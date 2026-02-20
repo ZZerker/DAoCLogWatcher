@@ -1,0 +1,272 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:DAoCLogWatcher.UI.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:scott="using:ScottPlot.Avalonia"
+        mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="700"
+        x:Class="DAoCLogWatcher.UI.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="DAoC Log Watcher"
+        Width="1400" Height="1070"
+        Background="#FF1A1A1A">
+
+    <Design.DataContext>
+        <vm:MainWindowViewModel/>
+    </Design.DataContext>
+
+    <Grid RowDefinitions="Auto,*">
+        <Border Grid.Row="0" Background="#FF252525" Padding="15" Margin="0,0,0,10">
+            <StackPanel Orientation="Horizontal" Spacing="10">
+                <Button Content="Open DAoC Log"
+                        Command="{Binding OpenDaocLogCommand}"
+                        Background="#FF007ACC"
+                        Foreground="White"
+                        Padding="12,8"
+                        CornerRadius="6"
+                        BorderThickness="0" />
+                <Button Content="Open Log File"
+                        Command="{Binding OpenFileCommand}"
+                        CommandParameter="{Binding $parent[Window].StorageProvider}"
+                        Background="#FF007ACC"
+                        Foreground="White"
+                        Padding="12,8"
+                        CornerRadius="6"
+                        BorderThickness="0" />
+                <Button Content="Stop Watching"
+                        Command="{Binding StopWatchingCommand}"
+                        IsEnabled="{Binding IsWatching}"
+                        Background="#FFDC3545"
+                        Foreground="White"
+                        Padding="12,8"
+                        CornerRadius="6"
+                        BorderThickness="0" />
+                <CheckBox Content="Last 24h only"
+                          IsChecked="{Binding EnableTimeFiltering}"
+                          VerticalAlignment="Center"
+                          Margin="20,0,0,0"
+                          Foreground="#FFCCCCCC" />
+                <CheckBox Content="Last 6h only"
+                          IsChecked="{Binding EnableSixHourFiltering}"
+                          VerticalAlignment="Center"
+                          Margin="10,0,0,0"
+                          Foreground="#FFCCCCCC" />
+                <TextBlock Text="{Binding CurrentFilePath}"
+                           VerticalAlignment="Center"
+                           Margin="10,0,0,0"
+                           Foreground="#FF888888"
+                           FontSize="12" />
+            </StackPanel>
+        </Border>
+
+        <Grid Grid.Row="1" ColumnDefinitions="320,*" Margin="10,0,10,10">
+            <Border Grid.Column="0" Background="#FF252525" BorderBrush="#FF3A3A3A" BorderThickness="1" CornerRadius="8" Padding="20" Margin="0,0,10,0">
+                <StackPanel Spacing="18">
+                    <TextBlock Text="Summary" FontSize="22" FontWeight="Bold" Foreground="#FFFFFF" />
+
+                    <Border Background="#FF1E1E1E" CornerRadius="6" Padding="15">
+                        <StackPanel Spacing="10">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="TOTAL REALM POINTS" FontWeight="SemiBold" FontSize="11" Foreground="#FF888888" />
+                                <TextBlock Text="{Binding Summary.TotalRealmPoints}" FontSize="32" FontWeight="Bold" Foreground="#FF00D9FF" />
+                            </StackPanel>
+                            <StackPanel Spacing="5">
+                                <TextBlock Text="RPs PER HOUR" FontWeight="SemiBold" FontSize="10" Foreground="#FF666666" />
+                                <TextBlock Text="{Binding Summary.RpsPerHour, StringFormat='{}{0:F0} RP/h'}" FontSize="18" FontWeight="SemiBold" Foreground="#FFAA88FF" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Height="1" Background="#FF3A3A3A" />
+
+                    <TextBlock Text="ABSOLUTE NUMBERS" FontWeight="SemiBold" FontSize="11" Foreground="#FF888888" />
+                    <StackPanel Spacing="6">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="Player Kills:" MinWidth="130" Foreground="#FFCCCCCC" />
+                            <TextBlock Text="{Binding Summary.PlayerKills}" FontWeight="Bold" Foreground="#FFFFFF" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="Campaign Quests:" MinWidth="130" Foreground="#FFCCCCCC" />
+                            <TextBlock Text="{Binding Summary.CampaignQuests}" FontWeight="Bold" Foreground="#FFFFFF" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="Ticks:" MinWidth="130" Foreground="#FFCCCCCC" />
+                            <TextBlock Text="{Binding Summary.Ticks}" FontWeight="Bold" Foreground="#FFFFFF" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="Siege:" MinWidth="130" Foreground="#FFCCCCCC" />
+                            <TextBlock Text="{Binding Summary.Siege}" FontWeight="Bold" Foreground="#FFFFFF" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="Assault Order:" MinWidth="130" Foreground="#FFCCCCCC" />
+                            <TextBlock Text="{Binding Summary.AssaultOrder}" FontWeight="Bold" Foreground="#FFFFFF" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="Support Ticks:" MinWidth="130" Foreground="#FFCCCCCC" />
+                            <TextBlock Text="{Binding Summary.SupportActivity}" FontWeight="Bold" Foreground="#FFFFFF" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="Relic Capture:" MinWidth="130" Foreground="#FFCCCCCC" />
+                            <TextBlock Text="{Binding Summary.RelicCapture}" FontWeight="Bold" Foreground="#FFFFFF" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="Unknown:" MinWidth="130" Foreground="#FFCCCCCC" />
+                            <TextBlock Text="{Binding Summary.Unknown}" FontWeight="Bold" Foreground="#FFFFFF" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <Border Height="1" Background="#FF3A3A3A" />
+
+                    <TextBlock Text="ABSOLUTE RPs" FontWeight="SemiBold" FontSize="11" Foreground="#FF888888" />
+                    <StackPanel Spacing="6">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="Player Kills:" MinWidth="130" Foreground="#FFCCCCCC" />
+                            <TextBlock Text="{Binding Summary.PlayerKillsRp}" FontWeight="Bold" Foreground="#FF00D968" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="Campaign Quests:" MinWidth="130" Foreground="#FFCCCCCC" />
+                            <TextBlock Text="{Binding Summary.CampaignQuestsRP}" FontWeight="Bold" Foreground="#FF00D968" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="Ticks:" MinWidth="130" Foreground="#FFCCCCCC" />
+                            <TextBlock Text="{Binding Summary.TicksRP}" FontWeight="Bold" Foreground="#FF00D968" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="Siege:" MinWidth="130" Foreground="#FFCCCCCC" />
+                            <TextBlock Text="{Binding Summary.SiegeRP}" FontWeight="Bold" Foreground="#FF00D968" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="Assault Order:" MinWidth="130" Foreground="#FFCCCCCC" />
+                            <TextBlock Text="{Binding Summary.AssaultOrderRP}" FontWeight="Bold" Foreground="#FF00D968" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="Support Ticks:" MinWidth="130" Foreground="#FFCCCCCC" />
+                            <TextBlock Text="{Binding Summary.SupportActivityRP}" FontWeight="Bold" Foreground="#FF00D968" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="Relic Capture:" MinWidth="130" Foreground="#FFCCCCCC" />
+                            <TextBlock Text="{Binding Summary.RelicCaptureRP}" FontWeight="Bold" Foreground="#FF00D968" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="Unknown:" MinWidth="130" Foreground="#FFCCCCCC" />
+                            <TextBlock Text="{Binding Summary.UnknownRP}" FontWeight="Bold" Foreground="#FF00D968" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <Border Height="1" Background="#FF3A3A3A" />
+
+                    <TextBlock Text="PERCENTAGES" FontWeight="SemiBold" FontSize="11" Foreground="#FF888888" />
+                    <StackPanel Spacing="6">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="Player Kills:" MinWidth="130" Foreground="#FFCCCCCC" />
+                            <TextBlock Text="{Binding Summary.PlayerKillsPercentage, StringFormat='{}{0:F1}%'}" FontWeight="Bold" Foreground="#FFFFAA00" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="Campaign Quests:" MinWidth="130" Foreground="#FFCCCCCC" />
+                            <TextBlock Text="{Binding Summary.CampaignQuestsPercentage, StringFormat='{}{0:F1}%'}" FontWeight="Bold" Foreground="#FFFFAA00" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="Ticks:" MinWidth="130" Foreground="#FFCCCCCC" />
+                            <TextBlock Text="{Binding Summary.TicksPercentage, StringFormat='{}{0:F1}%'}" FontWeight="Bold" Foreground="#FFFFAA00" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="Siege:" MinWidth="130" Foreground="#FFCCCCCC" />
+                            <TextBlock Text="{Binding Summary.SiegePercentage, StringFormat='{}{0:F1}%'}" FontWeight="Bold" Foreground="#FFFFAA00" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="Assault Order:" MinWidth="130" Foreground="#FFCCCCCC" />
+                            <TextBlock Text="{Binding Summary.AssaultOrderPercentage, StringFormat='{}{0:F1}%'}" FontWeight="Bold" Foreground="#FFFFAA00" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="Support Ticks:" MinWidth="130" Foreground="#FFCCCCCC" />
+                            <TextBlock Text="{Binding Summary.SupportActivityPercentage, StringFormat='{}{0:F1}%'}" FontWeight="Bold" Foreground="#FFFFAA00" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="Relic Capture:" MinWidth="130" Foreground="#FFCCCCCC" />
+                            <TextBlock Text="{Binding Summary.RelicCapturePercentage, StringFormat='{}{0:F1}%'}" FontWeight="Bold" Foreground="#FFFFAA00" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="Unknown:" MinWidth="130" Foreground="#FFCCCCCC" />
+                            <TextBlock Text="{Binding Summary.UnknownPercentage, StringFormat='{}{0:F1}%'}" FontWeight="Bold" Foreground="#FFFFAA00" />
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Column="1" Background="#FF252525" BorderBrush="#FF3A3A3A" BorderThickness="1" CornerRadius="8" Padding="20" Margin="0,0,0,0">
+                <Grid RowDefinitions="*,Auto">
+                    <DockPanel Grid.Row="0">
+                        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,15">
+                            <TextBlock Text="Realm Point Log" FontSize="22" FontWeight="Bold" Margin="0,0,15,0" Foreground="#FFFFFF" />
+                            <TextBlock Text="{Binding LogEntries.Count, StringFormat='({0} entries)'}" FontSize="14" VerticalAlignment="Center" Foreground="#FF888888" />
+                        </StackPanel>
+
+                        <ScrollViewer Background="#FF1E1E1E" CornerRadius="6" Padding="10">
+                            <ItemsControl ItemsSource="{Binding LogEntries}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border BorderBrush="#FF2A2A2A" BorderThickness="0,0,0,1" Padding="10,8" Background="Transparent">
+                                            <Grid ColumnDefinitions="Auto,Auto,Auto,*">
+                                                <TextBlock Grid.Column="0" Text="{Binding Timestamp}"
+                                                           Foreground="#FF888888"
+                                                           FontFamily="Consolas,Courier New,monospace"
+                                                           FontSize="13"
+                                                           Margin="0,0,20,0"
+                                                           MinWidth="80" />
+                                                <TextBlock Grid.Column="1" Text="{Binding Points, StringFormat='+{0} RP'}"
+                                                           Foreground="#FF00D968"
+                                                           FontWeight="Bold"
+                                                           FontSize="13"
+                                                           Margin="0,0,20,0"
+                                                           MinWidth="90" />
+                                                <TextBlock Grid.Column="2" Text="{Binding Source}"
+                                                           Foreground="#FF00D9FF"
+                                                           FontSize="13"
+                                                           Margin="0,0,20,0"
+                                                           MinWidth="150" />
+                                                <TextBlock Grid.Column="3" Text="{Binding Details}"
+                                                           Foreground="#FFCCCCCC"
+                                                           FontSize="13"
+                                                           TextWrapping="Wrap" />
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </DockPanel>
+
+                    <Border Grid.Row="1" Background="#FF1E1E1E" CornerRadius="6" Padding="15" Margin="0,15,0,0">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Top" Text="Realm Points Over Time" FontSize="16" FontWeight="SemiBold" Foreground="#FFFFFF" Margin="0,0,0,10" />
+                            <scott:AvaPlot x:Name="RpChart" Height="200" />
+                        </DockPanel>
+                    </Border>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+
+</Window>

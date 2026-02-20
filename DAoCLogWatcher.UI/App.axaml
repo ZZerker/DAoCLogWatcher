@@ -1,0 +1,45 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="DAoCLogWatcher.UI.App"
+             xmlns:local="using:DAoCLogWatcher.UI"
+             RequestedThemeVariant="Default">
+             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
+
+    <Application.DataTemplates>
+        <local:ViewLocator/>
+    </Application.DataTemplates>
+  
+    <Application.Styles>
+        <FluentTheme />
+
+        <!-- Override DataGrid styling to ensure visibility -->
+        <Style Selector="DataGrid">
+            <Setter Property="Background" Value="White" />
+            <Setter Property="Foreground" Value="Black" />
+            <Setter Property="RowBackground" Value="White" />
+        </Style>
+
+        <Style Selector="DataGrid DataGridRow">
+            <Setter Property="Background" Value="White" />
+            <Setter Property="Foreground" Value="Black" />
+        </Style>
+
+        <Style Selector="DataGrid DataGridRow:pointerover">
+            <Setter Property="Background" Value="#F0F0F0" />
+        </Style>
+
+        <Style Selector="DataGrid DataGridRow:selected">
+            <Setter Property="Background" Value="#E3F2FD" />
+        </Style>
+
+        <Style Selector="DataGrid DataGridCell">
+            <Setter Property="Foreground" Value="Black" />
+        </Style>
+
+        <Style Selector="DataGrid DataGridColumnHeader">
+            <Setter Property="Background" Value="#F5F5F5" />
+            <Setter Property="Foreground" Value="Black" />
+            <Setter Property="FontWeight" Value="Bold" />
+        </Style>
+    </Application.Styles>
+</Application>

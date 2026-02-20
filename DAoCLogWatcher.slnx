@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="DAoCLogWatcher.Benchmarks/DAoCLogWatcher.Benchmarks.csproj" />
+  <Project Path="DAoCLogWatcher.Core/DAoCLogWatcher.Core.csproj" />
+  <Project Path="DAoCLogWatcher.Tests/DAoCLogWatcher.Tests.csproj" />
+  <Project Path="DAoCLogWatcher.UI/DAoCLogWatcher.UI.csproj" />
+</Solution>
