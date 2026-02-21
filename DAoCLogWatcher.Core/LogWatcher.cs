@@ -20,6 +20,8 @@ public sealed partial class LogWatcher : IDisposable, IAsyncDisposable
     private string incompleteLineBuffer;
     private bool skipOldEntries;
     private DateTime? currentSessionStart;
+    private DateTime? lastLogClosed;
+    private const int LogReopenThresholdSeconds = 30;
 
     public LogWatcher(string logFilePath, long startPosition = 0, bool enableTimeFiltering = false, int filterHours = 24)
     {
@@ -87,9 +89,10 @@ public sealed partial class LogWatcher : IDisposable, IAsyncDisposable
 
                 var completeLines = this.ExtractCompleteLines();
 
-                foreach (var line in completeLines)
-                {
-	                this.ProcessLogOpenedMarker(line);
+				foreach (var line in completeLines)
+				{
+					this.ProcessLogClosedMarker(line);
+					this.ProcessLogOpenedMarker(line);
 
                     var shouldYield = !this.skipOldEntries ||this.ShouldProcessLine(line);
 
@@ -119,24 +122,48 @@ public sealed partial class LogWatcher : IDisposable, IAsyncDisposable
         }
     }
 
-    private static readonly Regex ChatLogOpenedRegex = GenerateChatLogOpenedRegex();
+	private static readonly Regex ChatLogOpenedRegex = GenerateChatLogOpenedRegex();
+	private static readonly Regex ChatLogClosedRegex = GenerateChatLogClosedRegex();
 
-    private void ProcessLogOpenedMarker(string line)
-    {
-        var match = ChatLogOpenedRegex.Match(line);
-        if (match.Success)
-        {
-            if (DateTime.TryParseExact(
-                match.Groups["date"].Value,
-                "ddd MMM d HH:mm:ss yyyy",
-                CultureInfo.InvariantCulture,
-                DateTimeStyles.None,
-                out var sessionDate))
-            {
-	            this.currentSessionStart = sessionDate;
-            }
-        }
-    }
+	private void ProcessLogClosedMarker(string line)
+	{
+		var match = ChatLogClosedRegex.Match(line);
+		if (match.Success)
+		{
+			if (DateTime.TryParseExact(
+				match.Groups["date"].Value,
+				"ddd MMM d HH:mm:ss yyyy",
+				CultureInfo.InvariantCulture,
+				DateTimeStyles.None,
+				out var closedAt))
+			{
+				this.lastLogClosed = closedAt;
+			}
+		}
+	}
+
+	private void ProcessLogOpenedMarker(string line)
+	{
+		var match = ChatLogOpenedRegex.Match(line);
+		if (match.Success)
+		{
+			if (DateTime.TryParseExact(
+				match.Groups["date"].Value,
+				"ddd MMM d HH:mm:ss yyyy",
+				CultureInfo.InvariantCulture,
+				DateTimeStyles.None,
+				out var sessionDate))
+			{
+				var isQuickReopen = this.lastLogClosed.HasValue &&
+									(sessionDate - this.lastLogClosed.Value).TotalSeconds <= LogReopenThresholdSeconds;
+
+				if (!isQuickReopen)
+					this.currentSessionStart = sessionDate;
+
+				this.lastLogClosed = null;
+			}
+		}
+	}
 
     private bool ShouldProcessLine(string line)
     {
@@ -168,6 +195,10 @@ public sealed partial class LogWatcher : IDisposable, IAsyncDisposable
     [GeneratedRegex(@"^\*\*\* Chat Log Opened: (?<date>.+)$",
         RegexOptions.Compiled | RegexOptions.CultureInvariant)]
     private static partial Regex GenerateChatLogOpenedRegex();
+
+    [GeneratedRegex(@"^\*\*\* Chat Log Closed: (?<date>.+)$",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant)]
+    private static partial Regex GenerateChatLogClosedRegex();
 
     private void SeekToLastPosition(FileStream stream)
     {

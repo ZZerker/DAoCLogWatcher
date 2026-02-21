@@ -10,10 +10,14 @@ public static class CharacterDiscoveryService
     /// Returns deduplicated character names found in the DAoC eden profile directory.
     /// Files are named e.g. "Barnabas-41.ini" or "Barnabas-42.ini"; the suffix is stripped.
     /// </summary>
-    public static IReadOnlyList<string> GetCharacterNames()
-    {
-        var edenPath = GetEdenPath();
+    public static IReadOnlyList<string> GetCharacterNames() => GetCharacterNames(GetEdenPath());
 
+    /// <summary>
+    /// Returns deduplicated character names found in the given directory.
+    /// Files are named e.g. "Barnabas-41.ini" or "Barnabas-42.ini"; the suffix is stripped.
+    /// </summary>
+    public static IReadOnlyList<string> GetCharacterNames(string edenPath)
+    {
         if (!Directory.Exists(edenPath))
             return [];
 

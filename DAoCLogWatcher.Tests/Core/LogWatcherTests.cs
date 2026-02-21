@@ -298,6 +298,72 @@ public sealed class LogWatcherTests : IDisposable
     }
 
     [Fact]
+    public async Task WatchAsync_QuickLogReopen_PreservesSessionStart()
+    {
+        // Arrange - log closed and reopened within 30 seconds
+        var content =
+            "*** Chat Log Opened: Sat Feb 21 11:49:00 2026\n" +
+            "[11:49:01] You get 500 realm points for Tower Capture!\n" +
+            "*** Chat Log Closed: Sat Feb 21 11:50:35 2026\n" +
+            "\n" +
+            "*** Chat Log Opened: Sat Feb 21 11:50:37 2026\n" +
+            "[11:50:37] You get 100 realm points for Battle Tick!\n";
+
+        await File.WriteAllTextAsync(this.testLogFilePath, content);
+        var watcher = new LogWatcher(this.testLogFilePath, enableTimeFiltering: false);
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+
+        // Act
+        await foreach (var line in watcher.WatchAsync(cts.Token))
+        {
+            if (line.Text.Contains("Battle Tick"))
+            {
+                cts.Cancel();
+                break;
+            }
+        }
+
+        // Assert - session start should still be the original open time (11:49:00), not 11:50:37
+        watcher.CurrentSessionStart.Should().NotBeNull();
+        watcher.CurrentSessionStart!.Value.Hour.Should().Be(11);
+        watcher.CurrentSessionStart.Value.Minute.Should().Be(49);
+        watcher.CurrentSessionStart.Value.Second.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task WatchAsync_SlowLogReopen_UpdatesSessionStart()
+    {
+        // Arrange - log closed and reopened after more than 30 seconds
+        var content =
+            "*** Chat Log Opened: Sat Feb 21 11:00:00 2026\n" +
+            "[11:00:01] You get 500 realm points for Tower Capture!\n" +
+            "*** Chat Log Closed: Sat Feb 21 11:00:10 2026\n" +
+            "\n" +
+            "*** Chat Log Opened: Sat Feb 21 11:05:00 2026\n" +
+            "[11:05:01] You get 100 realm points for Battle Tick!\n";
+
+        await File.WriteAllTextAsync(this.testLogFilePath, content);
+        var watcher = new LogWatcher(this.testLogFilePath, enableTimeFiltering: false);
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+
+        // Act
+        await foreach (var line in watcher.WatchAsync(cts.Token))
+        {
+            if (line.Text.Contains("Battle Tick"))
+            {
+                cts.Cancel();
+                break;
+            }
+        }
+
+        // Assert - session start should be updated to the new open time (11:05:00)
+        watcher.CurrentSessionStart.Should().NotBeNull();
+        watcher.CurrentSessionStart!.Value.Hour.Should().Be(11);
+        watcher.CurrentSessionStart.Value.Minute.Should().Be(5);
+        watcher.CurrentSessionStart.Value.Second.Should().Be(0);
+    }
+
+    [Fact]
     public void Constructor_NullOrEmptyPath_ThrowsArgumentException()
     {
         // Act & Assert
