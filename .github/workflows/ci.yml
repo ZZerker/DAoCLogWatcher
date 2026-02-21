@@ -33,7 +33,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results
+          name: test-results.zip
           path: '**/*.trx'
 
   # ── Publish self-contained binaries (only on version tags) ──────────────────
