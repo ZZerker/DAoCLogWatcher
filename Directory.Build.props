@@ -1,7 +1,9 @@
 <Project>
   <PropertyGroup>
     <Version>0.1.0</Version>
-    <AssemblyVersion>$(Version)</AssemblyVersion>
-    <FileVersion>$(Version)</FileVersion>
+    <!-- AssemblyVersion and FileVersion require numeric-only format; strip any pre-release suffix (e.g. -beta, -rc1) -->
+    <_VersionNumeric>$(Version.Split('-')[0])</_VersionNumeric>
+    <AssemblyVersion>$(_VersionNumeric)</AssemblyVersion>
+    <FileVersion>$(_VersionNumeric)</FileVersion>
   </PropertyGroup>
 </Project>
