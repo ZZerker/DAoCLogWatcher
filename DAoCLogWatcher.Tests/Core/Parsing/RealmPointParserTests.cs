@@ -172,6 +172,30 @@ public sealed class RealmPointParserTests
     }
 
     [Fact]
+    public void TryParse_SiegeCaptureSequence_ParsesCorrectly()
+    {
+        // Arrange
+        var parser = new RealmPointParser();
+
+        // Act - RP line comes first (no reason → pending)
+        var rpResult = parser.TryParse("[11:49:29] You get 630 realm points!", out var rpEntry);
+
+        // Assert - Held pending
+        rpResult.Should().BeFalse();
+        rpEntry.Should().BeNull();
+
+        // Act - Capture announcement follows
+        var captureResult = parser.TryParse("[11:49:29] The forces of Midgard led by Boomalaka have captured Hlidskialf Faste!", out var captureEntry);
+
+        // Assert
+        captureResult.Should().BeTrue();
+        captureEntry.Should().NotBeNull();
+        captureEntry!.Points.Should().Be(630);
+        captureEntry.Source.Should().Be(RealmPointSource.Siege);
+        captureEntry.PlayerName.Should().BeNull();
+    }
+
+    [Fact]
     public void TryParse_StateMachine_ResetsAfterEmission()
     {
         // Arrange

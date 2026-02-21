@@ -34,12 +34,13 @@ public sealed partial class RealmPointParser
 
 		if(this.waitingForParticipationCheck&&this.pendingEntry != null)
 		{
+			var pendingSource = line.Contains("have captured") ? RealmPointSource.Siege : RealmPointSource.PlayerKill;
 			entry = new RealmPointEntry
 					{
 							Timestamp = this.pendingEntry.Timestamp,
 							Points = this.pendingEntry.Points,
-							Source = RealmPointSource.PlayerKill,
-							PlayerName = this.pendingEntry.PlayerName,
+							Source = pendingSource,
+							PlayerName = pendingSource == RealmPointSource.PlayerKill ? this.pendingEntry.PlayerName : null,
 							RawLine = this.pendingEntry.RawLine
 					};
 
