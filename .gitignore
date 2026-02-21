@@ -1,6 +1,6 @@
 obj
 bin
-
+*.log
 
 
 # ReSharper is a .NET coding add-in
@@ -18,3 +18,4 @@ publish/
 x64/
 [Bb]in/
 [Oo]bj/
+/.vs

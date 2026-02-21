@@ -2,13 +2,42 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="DAoCLogWatcher.UI.App"
              xmlns:local="using:DAoCLogWatcher.UI"
-             RequestedThemeVariant="Default">
+             RequestedThemeVariant="Dark">
              <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
 
     <Application.DataTemplates>
         <local:ViewLocator/>
     </Application.DataTemplates>
   
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="AppWindowBackground">#1A1A1A</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppPanelBackground">#252525</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppCardBackground">#1E1E1E</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppBorderBrush">#3A3A3A</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppRowBorder">#2A2A2A</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppTextPrimary">#FFFFFF</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppTextSecondary">#CCCCCC</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppTextMuted">#888888</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppTextDim">#666666</SolidColorBrush>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="AppWindowBackground">#F0F0F0</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppPanelBackground">#FAFAFA</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppCardBackground">#FFFFFF</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppBorderBrush">#CCCCCC</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppRowBorder">#E0E0E0</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppTextPrimary">#111111</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppTextSecondary">#444444</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppTextMuted">#666666</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppTextDim">#999999</SolidColorBrush>
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+
     <Application.Styles>
         <FluentTheme />
 

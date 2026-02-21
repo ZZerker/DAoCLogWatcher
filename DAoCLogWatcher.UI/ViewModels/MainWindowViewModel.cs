@@ -27,14 +27,56 @@ public partial class MainWindowViewModel: ViewModelBase
 
 	[ObservableProperty] private bool isWatching;
 
+	[ObservableProperty] private bool isDarkTheme = true;
+	public string ThemeIcon => IsDarkTheme ? "☀ Light" : "🌙 Dark";
+	partial void OnIsDarkThemeChanged(bool _) => OnPropertyChanged(nameof(ThemeIcon));
+
+	[RelayCommand]
+	private void ToggleTheme() => IsDarkTheme = !IsDarkTheme;
+
+	// Sidebar collapse
+	[ObservableProperty] private bool isSidebarVisible = true;
+	public string SidebarToggleIcon => IsSidebarVisible ? "◀ Summary" : "▶ Summary";
+	partial void OnIsSidebarVisibleChanged(bool _) => OnPropertyChanged(nameof(SidebarToggleIcon));
+
+	[RelayCommand]
+	private void ToggleSidebar() => IsSidebarVisible = !IsSidebarVisible;
+
+	// Individual chart collapse
+	[ObservableProperty] private bool isRpsChartVisible = true;
+	public string RpsChartToggleIcon => IsRpsChartVisible ? "▲" : "▼";
+	partial void OnIsRpsChartVisibleChanged(bool _) => OnPropertyChanged(nameof(RpsChartToggleIcon));
+
+	[RelayCommand]
+	private void ToggleRpsChart() => IsRpsChartVisible = !IsRpsChartVisible;
+
+	[ObservableProperty] private bool isRpChartVisible = true;
+	public string RpChartToggleIcon => IsRpChartVisible ? "▲" : "▼";
+	partial void OnIsRpChartVisibleChanged(bool _) => OnPropertyChanged(nameof(RpChartToggleIcon));
+
+	[RelayCommand]
+	private void ToggleRpChart() => IsRpChartVisible = !IsRpChartVisible;
+
 	[ObservableProperty] private ObservableCollection<RealmPointLogEntry> logEntries = [];
 
 	private LogWatcher? logWatcher;
 
 	[ObservableProperty] private RealmPointSummary summary = new();
 
-	// Chart data: (time in seconds from start, cumulative RPs)
+	// Character kill tracking
+	public ObservableCollection<CharacterKillStat> CharacterKillStats { get; } = [];
+	private Dictionary<string, CharacterKillStat> _characterKillLookup = new(StringComparer.OrdinalIgnoreCase);
+	public bool HasCharacters => CharacterKillStats.Count > 0;
+
+	// Chart data: (time in minutes from start, cumulative RPs)
 	public List<(double Time, double Rps)> ChartDataPoints { get; } = new();
+
+	// Rolling 1-hour RPS chart data: (time in minutes from start, RP/h for last 60 min)
+	public List<(double TimeMinutes, double RpsPerHour)> RpsHourlyChartDataPoints { get; } = new();
+
+	// Raw entries used to compute rolling window RPS
+	private readonly List<(DateTime Time, int Points)> _rawEntries = new();
+
 	private DateTime? chartStartTime;
 
 	public event EventHandler? ChartUpdateRequested;
@@ -173,6 +215,15 @@ public partial class MainWindowViewModel: ViewModelBase
 			case RealmPointSource.PlayerKill:
 				this.Summary.PlayerKills++;
 				this.Summary.PlayerKillsRp += entry.Points;
+				if (entry.PlayerName != null && this._characterKillLookup.TryGetValue(entry.PlayerName, out var stat))
+				{
+					if (stat.KillCount == 0)
+					{
+						this.CharacterKillStats.Add(stat);
+						OnPropertyChanged(nameof(HasCharacters));
+					}
+					stat.KillCount++;
+				}
 				break;
 			case RealmPointSource.CampaignQuest:
 				this.Summary.CampaignQuests++;
@@ -254,6 +305,22 @@ public partial class MainWindowViewModel: ViewModelBase
 
 		this.ChartDataPoints.Add((timeFromStart, cumulativeRps));
 
+		// Track raw entry for rolling RPS computation
+		this._rawEntries.Add((entryTime, points));
+
+		// Compute rolling 1-hour RPS at this point in time
+		var windowStart = entryTime.AddHours(-1);
+		var windowRps = 0;
+		foreach (var (t, p) in this._rawEntries)
+		{
+			if (t >= windowStart && t <= entryTime)
+				windowRps += p;
+		}
+		var actualWindowHours = (entryTime - (this.chartStartTime.Value > windowStart ? this.chartStartTime.Value : windowStart)).TotalHours;
+		var rollingRpsPerHour = actualWindowHours > 0 ? windowRps / actualWindowHours : 0;
+
+		this.RpsHourlyChartDataPoints.Add((timeFromStart, rollingRpsPerHour));
+
 		// Trigger chart update
 		this.ChartUpdateRequested?.Invoke(this, EventArgs.Empty);
 	}
@@ -270,7 +337,18 @@ public partial class MainWindowViewModel: ViewModelBase
 		this.Summary.Reset();
 		this.LogEntries.Clear();
 		this.ChartDataPoints.Clear();
+		this.RpsHourlyChartDataPoints.Clear();
+		this._rawEntries.Clear();
 		this.chartStartTime = null;
+
+		// Load character roster into lookup; CharacterKillStats stays empty until the first kill
+		this.CharacterKillStats.Clear();
+		this._characterKillLookup.Clear();
+		foreach (var name in CharacterDiscoveryService.GetCharacterNames())
+		{
+			this._characterKillLookup[name] = new CharacterKillStat { Name = name };
+		}
+		OnPropertyChanged(nameof(HasCharacters));
 
 		this.cancellationTokenSource = new CancellationTokenSource();
 

@@ -8,6 +8,9 @@ namespace DAoCLogWatcher.Core.Parsing;
 public sealed partial class RealmPointParser
 {
 	private static readonly Regex RealmPointRegex = GenerateRealmPointRegex();
+	private static readonly Regex PlayerNameRegex = new(
+		@"for (?:participating in )?the killing of (?<name>[\w]+)",
+		RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
 	private RealmPointEntry? pendingEntry;
 	private bool waitingForParticipationCheck;
@@ -32,13 +35,13 @@ public sealed partial class RealmPointParser
 		if(this.waitingForParticipationCheck&&this.pendingEntry != null)
 		{
 			entry = new RealmPointEntry
-			        {
-					        Timestamp = this.pendingEntry.Timestamp,
-					        Points = this.pendingEntry.Points,
-					        Source = RealmPointSource.PlayerKill,
-					        PlayerName = null,
-					        RawLine = this.pendingEntry.RawLine
-			        };
+					{
+							Timestamp = this.pendingEntry.Timestamp,
+							Points = this.pendingEntry.Points,
+							Source = RealmPointSource.PlayerKill,
+							PlayerName = this.pendingEntry.PlayerName,
+							RawLine = this.pendingEntry.RawLine
+					};
 
 			this.pendingEntry = null;
 			this.waitingForParticipationCheck = false;
@@ -88,14 +91,17 @@ public sealed partial class RealmPointParser
 
 		if(source == RealmPointSource.Unknown)
 		{
+			var playerNameMatch = PlayerNameRegex.Match(reason);
+			var playerName = playerNameMatch.Success ? playerNameMatch.Groups["name"].Value : null;
+
 			this.pendingEntry = new RealmPointEntry
-			                    {
-					                    Timestamp = timestamp,
-					                    Points = points,
-					                    Source = RealmPointSource.Unknown,
-					                    PlayerName = null,
-					                    RawLine = line
-			                    };
+								{
+										Timestamp = timestamp,
+										Points = points,
+										Source = RealmPointSource.Unknown,
+										PlayerName = playerName,
+										RawLine = line
+								};
 			this.waitingForParticipationCheck = true;
 			return false;
 		}
@@ -146,9 +152,6 @@ public sealed partial class RealmPointParser
 
 		return RealmPointSource.Unknown;
 	}
-
-	[GeneratedRegex(@"^\[\d{2}:\d{2}:\d{2}\] Kill participation: (?<percentage>[\d.]+)%$", RegexOptions.Compiled|RegexOptions.CultureInvariant)]
-	private static partial Regex GenerateKillParticipationRegex();
 
 	[GeneratedRegex(@"^\[(?<timestamp>\d{2}:\d{2}:\d{2})\] You get (?:an additional )?(?<points>\d+) realm points?(?<reason>.*)!$", RegexOptions.Compiled|RegexOptions.CultureInvariant)]
 	private static partial Regex GenerateRealmPointRegex();
