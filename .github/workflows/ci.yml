@@ -100,7 +100,17 @@ jobs:
         run: |
           sudo apt-get update -y
           sudo apt-get install -y flatpak flatpak-builder xvfb
-          sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+          flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+
+      - name: Cache Flatpak runtime
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/flatpak
+          key: flatpak-runtime-24.08
+
+      - name: Install Flatpak runtime
+        run: |
+          flatpak install --user -y flathub org.freedesktop.Platform//24.08 org.freedesktop.Sdk//24.08
 
       - name: Publish linux-x64 for Flatpak
         run: |
@@ -112,11 +122,24 @@ jobs:
             -p:Version="$VERSION" \
             -o publish/flatpak
 
-      - uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+      - name: Build Flatpak
+        run: |
+          xvfb-run --auto-servernum flatpak-builder \
+            --user \
+            --disable-sandbox \
+            --force-clean \
+            --repo=flatpak-repo \
+            flatpak-build-dir \
+            flatpak/io.github.zzerker.DAoCLogWatcher.yml
+
+      - name: Bundle Flatpak
+        run: flatpak build-bundle flatpak-repo DAoCLogWatcher.flatpak io.github.zzerker.DAoCLogWatcher
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
         with:
-          bundle: DAoCLogWatcher.flatpak
-          manifest-path: flatpak/io.github.zzerker.DAoCLogWatcher.yml
-          cache-key: flatpak-builder-${{ github.sha }}
+          name: DAoCLogWatcher.flatpak
+          path: DAoCLogWatcher.flatpak
 
   # ── Create GitHub Release and attach binaries ────────────────────────────────
   release:
