@@ -24,7 +24,7 @@ modules:
     sources:
       # Pre-built publish output copied here by the CI publish step
       - type: dir
-        path: publish/flatpak
+        path: ../publish/flatpak
         dest: app
       # Launcher wrapper so .NET resolves assemblies from /app/lib/daoclogwatcher/
       - type: script
