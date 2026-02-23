@@ -126,7 +126,7 @@ jobs:
         run: |
           xvfb-run --auto-servernum flatpak-builder \
             --user \
-            --disable-sandbox \
+            --disable-rofiles-fuse \
             --force-clean \
             --repo=flatpak-repo \
             flatpak-build-dir \
