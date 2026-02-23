@@ -30,4 +30,7 @@ modules:
       - type: script
         dest-filename: launcher.sh
         commands:
+          # On a Wayland session, unset DISPLAY so Avalonia doesn't attempt X11
+          # (fallback-x11 can leave DISPLAY set even when XWayland is unavailable)
+          - '[ -n "$WAYLAND_DISPLAY" ] && unset DISPLAY'
           - exec /app/lib/daoclogwatcher/DAoCLogWatcher.UI "$@"

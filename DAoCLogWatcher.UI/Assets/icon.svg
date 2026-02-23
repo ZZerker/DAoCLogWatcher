@@ -1,0 +1,88 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="256" height="256" rx="60" fill="#14181c"/>
+
+  <g transform="translate(28, 28)">
+
+    <g stroke="#1e272e" stroke-width="2">
+        <g transform="translate(130, 70) rotate(45)">
+            <rect x="-4" y="-60" width="8" height="140" rx="2" fill="#543a26"/>
+            <circle cx="0" cy="-70" r="10" fill="#2c5e7a"/>
+            <rect x="-5" y="-58" width="10" height="5" fill="#8a6e3c"/>
+        </g>
+        <g transform="translate(70, 70) rotate(-45)">
+            <rect x="-6" y="-50" width="12" height="130" rx="1" fill="#7f8c8d"/>
+            <rect x="-20" y="-50" width="40" height="8" rx="2" fill="#4a5b66"/>
+            <rect x="-5" y="-65" width="10" height="15" fill="#543a26"/>
+            <circle cx="0" cy="-70" r="6" fill="#4a5b66"/>
+        </g>
+    </g>
+
+    <g>
+        <path d="M100 20C100 20 40 30 40 80C40 145 100 200 100 200C100 200 160 145 160 80C160 30 100 20 100 20Z" fill="url(#shieldMetal)"/>
+        <path d="M100 20C100 20 40 30 40 80C40 145 100 200 100 200C100 200 160 145 160 80C160 30 100 20 100 20Z" stroke="#2a353d" stroke-width="12" fill="none"/>
+        <path d="M100 26C100 26 46 36 46 80C46 140 100 190 100 190C100 190 154 140 154 80C154 36 100 26 100 26Z" stroke="#4a5b66" stroke-width="2" fill="none"/>
+        <circle cx="55" cy="60" r="4" fill="#2a353d" stroke="#4a5b66" stroke-width="2"/>
+        <circle cx="145" cy="60" r="4" fill="#2a353d" stroke="#4a5b66" stroke-width="2"/>
+        <circle cx="100" cy="180" r="4" fill="#2a353d" stroke="#4a5b66" stroke-width="2"/>
+    </g>
+
+    <defs>
+        <g id="logRows">
+            <g fill="#c0392b">
+                <rect x="60" y="60" width="20" height="6" rx="2"/>
+                <rect x="85" y="60" width="30" height="6" rx="2"/>
+                <rect x="120" y="60" width="15" height="6" rx="2"/>
+            </g>
+            <g fill="#27ae60">
+                <rect x="60" y="80" width="15" height="6" rx="2"/>
+                <rect x="80" y="80" width="25" height="6" rx="2"/>
+                <rect x="110" y="80" width="35" height="6" rx="2"/>
+            </g>
+            <g fill="#2980b9">
+                <rect x="60" y="100" width="25" height="6" rx="2"/>
+                <rect x="90" y="100" width="20" height="6" rx="2"/>
+            </g>
+            <rect x="115" y="100" width="25" height="6" rx="2" fill="#f39c12"/>
+            <rect x="60" y="120" width="15" height="6" rx="2" fill="#c0392b"/>
+            <rect x="80" y="120" width="40" height="6" rx="2" fill="#7f8c8d"/>
+            <rect x="60" y="140" width="30" height="6" rx="2" fill="#27ae60"/>
+            <rect x="95" y="140" width="20" height="6" rx="2" fill="#7f8c8d"/>
+        </g>
+    </defs>
+
+    <use href="#logRows" fill="#000000" opacity="0.3" style="mix-blend-mode: overlay;"/>
+
+    <g transform="translate(100, 100) rotate(45)">
+       <rect x="-6" y="32" width="12" height="40" rx="2" fill="#543a26"/>
+       <rect x="-6" y="32" width="12" height="5" fill="#8a6e3c"/>
+       <rect x="-6" y="67" width="12" height="5" fill="#8a6e3c"/>
+       <path d="M-4 32 L-4 25 L4 25 L4 32" fill="#8a6e3c" stroke="#594627" stroke-width="1"/>
+       <circle cx="0" cy="0" r="38" fill="#8a6e3c"/>
+       <circle cx="0" cy="0" r="32" fill="#1e272e"/>
+       <circle cx="0" cy="0" r="35" stroke="#cfa76e" stroke-width="4" stroke-dasharray="8 4" fill="none"/>
+    </g>
+
+    <defs>
+        <clipPath id="lens-clip-final">
+            <circle cx="100" cy="100" r="31" />
+        </clipPath>
+    </defs>
+
+    <g clip-path="url(#lens-clip-final)">
+        <circle cx="100" cy="100" r="32" fill="url(#magicLensBg)"/>
+        <use href="#logRows"/>
+    </g>
+  </g>
+
+  <defs>
+    <linearGradient id="shieldMetal" x1="40" y1="20" x2="160" y2="200" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3a4a54"/>
+      <stop offset="1" stop-color="#232f3e"/>
+    </linearGradient>
+    <linearGradient id="magicLensBg" x1="68" y1="68" x2="132" y2="132" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2c5e7a"/>
+      <stop offset="0.6" stop-color="#1a3d52"/>
+      <stop offset="1" stop-color="#0c1d29"/>
+    </linearGradient>
+  </defs>
+</svg>

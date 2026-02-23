@@ -1,0 +1,62 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="256" height="256" rx="60" fill="#14181c"/>
+
+
+  <path d="M128 20C128 20 56 32 56 92C56 170 128 236 128 236C128 236 200 170 200 92C200 32 128 20 128 20Z" fill="url(#shieldMetal)"/>
+  <path d="M128 20C128 20 56 32 56 92C56 170 128 236 128 236C128 236 200 170 200 92C200 32 128 20 128 20Z" stroke="#2a353d" stroke-width="12" fill="none"/>
+  <path d="M128 28C128 28 64 40 64 92C64 164 128 224 128 224C128 224 192 164 192 92C192 40 128 28 128 28Z" stroke="#4a5b66" stroke-width="2" fill="none"/>
+  
+  <circle cx="74" cy="68" r="5" fill="#2a353d" stroke="#4a5b66" stroke-width="2"/>
+  <circle cx="182" cy="68" r="5" fill="#2a353d" stroke="#4a5b66" stroke-width="2"/>
+  <circle cx="128" cy="212" r="5" fill="#2a353d" stroke="#4a5b66" stroke-width="2"/>
+
+  <g opacity="0.3">
+    <rect x="80" y="80" width="24" height="7" rx="2" fill="#000"/>
+    <rect x="110" y="80" width="36" height="7" rx="2" fill="#000"/>
+    <rect x="152" y="80" width="18" height="7" rx="2" fill="#000"/>
+    <rect x="80" y="104" width="18" height="7" rx="2" fill="#000"/>
+    <rect x="104" y="104" width="30" height="7" rx="2" fill="#000"/>
+    <rect x="140" y="104" width="42" height="7" rx="2" fill="#000"/>
+    <rect x="80" y="128" width="30" height="7" rx="2" fill="#000"/>
+    <rect x="116" y="128" width="24" height="7" rx="2" fill="#000"/>
+    <rect x="146" y="128" width="30" height="7" rx="2" fill="#000"/>
+  </g>
+
+  <g transform="translate(128, 128) rotate(45)">
+    <rect x="-8" y="38" width="16" height="48" rx="2" fill="#543a26"/>
+    <rect x="-8" y="38" width="16" height="6" fill="#8a6e3c"/>
+    <rect x="-8" y="80" width="16" height="6" fill="#8a6e3c"/>
+    <path d="M-5 38 L-5 30 L5 30 L5 38" fill="#8a6e3c" stroke="#594627" stroke-width="1"/>
+    <circle cx="0" cy="0" r="46" fill="#8a6e3c"/>
+    <circle cx="0" cy="0" r="38" fill="#1e272e"/>
+    <circle cx="0" cy="0" r="42" stroke="#cfa76e" stroke-width="4" stroke-dasharray="10 5" fill="none"/>
+  </g>
+
+  <g clip-path="url(#magick-clip-final)">
+    <circle cx="128" cy="128" r="38" fill="url(#magicLensBg)"/>
+    <rect x="80" y="80" width="24" height="7" rx="2" fill="#c0392b"/>
+    <rect x="110" y="80" width="36" height="7" rx="2" fill="#c0392b"/>
+    <rect x="152" y="80" width="18" height="7" rx="2" fill="#c0392b"/>
+    <rect x="80" y="104" width="18" height="7" rx="2" fill="#27ae60"/>
+    <rect x="104" y="104" width="30" height="7" rx="2" fill="#27ae60"/>
+    <rect x="140" y="104" width="42" height="7" rx="2" fill="#27ae60"/>
+    <rect x="80" y="128" width="30" height="7" rx="2" fill="#2980b9"/>
+    <rect x="116" y="128" width="24" height="7" rx="2" fill="#2980b9"/>
+    <rect x="146" y="128" width="30" height="7" rx="2" fill="#f39c12"/>
+  </g>
+
+  <defs>
+    <clipPath id="magick-clip-final">
+      <circle cx="128" cy="128" r="37" />
+    </clipPath>
+    <linearGradient id="shieldMetal" x1="56" y1="20" x2="200" y2="236" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3a4a54"/>
+      <stop offset="1" stop-color="#232f3e"/>
+    </linearGradient>
+    <linearGradient id="magicLensBg" x1="90" y1="90" x2="166" y2="166" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2c5e7a"/>
+      <stop offset="0.6" stop-color="#1a3d52"/>
+      <stop offset="1" stop-color="#0c1d29"/>
+    </linearGradient>
+  </defs>
+</svg>
