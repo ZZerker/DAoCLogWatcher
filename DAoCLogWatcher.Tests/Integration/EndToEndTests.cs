@@ -302,52 +302,51 @@ public sealed class EndToEndTests : IDisposable
         public int UnknownRP { get; private set; }
         public int EntryCount { get; private set; }
 
-        public double PlayerKillsPercentage => TotalRealmPoints > 0 ? (PlayerKillsRP * 100.0 / TotalRealmPoints) : 0;
-        public double CampaignQuestsPercentage => TotalRealmPoints > 0 ? (CampaignQuestsRP * 100.0 / TotalRealmPoints) : 0;
-        public double TicksPercentage => TotalRealmPoints > 0 ? (TicksRP * 100.0 / TotalRealmPoints) : 0;
-        public double SiegePercentage => TotalRealmPoints > 0 ? (SiegeRP * 100.0 / TotalRealmPoints) : 0;
-        public double AssaultOrderPercentage => TotalRealmPoints > 0 ? (AssaultOrderRP * 100.0 / TotalRealmPoints) : 0;
-        public double SupportActivityPercentage => TotalRealmPoints > 0 ? (SupportActivityRP * 100.0 / TotalRealmPoints) : 0;
-        public double RelicCapturePercentage => TotalRealmPoints > 0 ? (RelicCaptureRP * 100.0 / TotalRealmPoints) : 0;
-        public double UnknownPercentage => TotalRealmPoints > 0 ? (UnknownRP * 100.0 / TotalRealmPoints) : 0;
+        public double PlayerKillsPercentage => this.TotalRealmPoints > 0 ? (this.PlayerKillsRP * 100.0 / this.TotalRealmPoints) : 0;
+        public double CampaignQuestsPercentage => this.TotalRealmPoints > 0 ? (this.CampaignQuestsRP * 100.0 / this.TotalRealmPoints) : 0;
+        public double TicksPercentage => this.TotalRealmPoints > 0 ? (this.TicksRP * 100.0 / this.TotalRealmPoints) : 0;
+        public double SiegePercentage => this.TotalRealmPoints > 0 ? (this.SiegeRP * 100.0 / this.TotalRealmPoints) : 0;
+        public double AssaultOrderPercentage => this.TotalRealmPoints > 0 ? (this.AssaultOrderRP * 100.0 / this.TotalRealmPoints) : 0;
+        public double SupportActivityPercentage => this.TotalRealmPoints > 0 ? (this.SupportActivityRP * 100.0 / this.TotalRealmPoints) : 0;
+        public double RelicCapturePercentage => this.TotalRealmPoints > 0 ? (this.RelicCaptureRP * 100.0 / this.TotalRealmPoints) : 0;
+        public double UnknownPercentage => this.TotalRealmPoints > 0 ? (this.UnknownRP * 100.0 / this.TotalRealmPoints) : 0;
 
-        public int IndividualRPsSum => PlayerKillsRP + CampaignQuestsRP + TicksRP + SiegeRP +
-                                       AssaultOrderRP + SupportActivityRP + RelicCaptureRP + UnknownRP;
+        public int IndividualRPsSum =>
+		        this.PlayerKillsRP + this.CampaignQuestsRP + this.TicksRP + this.SiegeRP + this.AssaultOrderRP + this.SupportActivityRP + this.RelicCaptureRP + this.UnknownRP;
 
-        public double TotalPercentage => PlayerKillsPercentage + CampaignQuestsPercentage +
-                                        TicksPercentage + SiegePercentage + AssaultOrderPercentage +
-                                        SupportActivityPercentage + RelicCapturePercentage + UnknownPercentage;
+        public double TotalPercentage =>
+		        this.PlayerKillsPercentage + this.CampaignQuestsPercentage + this.TicksPercentage + this.SiegePercentage + this.AssaultOrderPercentage + this.SupportActivityPercentage + this.RelicCapturePercentage + this.UnknownPercentage;
 
         public void ProcessEntry(RealmPointEntry entry)
         {
-            EntryCount++;
-            TotalRealmPoints += entry.Points;
+	        this.EntryCount++;
+	        this.TotalRealmPoints += entry.Points;
 
             switch (entry.Source)
             {
                 case RealmPointSource.PlayerKill:
-                    PlayerKillsRP += entry.Points;
+	                this.PlayerKillsRP += entry.Points;
                     break;
                 case RealmPointSource.CampaignQuest:
-                    CampaignQuestsRP += entry.Points;
+	                this.CampaignQuestsRP += entry.Points;
                     break;
                 case RealmPointSource.Tick:
-                    TicksRP += entry.Points;
+	                this.TicksRP += entry.Points;
                     break;
                 case RealmPointSource.Siege:
-                    SiegeRP += entry.Points;
+	                this.SiegeRP += entry.Points;
                     break;
                 case RealmPointSource.AssaultOrder:
-                    AssaultOrderRP += entry.Points;
+	                this.AssaultOrderRP += entry.Points;
                     break;
                 case RealmPointSource.SupportActivity:
-                    SupportActivityRP += entry.Points;
+	                this.SupportActivityRP += entry.Points;
                     break;
                 case RealmPointSource.RelicCapture:
-                    RelicCaptureRP += entry.Points;
+	                this.RelicCaptureRP += entry.Points;
                     break;
                 case RealmPointSource.Unknown:
-                    UnknownRP += entry.Points;
+	                this.UnknownRP += entry.Points;
                     break;
             }
         }

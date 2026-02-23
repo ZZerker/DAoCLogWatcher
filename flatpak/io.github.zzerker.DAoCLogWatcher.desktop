@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=DAoC Log Watcher
+Comment=Dark Age of Camelot realm points and kill tracker
+Exec=DAoCLogWatcher.UI
+Icon=io.github.zzerker.DAoCLogWatcher
+Terminal=false
+Categories=Game;Utility;

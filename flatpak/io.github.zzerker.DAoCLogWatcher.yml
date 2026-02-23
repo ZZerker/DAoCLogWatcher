@@ -19,6 +19,9 @@ modules:
       - install -Dm755 -d /app/lib/daoclogwatcher
       - cp -a app/. /app/lib/daoclogwatcher/
       - chmod +x /app/lib/daoclogwatcher/DAoCLogWatcher.UI
+      # Install icon and desktop integration
+      - install -Dm644 icon.svg /app/share/icons/hicolor/scalable/apps/io.github.zzerker.DAoCLogWatcher.svg
+      - install -Dm644 io.github.zzerker.DAoCLogWatcher.desktop /app/share/applications/io.github.zzerker.DAoCLogWatcher.desktop
       # Install the generated launcher script to /app/bin (on PATH)
       - install -Dm755 launcher.sh /app/bin/DAoCLogWatcher.UI
     sources:
@@ -26,6 +29,13 @@ modules:
       - type: dir
         path: ../publish/flatpak
         dest: app
+      # SVG icon for desktop integration (not available as standalone file in publish output)
+      - type: file
+        path: ../DAoCLogWatcher.UI/Assets/icon2.svg
+        dest-filename: icon.svg
+      # XDG desktop entry
+      - type: file
+        path: io.github.zzerker.DAoCLogWatcher.desktop
       # Launcher wrapper so .NET resolves assemblies from /app/lib/daoclogwatcher/
       - type: script
         dest-filename: launcher.sh

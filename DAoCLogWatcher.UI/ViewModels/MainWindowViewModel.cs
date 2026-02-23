@@ -28,34 +28,34 @@ public partial class MainWindowViewModel: ViewModelBase
 	[ObservableProperty] private bool isWatching;
 
 	[ObservableProperty] private bool isDarkTheme = true;
-	public string ThemeIcon => IsDarkTheme ? "☀ Light" : "🌙 Dark";
-	partial void OnIsDarkThemeChanged(bool _) => OnPropertyChanged(nameof(ThemeIcon));
+	public string ThemeIcon => this.IsDarkTheme ? "☀ Light" : "🌙 Dark";
+	partial void OnIsDarkThemeChanged(bool _) => this.OnPropertyChanged(nameof(this.ThemeIcon));
 
 	[RelayCommand]
-	private void ToggleTheme() => IsDarkTheme = !IsDarkTheme;
+	private void ToggleTheme() => this.IsDarkTheme = !this.IsDarkTheme;
 
 	// Sidebar collapse
 	[ObservableProperty] private bool isSidebarVisible = true;
-	public string SidebarToggleIcon => IsSidebarVisible ? "◀ Summary" : "▶ Summary";
-	partial void OnIsSidebarVisibleChanged(bool _) => OnPropertyChanged(nameof(SidebarToggleIcon));
+	public string SidebarToggleIcon => this.IsSidebarVisible ? "◀ Summary" : "▶ Summary";
+	partial void OnIsSidebarVisibleChanged(bool _) => this.OnPropertyChanged(nameof(this.SidebarToggleIcon));
 
 	[RelayCommand]
-	private void ToggleSidebar() => IsSidebarVisible = !IsSidebarVisible;
+	private void ToggleSidebar() => this.IsSidebarVisible = !this.IsSidebarVisible;
 
 	// Individual chart collapse
 	[ObservableProperty] private bool isRpsChartVisible = true;
-	public string RpsChartToggleIcon => IsRpsChartVisible ? "▲" : "▼";
-	partial void OnIsRpsChartVisibleChanged(bool _) => OnPropertyChanged(nameof(RpsChartToggleIcon));
+	public string RpsChartToggleIcon => this.IsRpsChartVisible ? "▲" : "▼";
+	partial void OnIsRpsChartVisibleChanged(bool _) => this.OnPropertyChanged(nameof(this.RpsChartToggleIcon));
 
 	[RelayCommand]
-	private void ToggleRpsChart() => IsRpsChartVisible = !IsRpsChartVisible;
+	private void ToggleRpsChart() => this.IsRpsChartVisible = !this.IsRpsChartVisible;
 
 	[ObservableProperty] private bool isRpChartVisible = true;
-	public string RpChartToggleIcon => IsRpChartVisible ? "▲" : "▼";
-	partial void OnIsRpChartVisibleChanged(bool _) => OnPropertyChanged(nameof(RpChartToggleIcon));
+	public string RpChartToggleIcon => this.IsRpChartVisible ? "▲" : "▼";
+	partial void OnIsRpChartVisibleChanged(bool _) => this.OnPropertyChanged(nameof(this.RpChartToggleIcon));
 
 	[RelayCommand]
-	private void ToggleRpChart() => IsRpChartVisible = !IsRpChartVisible;
+	private void ToggleRpChart() => this.IsRpChartVisible = !this.IsRpChartVisible;
 
 	[ObservableProperty] private ObservableCollection<RealmPointLogEntry> logEntries = [];
 
@@ -65,8 +65,8 @@ public partial class MainWindowViewModel: ViewModelBase
 
 	// Character kill tracking
 	public ObservableCollection<CharacterKillStat> CharacterKillStats { get; } = [];
-	private Dictionary<string, CharacterKillStat> _characterKillLookup = new(StringComparer.OrdinalIgnoreCase);
-	public bool HasCharacters => CharacterKillStats.Count > 0;
+	private Dictionary<string, CharacterKillStat> characterKillLookup = new(StringComparer.OrdinalIgnoreCase);
+	public bool HasCharacters => this.CharacterKillStats.Count > 0;
 
 	// Chart data: (time in minutes from start, cumulative RPs)
 	public List<(double Time, double Rps)> ChartDataPoints { get; } = new();
@@ -75,7 +75,7 @@ public partial class MainWindowViewModel: ViewModelBase
 	public List<(double TimeMinutes, double RpsPerHour)> RpsHourlyChartDataPoints { get; } = new();
 
 	// Raw entries used to compute rolling window RPS
-	private readonly List<(DateTime Time, int Points)> _rawEntries = new();
+	private readonly List<(DateTime Time, int Points)> rawEntries = new();
 
 	private DateTime? chartStartTime;
 
@@ -204,10 +204,7 @@ public partial class MainWindowViewModel: ViewModelBase
 		// Use the session start from the log file if available, otherwise use today
 		var sessionDate = this.logWatcher?.CurrentSessionStart?.Date ?? DateTime.Now.Date;
 		var entryDateTime = sessionDate.Add(entry.Timestamp.ToTimeSpan());
-		if (!this.Summary.FirstEntryTime.HasValue)
-		{
-			this.Summary.FirstEntryTime = entryDateTime;
-		}
+		this.Summary.FirstEntryTime ??= entryDateTime;
 		this.Summary.LastEntryTime = entryDateTime;
 
 		switch(entry.Source)
@@ -215,15 +212,19 @@ public partial class MainWindowViewModel: ViewModelBase
 			case RealmPointSource.PlayerKill:
 				this.Summary.PlayerKills++;
 				this.Summary.PlayerKillsRp += entry.Points;
-				if (entry.PlayerName != null && this._characterKillLookup.TryGetValue(entry.PlayerName, out var stat))
+				if (entry.PlayerName!=null)
 				{
-					if (stat.KillCount == 0)
+					if (entry.PlayerName != null && this.characterKillLookup.TryGetValue(entry.PlayerName, out var stat))
 					{
-						this.CharacterKillStats.Add(stat);
-						OnPropertyChanged(nameof(HasCharacters));
+						if (stat.KillCount == 0)
+						{
+							this.CharacterKillStats.Add(stat);
+							this.OnPropertyChanged(nameof(this.HasCharacters));
+						}
+						stat.KillCount++;
 					}
-					stat.KillCount++;
 				}
+				
 				break;
 			case RealmPointSource.CampaignQuest:
 				this.Summary.CampaignQuests++;
@@ -290,15 +291,12 @@ public partial class MainWindowViewModel: ViewModelBase
 		}
 
 		// Update chart data
-		UpdateChartData(entryDateTime, entry.Points);
+		this.UpdateChartData(entryDateTime, entry.Points);
 	}
 
 	private void UpdateChartData(DateTime entryTime, int points)
 	{
-		if (!this.chartStartTime.HasValue)
-		{
-			this.chartStartTime = entryTime;
-		}
+		this.chartStartTime ??= entryTime;
 
 		var timeFromStart = (entryTime - this.chartStartTime.Value).TotalMinutes;
 		var cumulativeRps = this.Summary.TotalRealmPoints;
@@ -306,12 +304,12 @@ public partial class MainWindowViewModel: ViewModelBase
 		this.ChartDataPoints.Add((timeFromStart, cumulativeRps));
 
 		// Track raw entry for rolling RPS computation
-		this._rawEntries.Add((entryTime, points));
+		this.rawEntries.Add((entryTime, points));
 
 		// Compute rolling 1-hour RPS at this point in time
 		var windowStart = entryTime.AddHours(-1);
 		var windowRps = 0;
-		foreach (var (t, p) in this._rawEntries)
+		foreach (var (t, p) in this.rawEntries)
 		{
 			if (t >= windowStart && t <= entryTime)
 				windowRps += p;
@@ -338,17 +336,18 @@ public partial class MainWindowViewModel: ViewModelBase
 		this.LogEntries.Clear();
 		this.ChartDataPoints.Clear();
 		this.RpsHourlyChartDataPoints.Clear();
-		this._rawEntries.Clear();
+		this.rawEntries.Clear();
 		this.chartStartTime = null;
 
 		// Load character roster into lookup; CharacterKillStats stays empty until the first kill
 		this.CharacterKillStats.Clear();
-		this._characterKillLookup.Clear();
+		this.characterKillLookup.Clear();
 		foreach (var name in CharacterDiscoveryService.GetCharacterNames())
 		{
-			this._characterKillLookup[name] = new CharacterKillStat { Name = name };
+			this.characterKillLookup[name] = new CharacterKillStat { Name = name };
 		}
-		OnPropertyChanged(nameof(HasCharacters));
+
+		this.OnPropertyChanged(nameof(this.HasCharacters));
 
 		this.cancellationTokenSource = new CancellationTokenSource();
 

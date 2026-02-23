@@ -29,18 +29,18 @@ public class ParserBenchmarks
     [GlobalSetup]
     public void Setup()
     {
-        parser = new RealmPointParser();
+	    this.parser = new RealmPointParser();
 
         // Real log patterns
-        playerKillLine = "[12:34:56] You get 1234 realm points!";
-        campaignQuestLine = "[12:34:56] You get 1000 realm points for Campaign Quest!";
-        tickLine = "[12:34:56] You get 2500 realm points for Battle Tick!";
-        siegeLine = "[12:34:56] You get 400 realm points for Tower Capture!";
-        bonusLine = "[12:34:56] You get an additional 20 realm points due to your realm rank!";
-        invalidLine = "[12:34:56] Some random log message";
+        this.playerKillLine = "[12:34:56] You get 1234 realm points!";
+        this.campaignQuestLine = "[12:34:56] You get 1000 realm points for Campaign Quest!";
+        this.tickLine = "[12:34:56] You get 2500 realm points for Battle Tick!";
+        this.siegeLine = "[12:34:56] You get 400 realm points for Tower Capture!";
+        this.bonusLine = "[12:34:56] You get an additional 20 realm points due to your realm rank!";
+        this.invalidLine = "[12:34:56] Some random log message";
 
         // Mixed workload: realistic distribution of line types
-        testLines = GenerateMixedWorkload(1000);
+        this.testLines = GenerateMixedWorkload(1000);
     }
 
     [Benchmark(Description = "Parse 1000 mixed lines (realistic workload)")]
@@ -49,7 +49,7 @@ public class ParserBenchmarks
         var parser = new RealmPointParser();
         int count = 0;
 
-        foreach (var line in testLines)
+        foreach (var line in this.testLines)
         {
             if (parser.TryParse(line, out var entry))
             {
@@ -64,8 +64,8 @@ public class ParserBenchmarks
     public RealmPointEntry? ParsePlayerKill()
     {
         var parser = new RealmPointParser();
-        parser.TryParse(playerKillLine, out _);  // Pending
-        parser.TryParse(invalidLine, out var entry);  // Emit
+        parser.TryParse(this.playerKillLine, out _);  // Pending
+        parser.TryParse(this.invalidLine, out var entry);  // Emit
         return entry;
     }
 
@@ -73,7 +73,7 @@ public class ParserBenchmarks
     public RealmPointEntry? ParseCampaignQuest()
     {
         var parser = new RealmPointParser();
-        parser.TryParse(campaignQuestLine, out var entry);
+        parser.TryParse(this.campaignQuestLine, out var entry);
         return entry;
     }
 
@@ -81,7 +81,7 @@ public class ParserBenchmarks
     public RealmPointEntry? ParseBattleTick()
     {
         var parser = new RealmPointParser();
-        parser.TryParse(tickLine, out var entry);
+        parser.TryParse(this.tickLine, out var entry);
         return entry;
     }
 
@@ -89,7 +89,7 @@ public class ParserBenchmarks
     public RealmPointEntry? ParseSiege()
     {
         var parser = new RealmPointParser();
-        parser.TryParse(siegeLine, out var entry);
+        parser.TryParse(this.siegeLine, out var entry);
         return entry;
     }
 
@@ -97,7 +97,7 @@ public class ParserBenchmarks
     public RealmPointEntry? ParseBonusLine()
     {
         var parser = new RealmPointParser();
-        parser.TryParse(bonusLine, out var entry);
+        parser.TryParse(this.bonusLine, out var entry);
         return entry;
     }
 
@@ -105,7 +105,7 @@ public class ParserBenchmarks
     public RealmPointEntry? ParseInvalidLine()
     {
         var parser = new RealmPointParser();
-        parser.TryParse(invalidLine, out var entry);
+        parser.TryParse(this.invalidLine, out var entry);
         return entry;
     }
 
@@ -127,13 +127,13 @@ public class ParserBenchmarks
     [Benchmark(Description = "Regex match performance (valid line)")]
     public bool RegexMatch_Valid()
     {
-        return campaignQuestLine.Contains("realm point");
+        return this.campaignQuestLine.Contains("realm point");
     }
 
     [Benchmark(Description = "Regex match performance (invalid line)")]
     public bool RegexMatch_Invalid()
     {
-        return invalidLine.Contains("realm point");
+        return this.invalidLine.Contains("realm point");
     }
 
     /// <summary>

@@ -7,135 +7,178 @@ using DAoCLogWatcher.Core.Parsing;
 
 namespace DAoCLogWatcher.Core;
 
-public sealed partial class LogWatcher : IDisposable, IAsyncDisposable
+public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 {
-    private const int BufferSize = 4096;
-    private const int PollDelayMilliseconds = 500;
-
-    private readonly string logFilePath;
-    private readonly byte[] readBuffer;
-    private readonly int maxHistoryHours;
-    private FileStream? fileStream;
-    private long lastPosition;
-    private string incompleteLineBuffer;
-    private bool skipOldEntries;
-    private DateTime? currentSessionStart;
-    private DateTime? lastLogClosed;
-    private const int LogReopenThresholdSeconds = 30;
-
-    public LogWatcher(string logFilePath, long startPosition = 0, bool enableTimeFiltering = false, int filterHours = 24)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(logFilePath);
-
-        this.logFilePath = logFilePath;
-        this.lastPosition = startPosition;
-        this.readBuffer = new byte[BufferSize];
-        this.incompleteLineBuffer = string.Empty;
-        this.skipOldEntries = enableTimeFiltering && startPosition == 0;
-        this.maxHistoryHours = filterHours;
-    }
-
-    public long LastPosition => this.lastPosition;
-
-    public DateTime? CurrentSessionStart => this.currentSessionStart;
-
-    public async IAsyncEnumerable<LogLine> WatchAsync(
-        [EnumeratorCancellation] CancellationToken cancellationToken = default)
-    {
-        if (!File.Exists(this.logFilePath))
-            throw new FileNotFoundException($"Log file not found: {this.logFilePath}");
-
-        var parser = new RealmPointParser();
-
-        this.fileStream = new FileStream(this.logFilePath,
-                                         FileMode.Open,
-                                         FileAccess.Read,
-                                         FileShare.ReadWrite,
-                                         bufferSize: 0,
-                                         useAsync: true);
-
-        this.SeekToLastPosition(this.fileStream);
-
-        try
-        {
-            while (!cancellationToken.IsCancellationRequested)
-            {
-                int bytesRead;
-                try
-                {
-                    bytesRead = await this.fileStream.ReadAsync(this.readBuffer, cancellationToken);
-                }
-                catch (Exception ex) when (ex is OperationCanceledException or ObjectDisposedException)
-                {
-                    yield break;
-                }
-
-                if (bytesRead == 0)
-                {
-                    try
-                    {
-                        await Task.Delay(PollDelayMilliseconds, cancellationToken);
-                    }
-                    catch (Exception ex) when (ex is OperationCanceledException or ObjectDisposedException)
-                    {
-                        yield break;
-                    }
-                    continue;
-                }
-
-                this.UpdatePosition(this.fileStream);
-                var newText = this.DecodeBytes(bytesRead);
-                this.AppendToLineBuffer(newText);
-
-                var completeLines = this.ExtractCompleteLines();
-
-				foreach (var line in completeLines)
-				{
-					this.ProcessLogClosedMarker(line);
-					this.ProcessLogOpenedMarker(line);
-
-                    var shouldYield = !this.skipOldEntries ||this.ShouldProcessLine(line);
-
-                    if (shouldYield && !string.IsNullOrWhiteSpace(line))
-                    {
-                        parser.TryParse(line, out var entry);
-                        yield return new LogLine
-                        {
-                            Text = line,
-                            RealmPointEntry = entry
-                        };
-                    }
-                    else
-                    {
-                        parser.TryParse(line, out _);
-                    }
-                }
-            }
-        }
-        finally
-        {
-            if (this.fileStream != null)
-            {
-                await this.fileStream.DisposeAsync();
-                this.fileStream = null;
-            }
-        }
-    }
+	private const int BufferSize = 4096;
+	private const int PollDelayMilliseconds = 500;
+	private const int LogReopenThresholdSeconds = 30;
 
 	private static readonly Regex ChatLogOpenedRegex = GenerateChatLogOpenedRegex();
 	private static readonly Regex ChatLogClosedRegex = GenerateChatLogClosedRegex();
 
+	private readonly string logFilePath;
+	private readonly int maxHistoryHours;
+	private readonly byte[] readBuffer;
+	private FileStream? fileStream;
+	private string incompleteLineBuffer;
+	private DateTime? lastLogClosed;
+	private readonly bool skipOldEntries;
+
+	public LogWatcher(string logFilePath, long startPosition = 0, bool enableTimeFiltering = false, int filterHours = 24)
+	{
+		ArgumentException.ThrowIfNullOrWhiteSpace(logFilePath);
+
+		this.logFilePath = logFilePath;
+		this.LastPosition = startPosition;
+		this.readBuffer = new byte[BufferSize];
+		this.incompleteLineBuffer = string.Empty;
+		this.skipOldEntries = enableTimeFiltering&&startPosition == 0;
+		this.maxHistoryHours = filterHours;
+	}
+
+	public long LastPosition { get; private set; }
+
+	public DateTime? CurrentSessionStart { get; private set; }
+
+	#region Interface Implementation
+	public async ValueTask DisposeAsync()
+	{
+		if(this.fileStream != null)
+		{
+			await this.fileStream.DisposeAsync();
+		}
+	}
+
+	public void Dispose()
+	{
+		this.fileStream?.Dispose();
+	}
+	#endregion
+
+	public async IAsyncEnumerable<LogLine> WatchAsync([EnumeratorCancellation] CancellationToken cancellationToken = default)
+	{
+		if(!File.Exists(this.logFilePath))
+		{
+			throw new FileNotFoundException($"Log file not found: {this.logFilePath}");
+		}
+
+		var parser = new RealmPointParser();
+
+		this.fileStream = new FileStream(this.logFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 0, true);
+
+		this.SeekToLastPosition(this.fileStream);
+
+		try
+		{
+			while(!cancellationToken.IsCancellationRequested)
+			{
+				int bytesRead;
+				try
+				{
+					bytesRead = await this.fileStream.ReadAsync(this.readBuffer, cancellationToken);
+				}
+				catch(Exception ex) when(ex is OperationCanceledException or ObjectDisposedException)
+				{
+					yield break;
+				}
+
+				if(bytesRead == 0)
+				{
+					try
+					{
+						await Task.Delay(PollDelayMilliseconds, cancellationToken);
+					}
+					catch(Exception ex) when(ex is OperationCanceledException or ObjectDisposedException)
+					{
+						yield break;
+					}
+
+					continue;
+				}
+
+				this.UpdatePosition(this.fileStream);
+				var newText = this.DecodeBytes(bytesRead);
+				this.AppendToLineBuffer(newText);
+
+				var completeLines = this.ExtractCompleteLines();
+
+				foreach(var line in completeLines)
+				{
+					this.ProcessLogClosedMarker(line);
+					this.ProcessLogOpenedMarker(line);
+
+					var shouldYield = !this.skipOldEntries||this.ShouldProcessLine(line);
+
+					if(shouldYield&&!string.IsNullOrWhiteSpace(line))
+					{
+						parser.TryParse(line, out var entry);
+						yield return new LogLine
+						             {
+								             Text = line,
+								             RealmPointEntry = entry
+						             };
+					}
+					else
+					{
+						parser.TryParse(line, out _);
+					}
+				}
+			}
+		}
+		finally
+		{
+			if(this.fileStream != null)
+			{
+				await this.fileStream.DisposeAsync();
+				this.fileStream = null;
+			}
+		}
+	}
+
+	private void AppendToLineBuffer(string text)
+	{
+		this.incompleteLineBuffer += text;
+	}
+
+	private string DecodeBytes(int byteCount)
+	{
+		return Encoding.UTF8.GetString(this.readBuffer, 0, byteCount);
+	}
+
+	private string[] ExtractCompleteLines()
+	{
+		var allLines = this.incompleteLineBuffer.Split('\n');
+		var completeLineCount = allLines.Length - 1;
+
+		if(completeLineCount <= 0)
+		{
+			return Array.Empty<string>();
+		}
+
+		var completeLines = new string[completeLineCount];
+
+		for(var i = 0; i < completeLineCount; i++)
+		{
+			completeLines[i] = allLines[i].TrimEnd('\r');
+		}
+
+		this.incompleteLineBuffer = allLines[^1];
+
+		return completeLines;
+	}
+
+	[GeneratedRegex(@"^\*\*\* Chat Log Closed: (?<date>.+)$", RegexOptions.Compiled|RegexOptions.CultureInvariant)]
+	private static partial Regex GenerateChatLogClosedRegex();
+
+	[GeneratedRegex(@"^\*\*\* Chat Log Opened: (?<date>.+)$", RegexOptions.Compiled|RegexOptions.CultureInvariant)]
+	private static partial Regex GenerateChatLogOpenedRegex();
+
 	private void ProcessLogClosedMarker(string line)
 	{
 		var match = ChatLogClosedRegex.Match(line);
-		if (match.Success)
+		if(match.Success)
 		{
-			if (DateTime.TryParseExact(
-				match.Groups["date"].Value,
-				"ddd MMM d HH:mm:ss yyyy",
-				CultureInfo.InvariantCulture,
-				DateTimeStyles.None,
-				out var closedAt))
+			if(DateTime.TryParseExact(match.Groups["date"].Value, "ddd MMM d HH:mm:ss yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out var closedAt))
 			{
 				this.lastLogClosed = closedAt;
 			}
@@ -145,114 +188,66 @@ public sealed partial class LogWatcher : IDisposable, IAsyncDisposable
 	private void ProcessLogOpenedMarker(string line)
 	{
 		var match = ChatLogOpenedRegex.Match(line);
-		if (match.Success)
+		if(match.Success)
 		{
-			if (DateTime.TryParseExact(
-				match.Groups["date"].Value,
-				"ddd MMM d HH:mm:ss yyyy",
-				CultureInfo.InvariantCulture,
-				DateTimeStyles.None,
-				out var sessionDate))
+			if(DateTime.TryParseExact(match.Groups["date"].Value, "ddd MMM d HH:mm:ss yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out var sessionDate))
 			{
-				var isQuickReopen = this.lastLogClosed.HasValue &&
-									(sessionDate - this.lastLogClosed.Value).TotalSeconds <= LogReopenThresholdSeconds;
+				var isQuickReopen = this.lastLogClosed.HasValue&&(sessionDate - this.lastLogClosed.Value).TotalSeconds <= LogReopenThresholdSeconds;
 
-				if (!isQuickReopen)
-					this.currentSessionStart = sessionDate;
+				if(!isQuickReopen)
+				{
+					this.CurrentSessionStart = sessionDate;
+				}
 
 				this.lastLogClosed = null;
 			}
 		}
 	}
 
-    private bool ShouldProcessLine(string line)
-    {
-        // Extract timestamp from line and check if it's within the filter window
-        if (!line.StartsWith('[') || line.Length < 11)
-            return true; // No timestamp, include by default
+	private void SeekToLastPosition(FileStream stream)
+	{
+		if(this.LastPosition > 0&&this.LastPosition < stream.Length)
+		{
+			stream.Seek(this.LastPosition, SeekOrigin.Begin);
+		}
+	}
 
-        var endIndex = line.IndexOf(']');
-        if (endIndex <= 0 || endIndex > 10)
-            return true;
+	private bool ShouldProcessLine(string line)
+	{
+		// Extract timestamp from line and check if it's within the filter window
+		if(!line.StartsWith('[')||line.Length < 11)
+		{
+			return true; // No timestamp, include by default
+		}
 
-        var timestampStr = line.Substring(1, endIndex - 1);
-        if (!TimeOnly.TryParseExact(timestampStr, "HH:mm:ss", 
-            CultureInfo.InvariantCulture, DateTimeStyles.None, out var lineTime))
-            return true;
+		var endIndex = line.IndexOf(']');
+		if(endIndex <= 0||endIndex > 10)
+		{
+			return true;
+		}
 
-        // Get current session date or use today
-        var sessionDate = this.currentSessionStart?.Date ?? DateTime.Now.Date;
-        var lineDateTime = sessionDate.Add(lineTime.ToTimeSpan());
+		var timestampStr = line.Substring(1, endIndex - 1);
+		if(!TimeOnly.TryParseExact(timestampStr, "HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out var lineTime))
+		{
+			return true;
+		}
 
-        // Handle day wraparound - if line time is in the future, it's from yesterday
-        if (lineDateTime > DateTime.Now)
-            lineDateTime = lineDateTime.AddDays(-1);
+		// Get current session date or use today
+		var sessionDate = this.CurrentSessionStart?.Date ?? DateTime.Now.Date;
+		var lineDateTime = sessionDate.Add(lineTime.ToTimeSpan());
 
-        var cutoffTime = DateTime.Now.AddHours(-this.maxHistoryHours);
-        return lineDateTime >= cutoffTime;
-    }
+		// Handle day wraparound - if line time is in the future, it's from yesterday
+		if(lineDateTime > DateTime.Now)
+		{
+			lineDateTime = lineDateTime.AddDays(-1);
+		}
 
-    [GeneratedRegex(@"^\*\*\* Chat Log Opened: (?<date>.+)$",
-        RegexOptions.Compiled | RegexOptions.CultureInvariant)]
-    private static partial Regex GenerateChatLogOpenedRegex();
+		var cutoffTime = DateTime.Now.AddHours(-this.maxHistoryHours);
+		return lineDateTime >= cutoffTime;
+	}
 
-    [GeneratedRegex(@"^\*\*\* Chat Log Closed: (?<date>.+)$",
-        RegexOptions.Compiled | RegexOptions.CultureInvariant)]
-    private static partial Regex GenerateChatLogClosedRegex();
-
-    private void SeekToLastPosition(FileStream stream)
-    {
-        if (this.lastPosition > 0 &&this.lastPosition < stream.Length)
-        {
-            stream.Seek(this.lastPosition, SeekOrigin.Begin);
-        }
-    }
-
-    private void UpdatePosition(FileStream stream)
-    {
-	    this.lastPosition = stream.Position;
-    }
-
-    private string DecodeBytes(int byteCount)
-    {
-        return Encoding.UTF8.GetString(this.readBuffer, 0, byteCount);
-    }
-
-    private void AppendToLineBuffer(string text)
-    {
-	    this.incompleteLineBuffer += text;
-    }
-
-    private string[] ExtractCompleteLines()
-    {
-        var allLines = this.incompleteLineBuffer.Split('\n');
-        var completeLineCount = allLines.Length - 1;
-
-        if (completeLineCount <= 0)
-            return Array.Empty<string>();
-
-        var completeLines = new string[completeLineCount];
-
-        for (int i = 0; i < completeLineCount; i++)
-        {
-            completeLines[i] = allLines[i].TrimEnd('\r');
-        }
-
-        this.incompleteLineBuffer = allLines[^1];
-
-        return completeLines;
-    }
-
-    public void Dispose()
-    {
-	    this.fileStream?.Dispose();
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        if (this.fileStream != null)
-        {
-            await this.fileStream.DisposeAsync();
-        }
-    }
+	private void UpdatePosition(FileStream stream)
+	{
+		this.LastPosition = stream.Position;
+	}
 }
