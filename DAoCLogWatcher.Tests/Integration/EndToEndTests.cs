@@ -76,11 +76,11 @@ public sealed class EndToEndTests : IDisposable
         // Arrange - Log with player kills (need extra lines to trigger parser state machine)
         var logContent = @"*** Chat Log Opened: Mon Jan 15 10:00:00 2024
 [10:00:01] You get 1000 realm points!
-[10:00:02] Some other log line
+[10:00:02] You gain a total of 10,000 experience points.
 [10:00:05] You get 500 realm points!
-[10:00:06] Another log line
+[10:00:06] You gain a total of 5,000 experience points.
 [10:00:10] You get 750 realm points!
-[10:00:11] Final log line
+[10:00:11] You gain a total of 7,500 experience points.
 ";
         await File.WriteAllTextAsync(this.testLogFilePath, logContent);
 
@@ -141,7 +141,7 @@ public sealed class EndToEndTests : IDisposable
         // Arrange - At least one entry from each source
         var logContent = @"*** Chat Log Opened: Mon Jan 15 10:00:00 2024
 [10:00:00] You get 1000 realm points!
-[10:00:01] Trigger line for player kill
+[10:00:01] You gain a total of 10,000 experience points.
 [10:00:05] You get 500 realm points for Campaign Quest!
 [10:00:10] You get 2000 realm points for Battle Tick!
 [10:00:15] You get 300 realm points for Tower Capture!
@@ -345,7 +345,7 @@ public sealed class EndToEndTests : IDisposable
                 case RealmPointSource.RelicCapture:
 	                this.RelicCaptureRP += entry.Points;
                     break;
-                case RealmPointSource.Unknown:
+                case RealmPointSource.Misc:
 	                this.UnknownRP += entry.Points;
                     break;
             }

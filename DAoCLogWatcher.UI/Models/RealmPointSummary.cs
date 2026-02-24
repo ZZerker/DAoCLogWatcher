@@ -36,7 +36,10 @@ public partial class RealmPointSummary : ObservableObject
     private int relicCapture;
 
     [ObservableProperty]
-    private int unknown;
+    private int warsupplies;
+
+    [ObservableProperty]
+    private int misc;
 
     [ObservableProperty]
     private int playerKillsRp;
@@ -60,9 +63,12 @@ public partial class RealmPointSummary : ObservableObject
     private int relicCaptureRP;
 
     [ObservableProperty]
-    private int unknownRP;
+    private int warsuppliesRP;
 
-    public int TotalEntries => this.PlayerKills + this.CampaignQuests + this.Ticks + this.Siege + this.AssaultOrder + this.SupportActivity + this.RelicCapture + this.Unknown;
+    [ObservableProperty]
+    private int miscRP;
+
+    public int TotalEntries => this.PlayerKills + this.CampaignQuests + this.Ticks + this.Siege + this.AssaultOrder + this.SupportActivity + this.RelicCapture + this.Misc;
 
     public double PlayerKillsPercentage => this.TotalRealmPoints > 0 ? (this.PlayerKillsRp * 100.0 / this.TotalRealmPoints) : 0;
     public double CampaignQuestsPercentage => this.TotalRealmPoints > 0 ? (this.CampaignQuestsRP * 100.0 / this.TotalRealmPoints) : 0;
@@ -71,7 +77,7 @@ public partial class RealmPointSummary : ObservableObject
     public double AssaultOrderPercentage => this.TotalRealmPoints > 0 ? (this.AssaultOrderRP * 100.0 / this.TotalRealmPoints) : 0;
     public double SupportActivityPercentage => this.TotalRealmPoints > 0 ? (this.SupportActivityRP * 100.0 / this.TotalRealmPoints) : 0;
     public double RelicCapturePercentage => this.TotalRealmPoints > 0 ? (this.RelicCaptureRP * 100.0 / this.TotalRealmPoints) : 0;
-    public double UnknownPercentage => this.TotalRealmPoints > 0 ? (this.UnknownRP * 100.0 / this.TotalRealmPoints) : 0;
+    public double MiscPercentage => this.TotalRealmPoints > 0 ? (this.MiscRP * 100.0 / this.TotalRealmPoints) : 0;
 
     public double RpsPerHour
     {
@@ -114,7 +120,7 @@ public partial class RealmPointSummary : ObservableObject
         this.AssaultOrder = 0;
         this.SupportActivity = 0;
         this.RelicCapture = 0;
-        this.Unknown = 0;
+        this.Misc = 0;
         this.PlayerKillsRp = 0;
         this.CampaignQuestsRP = 0;
         this.TicksRP = 0;
@@ -122,8 +128,10 @@ public partial class RealmPointSummary : ObservableObject
         this.AssaultOrderRP = 0;
         this.SupportActivityRP = 0;
         this.RelicCaptureRP = 0;
-        this.UnknownRP = 0;
-        this.OnPropertyChanged(nameof(this.TotalEntries));
+        this.MiscRP = 0;
+        this.warsupplies = 0;
+        this.warsuppliesRP= 0;  
+		this.OnPropertyChanged(nameof(this.TotalEntries));
         this.OnPropertyChanged(nameof(this.PlayerKillsPercentage));
         this.OnPropertyChanged(nameof(this.CampaignQuestsPercentage));
         this.OnPropertyChanged(nameof(this.TicksPercentage));
@@ -131,7 +139,7 @@ public partial class RealmPointSummary : ObservableObject
         this.OnPropertyChanged(nameof(this.AssaultOrderPercentage));
         this.OnPropertyChanged(nameof(this.SupportActivityPercentage));
         this.OnPropertyChanged(nameof(this.RelicCapturePercentage));
-        this.OnPropertyChanged(nameof(this.UnknownPercentage));
+        this.OnPropertyChanged(nameof(this.MiscPercentage));
         this.OnPropertyChanged(nameof(this.RpsPerHour));
     }
 
@@ -147,7 +155,7 @@ public partial class RealmPointSummary : ObservableObject
     partial void OnAssaultOrderChanged(int value) => this.NotifyPercentagesChanged();
     partial void OnSupportActivityChanged(int value) => this.NotifyPercentagesChanged();
     partial void OnRelicCaptureChanged(int value) => this.NotifyPercentagesChanged();
-    partial void OnUnknownChanged(int value) => this.NotifyPercentagesChanged();
+    partial void OnMiscChanged(int value) => this.NotifyPercentagesChanged();
 
     private void NotifyPercentagesChanged()
     {
@@ -159,6 +167,6 @@ public partial class RealmPointSummary : ObservableObject
 	    this.OnPropertyChanged(nameof(this.AssaultOrderPercentage));
 	    this.OnPropertyChanged(nameof(this.SupportActivityPercentage));
 	    this.OnPropertyChanged(nameof(this.RelicCapturePercentage));
-	    this.OnPropertyChanged(nameof(this.UnknownPercentage));
+	    this.OnPropertyChanged(nameof(this.MiscPercentage));
     }
 }

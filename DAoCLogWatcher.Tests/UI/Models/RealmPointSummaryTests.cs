@@ -18,7 +18,7 @@ public sealed class RealmPointSummaryTests
             AssaultOrder = 1,
             SupportActivity = 4,
             RelicCapture = 1,
-            Unknown = 2
+            Misc = 2
         };
 
         // Act
@@ -42,7 +42,7 @@ public sealed class RealmPointSummaryTests
             AssaultOrderRP = 500,      // 5%
             SupportActivityRP = 300,   // 3%
             RelicCaptureRP = 200,      // 2%
-            UnknownRP = 0              // 0%
+            MiscRP = 0              // 0%
         };
 
         // Act & Assert
@@ -53,7 +53,7 @@ public sealed class RealmPointSummaryTests
         summary.AssaultOrderPercentage.Should().BeApproximately(5.0, 0.01);
         summary.SupportActivityPercentage.Should().BeApproximately(3.0, 0.01);
         summary.RelicCapturePercentage.Should().BeApproximately(2.0, 0.01);
-        summary.UnknownPercentage.Should().Be(0.0);
+        summary.MiscPercentage.Should().Be(0.0);
     }
 
     [Fact]
@@ -70,7 +70,7 @@ public sealed class RealmPointSummaryTests
             AssaultOrderRP = 500,
             SupportActivityRP = 300,
             RelicCaptureRP = 200,
-            UnknownRP = 0
+            MiscRP = 0
         };
 
         // Act
@@ -81,7 +81,7 @@ public sealed class RealmPointSummaryTests
                             summary.AssaultOrderPercentage +
                             summary.SupportActivityPercentage +
                             summary.RelicCapturePercentage +
-                            summary.UnknownPercentage;
+                            summary.MiscPercentage;
 
         // Assert
         totalPercentage.Should().BeApproximately(100.0, 0.01);
@@ -105,7 +105,7 @@ public sealed class RealmPointSummaryTests
             AssaultOrderRP = assault,
             SupportActivityRP = support,
             RelicCaptureRP = relic,
-            UnknownRP = unknown
+            MiscRP = unknown
         };
 
         // Act
@@ -116,7 +116,7 @@ public sealed class RealmPointSummaryTests
                             summary.AssaultOrderPercentage +
                             summary.SupportActivityPercentage +
                             summary.RelicCapturePercentage +
-                            summary.UnknownPercentage;
+                            summary.MiscPercentage;
 
         // Assert
         totalPercentage.Should().BeApproximately(100.0, 0.01);
@@ -278,8 +278,8 @@ public sealed class RealmPointSummaryTests
             SupportActivityRP = 300,
             RelicCapture = 1,
             RelicCaptureRP = 200,
-            Unknown = 2,
-            UnknownRP = 0
+            Misc = 2,
+            MiscRP = 0
         };
 
         // Act
@@ -303,8 +303,8 @@ public sealed class RealmPointSummaryTests
         summary.SupportActivityRP.Should().Be(0);
         summary.RelicCapture.Should().Be(0);
         summary.RelicCaptureRP.Should().Be(0);
-        summary.Unknown.Should().Be(0);
-        summary.UnknownRP.Should().Be(0);
+        summary.Misc.Should().Be(0);
+        summary.MiscRP.Should().Be(0);
         summary.TotalEntries.Should().Be(0);
         summary.RpsPerHour.Should().Be(0.0);
     }
@@ -326,7 +326,7 @@ public sealed class RealmPointSummaryTests
             AssaultOrderRP = assault,
             SupportActivityRP = support,
             RelicCaptureRP = relic,
-            UnknownRP = unknown
+            MiscRP = unknown
         };
 
         // Act
@@ -339,7 +339,7 @@ public sealed class RealmPointSummaryTests
             summary.AssaultOrderPercentage,
             summary.SupportActivityPercentage,
             summary.RelicCapturePercentage,
-            summary.UnknownPercentage
+            summary.MiscPercentage
         };
 
         // Assert
@@ -365,7 +365,7 @@ public sealed class RealmPointSummaryTests
             AssaultOrderRP = 500,
             SupportActivityRP = 300,
             RelicCaptureRP = 200,
-            UnknownRP = 0
+            MiscRP = 0
         };
 
         // Act
@@ -376,7 +376,7 @@ public sealed class RealmPointSummaryTests
                                 summary.AssaultOrderRP +
                                 summary.SupportActivityRP +
                                 summary.RelicCaptureRP +
-                                summary.UnknownRP;
+                                summary.MiscRP;
 
         // Assert
         sumOfIndividualRPs.Should().Be(summary.TotalRealmPoints,

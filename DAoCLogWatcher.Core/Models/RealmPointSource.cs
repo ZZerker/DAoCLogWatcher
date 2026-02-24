@@ -9,5 +9,6 @@ public enum RealmPointSource
     AssaultOrder,
     SupportActivity,
     RelicCapture,
-    Unknown
+    Misc,
+    WarSupplies
 }

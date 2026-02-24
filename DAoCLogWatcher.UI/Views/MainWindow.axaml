@@ -71,6 +71,15 @@
                            Margin="10,0,0,0"
                            Foreground="{DynamicResource AppTextMuted}"
                            FontSize="12" />
+                <Button Content="{Binding UpdateVersionText}"
+                        Command="{Binding ApplyUpdateAndRestartCommand}"
+                        IsVisible="{Binding IsUpdateAvailable}"
+                        Background="#FF28A745"
+                        Foreground="White"
+                        Padding="12,8"
+                        CornerRadius="6"
+                        BorderThickness="0"
+                        Margin="10,0,0,0" />
             </StackPanel>
         </Border>
 
@@ -157,7 +166,7 @@
 
                         <StackPanel Orientation="Horizontal" Spacing="10">
                             <TextBlock Text="Unknown:" MinWidth="130" Foreground="{DynamicResource AppTextSecondary}" />
-                            <TextBlock Text="{Binding Summary.Unknown}" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimary}" />
+                            <TextBlock Text="{Binding Summary.Misc}" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimary}" />
                         </StackPanel>
                     </StackPanel>
 
@@ -202,7 +211,7 @@
 
                         <StackPanel Orientation="Horizontal" Spacing="10">
                             <TextBlock Text="Unknown:" MinWidth="130" Foreground="{DynamicResource AppTextSecondary}" />
-                            <TextBlock Text="{Binding Summary.UnknownRP}" FontWeight="Bold" Foreground="#FF00D968" />
+                            <TextBlock Text="{Binding Summary.MiscRP}" FontWeight="Bold" Foreground="#FF00D968" />
                         </StackPanel>
                     </StackPanel>
 
@@ -247,7 +256,7 @@
 
                         <StackPanel Orientation="Horizontal" Spacing="10">
                             <TextBlock Text="Unknown:" MinWidth="130" Foreground="{DynamicResource AppTextSecondary}" />
-                            <TextBlock Text="{Binding Summary.UnknownPercentage, StringFormat='{}{0:F1}%'}" FontWeight="Bold" Foreground="#FFFFAA00" />
+                            <TextBlock Text="{Binding Summary.MiscPercentage, StringFormat='{}{0:F1}%'}" FontWeight="Bold" Foreground="#FFFFAA00" />
                         </StackPanel>
                     </StackPanel>
                 </StackPanel>

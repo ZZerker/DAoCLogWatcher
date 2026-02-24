@@ -34,7 +34,18 @@ public sealed partial class RealmPointParser
 
 		if(this.waitingForParticipationCheck&&this.pendingEntry != null)
 		{
-			var pendingSource = line.Contains("have captured") ? RealmPointSource.Siege : RealmPointSource.PlayerKill;
+			// XP Guild Bonus line may appear between the RP line and the XP confirmation line
+			if(line.Contains("XP Guild Bonus"))
+				return false;
+
+			RealmPointSource pendingSource;
+			if(line.Contains("have captured"))
+				pendingSource = RealmPointSource.Siege;
+			else if(line.Contains("experience points"))
+				pendingSource = RealmPointSource.PlayerKill;
+			else
+				pendingSource = RealmPointSource.Misc;
+
 			entry = new RealmPointEntry
 					{
 							Timestamp = this.pendingEntry.Timestamp,
@@ -90,7 +101,7 @@ public sealed partial class RealmPointParser
 			return true;
 		}
 
-		if(source == RealmPointSource.Unknown)
+		if(source == RealmPointSource.Misc)
 		{
 			var playerNameMatch = PlayerNameRegex.Match(reason);
 			var playerName = playerNameMatch.Success ? playerNameMatch.Groups["name"].Value : null;
@@ -99,7 +110,7 @@ public sealed partial class RealmPointParser
 								{
 										Timestamp = timestamp,
 										Points = points,
-										Source = RealmPointSource.Unknown,
+										Source = RealmPointSource.Misc,
 										PlayerName = playerName,
 										RawLine = line
 								};
@@ -123,12 +134,16 @@ public sealed partial class RealmPointParser
 	{
 		if(string.IsNullOrWhiteSpace(reason))
 		{
-			return RealmPointSource.Unknown;
+			return RealmPointSource.Misc;
 		}
 
 		if(reason.Contains("Campaign Quest"))
 		{
 			return RealmPointSource.CampaignQuest;
+		}
+		if(reason.Contains("War Supplies"))
+		{
+			return RealmPointSource.WarSupplies;
 		}
 
 		if(reason.Contains("Tower Capture")||reason.Contains("Keep Capture"))
@@ -151,7 +166,7 @@ public sealed partial class RealmPointParser
 			return RealmPointSource.SupportActivity;
 		}
 
-		return RealmPointSource.Unknown;
+		return RealmPointSource.Misc;
 	}
 
 	[GeneratedRegex(@"^\[(?<timestamp>\d{2}:\d{2}:\d{2})\] You get (?:an additional )?(?<points>\d+) realm points?(?<reason>.*)!$", RegexOptions.Compiled|RegexOptions.CultureInvariant)]

@@ -11,6 +11,8 @@ using CommunityToolkit.Mvvm.Input;
 using DAoCLogWatcher.Core;
 using DAoCLogWatcher.Core.Models;
 using DAoCLogWatcher.UI.Models;
+using Velopack;
+using Velopack.Sources;
 
 namespace DAoCLogWatcher.UI.ViewModels;
 
@@ -57,6 +59,10 @@ public partial class MainWindowViewModel: ViewModelBase
 	[RelayCommand]
 	private void ToggleRpChart() => this.IsRpChartVisible = !this.IsRpChartVisible;
 
+	[ObservableProperty] private bool isUpdateAvailable;
+	[ObservableProperty] private string? updateVersionText;
+	private UpdateInfo? pendingUpdate;
+
 	[ObservableProperty] private ObservableCollection<RealmPointLogEntry> logEntries = [];
 
 	private LogWatcher? logWatcher;
@@ -83,8 +89,8 @@ public partial class MainWindowViewModel: ViewModelBase
 
 	public MainWindowViewModel()
 	{
-
 		Console.WriteLine($"[ViewModel Constructor] Added {this.LogEntries.Count} demo entries");
+		_ = this.CheckForUpdatesAsync();
 	}
 
 	public bool IsAnyFilterEnabled => this.EnableTimeFiltering||this.EnableSixHourFiltering;
@@ -224,7 +230,6 @@ public partial class MainWindowViewModel: ViewModelBase
 						stat.KillCount++;
 					}
 				}
-				
 				break;
 			case RealmPointSource.CampaignQuest:
 				this.Summary.CampaignQuests++;
@@ -250,9 +255,13 @@ public partial class MainWindowViewModel: ViewModelBase
 				this.Summary.RelicCapture++;
 				this.Summary.RelicCaptureRP += entry.Points;
 				break;
-			case RealmPointSource.Unknown:
-				this.Summary.Unknown++;
-				this.Summary.UnknownRP += entry.Points;
+			case RealmPointSource.Misc:
+				this.Summary.Misc++;
+				this.Summary.MiscRP += entry.Points;
+				break;
+			case RealmPointSource.WarSupplies:
+				this.Summary.Warsupplies++;
+				this.Summary.WarsuppliesRP += entry.Points;
 				break;
 			default:
 				throw new ArgumentOutOfRangeException();
@@ -269,6 +278,8 @@ public partial class MainWindowViewModel: ViewModelBase
 				RealmPointSource.AssaultOrder => "Assault Order",
 				RealmPointSource.SupportActivity => "Support Tick",
 				RealmPointSource.RelicCapture => "Relic Capture",
+				RealmPointSource.WarSupplies => "War Supplies",
+				RealmPointSource.Misc => "Other",
 				_ => ""
 		};
 
@@ -315,11 +326,15 @@ public partial class MainWindowViewModel: ViewModelBase
 				windowRps += p;
 		}
 		var actualWindowHours = (entryTime - (this.chartStartTime.Value > windowStart ? this.chartStartTime.Value : windowStart)).TotalHours;
+
+		if(actualWindowHours<1) {
+			actualWindowHours = 1d;
+		}
 		var rollingRpsPerHour = actualWindowHours > 0 ? windowRps / actualWindowHours : 0;
 
 		this.RpsHourlyChartDataPoints.Add((timeFromStart, rollingRpsPerHour));
 
-		// Trigger chart update
+		
 		this.ChartUpdateRequested?.Invoke(this, EventArgs.Empty);
 	}
 
@@ -339,7 +354,6 @@ public partial class MainWindowViewModel: ViewModelBase
 		this.rawEntries.Clear();
 		this.chartStartTime = null;
 
-		// Load character roster into lookup; CharacterKillStats stays empty until the first kill
 		this.CharacterKillStats.Clear();
 		this.characterKillLookup.Clear();
 		foreach (var name in CharacterDiscoveryService.GetCharacterNames())
@@ -396,5 +410,49 @@ public partial class MainWindowViewModel: ViewModelBase
 		this.rpsRefreshTimer?.Dispose();
 		this.rpsRefreshTimer = null;
 		this.IsWatching = false;
+	}
+
+	private async Task CheckForUpdatesAsync()
+	{
+		try
+		{
+			var mgr = new UpdateManager(
+				new GithubSource("https://github.com/ZZerker/DAoCLogWatcher", null, false));
+
+			if (!mgr.IsInstalled)
+				return;
+
+			var update = await mgr.CheckForUpdatesAsync();
+			if (update == null)
+				return;
+
+			await mgr.DownloadUpdatesAsync(update);
+
+			this.pendingUpdate = update;
+			this.UpdateVersionText = $"v{update.TargetFullRelease.Version} available";
+			this.IsUpdateAvailable = true;
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine($"[Update] Check failed: {ex.Message}");
+		}
+	}
+
+	[RelayCommand]
+	private void ApplyUpdateAndRestart()
+	{
+		if (this.pendingUpdate == null)
+			return;
+
+		try
+		{
+			var mgr = new UpdateManager(
+				new GithubSource("https://github.com/ZZerker/DAoCLogWatcher", null, false));
+			mgr.ApplyUpdatesAndRestart(this.pendingUpdate);
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine($"[Update] Apply failed: {ex.Message}");
+		}
 	}
 }

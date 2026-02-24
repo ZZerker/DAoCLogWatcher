@@ -44,14 +44,36 @@ public sealed class RealmPointParserTests
         firstResult.Should().BeFalse();
         firstEntry.Should().BeNull();
 
-        // Act - Second line triggers emission
-        var secondResult = parser.TryParse("[12:34:57] Some other line", out var secondEntry);
+        // Act - XP gain line confirms this was a player kill
+        var secondResult = parser.TryParse("[12:34:57] You gain a total of 9,599,247 experience points.", out var secondEntry);
 
         // Assert - Second parse emits the pending entry
         secondResult.Should().BeTrue();
         secondEntry.Should().NotBeNull();
         secondEntry!.Points.Should().Be(1234);
         secondEntry.Source.Should().Be(RealmPointSource.PlayerKill);
+    }
+
+    [Fact]
+    public void TryParse_UnknownNextLine_ClassifiesAsMisc()
+    {
+        // Arrange
+        var parser = new RealmPointParser();
+
+        // Act - Ambiguous RP line is buffered
+        var firstResult = parser.TryParse("[12:34:56] You get 1234 realm points!", out var firstEntry);
+        firstResult.Should().BeFalse();
+        firstEntry.Should().BeNull();
+
+        // Act - Unrelated next line cannot confirm kill or capture
+        var secondResult = parser.TryParse("[12:34:57] Some unrelated log line.", out var secondEntry);
+
+        // Assert
+        secondResult.Should().BeTrue();
+        secondEntry.Should().NotBeNull();
+        secondEntry!.Points.Should().Be(1234);
+        secondEntry.Source.Should().Be(RealmPointSource.Misc);
+        secondEntry.PlayerName.Should().BeNull();
     }
 
     [Fact]
@@ -166,9 +188,43 @@ public sealed class RealmPointParserTests
         result.Should().BeFalse();
 
         // Complete parser2's sequence
-        parser2.TryParse("[10:00:02] Other line", out var entry2);
+        parser2.TryParse("[10:00:02] You gain a total of 5,000 experience points.", out var entry2);
         entry2.Should().NotBeNull();
         entry2!.Source.Should().Be(RealmPointSource.PlayerKill);
+    }
+
+    [Fact]
+    public void TryParse_PlayerKillWithXpGuildBonus_ClassifiesAsPlayerKill()
+    {
+        // Arrange - sequence: RP line → XP Guild Bonus → XP gain
+        var parser = new RealmPointParser();
+
+        parser.TryParse("[20:56:19] You get 51 realm points!", out _).Should().BeFalse();
+        parser.TryParse("[20:56:19] XP Guild Bonus: 160,671", out var intermediate).Should().BeFalse();
+        intermediate.Should().BeNull();
+
+        var result = parser.TryParse("You gain a total of 3,374,108 experience points.", out var entry);
+
+        result.Should().BeTrue();
+        entry.Should().NotBeNull();
+        entry!.Points.Should().Be(51);
+        entry.Source.Should().Be(RealmPointSource.PlayerKill);
+    }
+
+    [Fact]
+    public void TryParse_PlayerKillWithoutXpGuildBonus_ClassifiesAsPlayerKill()
+    {
+        // Arrange - sequence: RP line → XP gain (no Guild Bonus line)
+        var parser = new RealmPointParser();
+
+        parser.TryParse("[20:56:19] You get 51 realm points!", out _).Should().BeFalse();
+
+        var result = parser.TryParse("You gain a total of 3,374,108 experience points.", out var entry);
+
+        result.Should().BeTrue();
+        entry.Should().NotBeNull();
+        entry!.Points.Should().Be(51);
+        entry.Source.Should().Be(RealmPointSource.PlayerKill);
     }
 
     [Fact]
