@@ -1,6 +1,6 @@
 app-id: io.github.zzerker.DAoCLogWatcher
 runtime: org.freedesktop.Platform
-runtime-version: '24.08'
+runtime-version: '25.08'
 sdk: org.freedesktop.Sdk
 command: DAoCLogWatcher.UI
 
@@ -36,6 +36,10 @@ modules:
       # XDG desktop entry
       - type: file
         path: io.github.zzerker.DAoCLogWatcher.desktop
+      - type: file
+        path: io.github.zzerker.DAoCLogWatcher.svg
+      - type: file
+        path: io.github.zzerker.DAoCLogWatcher.metainfo.xml
       # Launcher wrapper so .NET resolves assemblies from /app/lib/daoclogwatcher/
       - type: script
         dest-filename: launcher.sh
