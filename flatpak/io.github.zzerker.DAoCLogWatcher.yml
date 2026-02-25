@@ -50,7 +50,5 @@ modules:
       - type: script
         dest-filename: launcher.sh
         commands:
-          # SAFE WAY TO UNSET DISPLAY IF WAYLAND IS ACTIVE.
-          # USING 'IF' PREVENTS THE SCRIPT FROM CRASHING DUE TO 'SET -E'
-          - if [ -n "$WAYLAND_DISPLAY" ]; then unset DISPLAY; fi
+          #EXECUTE APP DIRECTLY. DO NOT UNSET DISPLAY, SO AVALONIA CAN SAFELY USE XWAYLAND
           - exec /app/lib/daoclogwatcher/DAoCLogWatcher.UI "$@"
