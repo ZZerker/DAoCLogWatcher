@@ -1,6 +1,6 @@
 app-id: io.github.zzerker.DAoCLogWatcher
 runtime: org.freedesktop.Platform
-runtime-version: '25.08'
+runtime-version: '24.08'
 sdk: org.freedesktop.Sdk
 command: DAoCLogWatcher.UI
 
