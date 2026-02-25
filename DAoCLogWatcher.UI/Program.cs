@@ -24,4 +24,9 @@ sealed class Program
             .UsePlatformDetect()
             .WithInterFont()
             .LogToTrace();
+            // EXPLICITLY SET THE WM_CLASS FOR X11 AND XWAYLAND SESSIONS
+            // THIS ENSURES THE DESKTOP ENVIRONMENT RECOGNIZES THE WINDOW
+            .With(new X11PlatformOptions {
+                WmClass = "io.github.zzerker.DAoCLogWatcher"
+            });
 }
