@@ -18,12 +18,17 @@ namespace DAoCLogWatcher.UI.ViewModels;
 
 public partial class MainWindowViewModel: ViewModelBase
 {
+	// Minimum rolling window: dampens the early spike without distorting values for most of the warm-up period
+	private const double MinRollingWindowHours = 10.0 / 60.0;
+
 	private CancellationTokenSource? cancellationTokenSource;
 	private System.Timers.Timer? rpsRefreshTimer;
 
 	[ObservableProperty] private string? currentFilePath;
 
 	[ObservableProperty] [NotifyPropertyChangedFor(nameof(IsAnyFilterEnabled))] private bool enableSixHourFiltering;
+
+	[ObservableProperty] [NotifyPropertyChangedFor(nameof(IsAnyFilterEnabled))] private bool enableTwelveHourFiltering;
 
 	[ObservableProperty] [NotifyPropertyChangedFor(nameof(IsAnyFilterEnabled))] private bool enableTimeFiltering = true;
 
@@ -74,11 +79,11 @@ public partial class MainWindowViewModel: ViewModelBase
 	private Dictionary<string, CharacterKillStat> characterKillLookup = new(StringComparer.OrdinalIgnoreCase);
 	public bool HasCharacters => this.CharacterKillStats.Count > 0;
 
-	// Chart data: (time in minutes from start, cumulative RPs)
-	public List<(double Time, double Rps)> ChartDataPoints { get; } = new();
+	// Chart data: (timestamp, cumulative RPs)
+	public List<(DateTime Time, double Rps)> ChartDataPoints { get; } = new();
 
-	// Rolling 1-hour RPS chart data: (time in minutes from start, RP/h for last 60 min)
-	public List<(double TimeMinutes, double RpsPerHour)> RpsHourlyChartDataPoints { get; } = new();
+	// Rolling 1-hour RPS chart data: (timestamp, RP/h for last 60 min)
+	public List<(DateTime Time, double RpsPerHour)> RpsHourlyChartDataPoints { get; } = new();
 
 	// Raw entries used to compute rolling window RPS
 	private readonly List<(DateTime Time, int Points)> rawEntries = new();
@@ -93,21 +98,32 @@ public partial class MainWindowViewModel: ViewModelBase
 		_ = this.CheckForUpdatesAsync();
 	}
 
-	public bool IsAnyFilterEnabled => this.EnableTimeFiltering||this.EnableSixHourFiltering;
+	public bool IsAnyFilterEnabled => this.EnableTimeFiltering || this.EnableSixHourFiltering || this.EnableTwelveHourFiltering;
 
 	partial void OnEnableSixHourFilteringChanged(bool value)
 	{
-		if(value&&this.EnableTimeFiltering)
+		if (value)
 		{
 			this.EnableTimeFiltering = false;
+			this.EnableTwelveHourFiltering = false;
+		}
+	}
+
+	partial void OnEnableTwelveHourFilteringChanged(bool value)
+	{
+		if (value)
+		{
+			this.EnableTimeFiltering = false;
+			this.EnableSixHourFiltering = false;
 		}
 	}
 
 	partial void OnEnableTimeFilteringChanged(bool value)
 	{
-		if(value&&this.EnableSixHourFiltering)
+		if (value)
 		{
 			this.EnableSixHourFiltering = false;
+			this.EnableTwelveHourFiltering = false;
 		}
 	}
 
@@ -208,8 +224,12 @@ public partial class MainWindowViewModel: ViewModelBase
 
 		// Track first and last entry timestamps
 		// Use the session start from the log file if available, otherwise use today
-		var sessionDate = this.logWatcher?.CurrentSessionStart?.Date ?? DateTime.Now.Date;
+		var sessionStart = this.logWatcher?.CurrentSessionStart;
+		var sessionDate = sessionStart?.Date ?? DateTime.Now.Date;
 		var entryDateTime = sessionDate.Add(entry.Timestamp.ToTimeSpan());
+		// Handle midnight crossing: if the reconstructed time is before the session start, the entry is from the next day
+		if (sessionStart.HasValue && entryDateTime < sessionStart.Value)
+			entryDateTime = entryDateTime.AddDays(1);
 		this.Summary.FirstEntryTime ??= entryDateTime;
 		this.Summary.LastEntryTime = entryDateTime;
 
@@ -309,10 +329,8 @@ public partial class MainWindowViewModel: ViewModelBase
 	{
 		this.chartStartTime ??= entryTime;
 
-		var timeFromStart = (entryTime - this.chartStartTime.Value).TotalMinutes;
 		var cumulativeRps = this.Summary.TotalRealmPoints;
-
-		this.ChartDataPoints.Add((timeFromStart, cumulativeRps));
+		this.ChartDataPoints.Add((entryTime, cumulativeRps));
 
 		// Track raw entry for rolling RPS computation
 		this.rawEntries.Add((entryTime, points));
@@ -325,16 +343,14 @@ public partial class MainWindowViewModel: ViewModelBase
 			if (t >= windowStart && t <= entryTime)
 				windowRps += p;
 		}
-		var actualWindowHours = (entryTime - (this.chartStartTime.Value > windowStart ? this.chartStartTime.Value : windowStart)).TotalHours;
+		var actualWindowHours = Math.Max(
+			(entryTime - (this.chartStartTime.Value > windowStart ? this.chartStartTime.Value : windowStart)).TotalHours,
+			MinRollingWindowHours);
+		var rollingRpsPerHour = windowRps / actualWindowHours;
 
-		if(actualWindowHours<1) {
-			actualWindowHours = 1d;
-		}
-		var rollingRpsPerHour = actualWindowHours > 0 ? windowRps / actualWindowHours : 0;
+		this.RpsHourlyChartDataPoints.Add((entryTime, rollingRpsPerHour));
 
-		this.RpsHourlyChartDataPoints.Add((timeFromStart, rollingRpsPerHour));
 
-		
 		this.ChartUpdateRequested?.Invoke(this, EventArgs.Empty);
 	}
 
@@ -353,6 +369,7 @@ public partial class MainWindowViewModel: ViewModelBase
 		this.RpsHourlyChartDataPoints.Clear();
 		this.rawEntries.Clear();
 		this.chartStartTime = null;
+		this.ChartUpdateRequested?.Invoke(this, EventArgs.Empty);
 
 		this.CharacterKillStats.Clear();
 		this.characterKillLookup.Clear();
@@ -371,8 +388,8 @@ public partial class MainWindowViewModel: ViewModelBase
 		this.rpsRefreshTimer.AutoReset = true;
 		this.rpsRefreshTimer.Start();
 
-		var filterEnabled = this.EnableTimeFiltering||this.EnableSixHourFiltering;
-		var filterHours = this.EnableSixHourFiltering?6:24;
+		var filterEnabled = this.EnableTimeFiltering || this.EnableTwelveHourFiltering || this.EnableSixHourFiltering;
+		var filterHours = this.EnableSixHourFiltering ? 6 : this.EnableTwelveHourFiltering ? 12 : 24;
 		this.logWatcher = new LogWatcher(this.CurrentFilePath, 0, filterEnabled, filterHours);
 
 		Console.WriteLine($"[StartWatching] Starting watch on: {this.CurrentFilePath}, TimeFilter: {filterEnabled}, FilterHours: {filterHours}");

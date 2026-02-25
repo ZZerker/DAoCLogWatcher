@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using DAoCLogWatcher.Core;
 using DAoCLogWatcher.Core.Models;
@@ -386,5 +387,72 @@ public sealed class LogWatcherTests : IDisposable
         // Act & Assert
         await watcher.DisposeAsync();
         await watcher.DisposeAsync(); // Should not throw
+    }
+
+    [Fact]
+    public async Task WatchAsync_TimeFilter_BlocksOldEntriesResolvedOnTimestamplessLine()
+    {
+        // Regression: RP line (old) → XP Guild Bonus (filtered) → XP line (no timestamp, always passes
+        // ShouldProcessLine) used to let the resolved PlayerKill entry slip through the time filter.
+        // The entry's own timestamp must also be checked against the window.
+        var oldTime = DateTime.Now.AddHours(-48).ToString("HH:mm:ss");
+        var sessionDate = DateTime.Now.AddDays(-2).ToString("ddd MMM d HH:mm:ss yyyy", System.Globalization.CultureInfo.InvariantCulture);
+
+        var content =
+            $"*** Chat Log Opened: {sessionDate}\n" +
+            $"[{oldTime}] You get 51 realm points!\n" +
+            $"[{oldTime}] XP Guild Bonus: 160,671\n" +
+            "You gain a total of 3,374,108 experience points.\n";
+
+        await File.WriteAllTextAsync(this.testLogFilePath, content);
+
+        var entries = new List<LogLine>();
+        var watcher = new LogWatcher(this.testLogFilePath, enableTimeFiltering: true, filterHours: 24);
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+
+        await foreach (var line in watcher.WatchAsync(cts.Token))
+        {
+            if (line.RealmPointEntry != null)
+                entries.Add(line);
+        }
+
+        entries.Should().BeEmpty("entries from 48 hours ago must be filtered out even when resolved on a timestamp-less line");
+    }
+
+    [Theory]
+    [InlineData(1,  24, true,  "1h old entry is within the 24h window")]
+    [InlineData(25, 24, false, "25h old entry is outside the 24h window")]
+    [InlineData(5,  6,  true,  "5h old entry is within the 6h window")]
+    [InlineData(7,  6,  false, "7h old entry is outside the 6h window")]
+    public async Task WatchAsync_TimeFilter_RespectsWindowBoundary(
+        int entryAgeHours, int filterHours, bool shouldBeIncluded, string reason)
+    {
+        // Arrange - build a log with a session marker and one RP entry at the given age
+        var entryTime      = DateTime.Now.AddHours(-entryAgeHours);
+        var sessionOpened  = entryTime.AddHours(-1);
+        var sessionDateStr = sessionOpened.ToString("ddd MMM d HH:mm:ss yyyy", CultureInfo.InvariantCulture);
+        var entryTimeStr   = entryTime.ToString("HH:mm:ss", CultureInfo.InvariantCulture);
+
+        var content =
+            $"*** Chat Log Opened: {sessionDateStr}\n" +
+            $"[{entryTimeStr}] You get 500 realm points for Battle Tick!\n";
+
+        await File.WriteAllTextAsync(this.testLogFilePath, content);
+
+        var entries = new List<LogLine>();
+        var watcher = new LogWatcher(this.testLogFilePath, enableTimeFiltering: true, filterHours: filterHours);
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+
+        await foreach (var line in watcher.WatchAsync(cts.Token))
+        {
+            if (line.RealmPointEntry != null)
+                entries.Add(line);
+        }
+
+        // Assert
+        if (shouldBeIncluded)
+            entries.Should().HaveCount(1, reason);
+        else
+            entries.Should().BeEmpty(reason);
     }
 }

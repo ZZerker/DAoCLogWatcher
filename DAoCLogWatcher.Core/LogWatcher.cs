@@ -110,14 +110,21 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 					var shouldYield = !this.skipOldEntries||this.ShouldProcessLine(line);
 
 					if(shouldYield&&!string.IsNullOrWhiteSpace(line))
-					{
-						parser.TryParse(line, out var entry);
-						yield return new LogLine
-						             {
-								             Text = line,
-								             RealmPointEntry = entry
-						             };
-					}
+						{
+							parser.TryParse(line, out var entry);
+
+							// Multi-line sequences (e.g. RP line → XP Guild Bonus → XP line) may
+							// resolve on a timestamp-less line that bypasses ShouldProcessLine.
+							// Re-check the resolved entry's own timestamp against the filter window.
+							if(this.skipOldEntries&&entry != null&&!this.ShouldProcessTimestamp(entry.Timestamp))
+								entry = null;
+
+							yield return new LogLine
+										 {
+												 Text = line,
+												 RealmPointEntry = entry
+										 };
+						}
 					else
 					{
 						parser.TryParse(line, out _);
@@ -232,9 +239,13 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 			return true;
 		}
 
-		// Get current session date or use today
+		return this.ShouldProcessTimestamp(lineTime);
+	}
+
+	private bool ShouldProcessTimestamp(TimeOnly time)
+	{
 		var sessionDate = this.CurrentSessionStart?.Date ?? DateTime.Now.Date;
-		var lineDateTime = sessionDate.Add(lineTime.ToTimeSpan());
+		var lineDateTime = sessionDate.Add(time.ToTimeSpan());
 
 		// Handle day wraparound - if line time is in the future, it's from yesterday
 		if(lineDateTime > DateTime.Now)
