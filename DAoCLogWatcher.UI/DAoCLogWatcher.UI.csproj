@@ -34,7 +34,7 @@
     <PackageReference Include="Velopack" Version="0.0.*" />
     <PackageReference Include="ScottPlot.Avalonia" Version="5.1.57" />
     <!-- Override ScottPlot's outdated Linux native SkiaSharp assets to match the managed SkiaSharp 3.x used by Avalonia -->
-    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="3.119.0" />
-    <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="3.119.0" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="3.119.2" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="3.119.2" />
   </ItemGroup>
 </Project>
