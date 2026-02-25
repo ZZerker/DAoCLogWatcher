@@ -10,9 +10,9 @@
         <name>Zerker</name>
     </developer>
     <description>
-        <p>Ein nützliches Tool, um die Chat- und Kampf-Logs von Dark Age of Camelot übersichtlich auszuwerten.</p>
+        <p>a Dark Age of Camelot realm points and kill tracker</p>
     </description>
     <releases>
-        <release version="0.2.0" date="2026-02-25" />
+        <release version="0.1.4" date="2026-02-25" />
     </releases>
 </component>
