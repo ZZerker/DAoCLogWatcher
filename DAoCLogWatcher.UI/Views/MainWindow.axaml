@@ -42,6 +42,14 @@
                         Padding="12,8"
                         CornerRadius="6"
                         BorderThickness="0" />
+                <Button Content="📷"
+                        Click="OnScreenshotClick"
+                        ToolTip.Tip="Copy screenshot to clipboard"
+                        Background="#FF555566"
+                        Foreground="White"
+                        Padding="12,8"
+                        CornerRadius="6"
+                        BorderThickness="0" />
                 <Button Content="{Binding ThemeIcon}"
                         Command="{Binding ToggleThemeCommand}"
                         Background="#FF555566"
@@ -60,6 +68,11 @@
                           IsChecked="{Binding EnableTimeFiltering}"
                           VerticalAlignment="Center"
                           Margin="20,0,0,0"
+                          Foreground="{DynamicResource AppTextSecondary}" />
+                <CheckBox Content="Last 12h only"
+                          IsChecked="{Binding EnableTwelveHourFiltering}"
+                          VerticalAlignment="Center"
+                          Margin="10,0,0,0"
                           Foreground="{DynamicResource AppTextSecondary}" />
                 <CheckBox Content="Last 6h only"
                           IsChecked="{Binding EnableSixHourFiltering}"
