@@ -163,6 +163,8 @@ public partial class MainWindowViewModel: ViewModelBase
 			Path.Combine(home, "Games", "dark-age-of-camelot", "drive_c", "users", Environment.UserName, "My Documents", "Electronic Arts", "Dark Age of Camelot", "chat.log"),
 			// Lutris with "Documents" folder name
 			Path.Combine(home, "Games", "dark-age-of-camelot", "drive_c", "users", Environment.UserName, "Documents", "Electronic Arts", "Dark Age of Camelot", "chat.log"),
+			// Lutris with "Documents" folder name
+			Path.Combine(home, "Games", "dark-age-of-camelot-eden", "drive_c", "users", Environment.UserName, "Documents", "Electronic Arts", "Dark Age of Camelot", "chat.log"),
 		};
 
 		return Array.Find(candidates, File.Exists);
