@@ -122,6 +122,21 @@ jobs:
             -p:Version="$VERSION" \
             -o publish/flatpak
 
+      # ── NEW STEP: Inject dynamic version and date ────────────────────────────
+      - name: Inject Release Tag and Date into Metainfo
+        run: |
+          # Extract the version without the 'v' prefix (e.g., v1.2.3 -> 1.2.3)
+          VERSION="${GITHUB_REF_NAME#v}"
+
+          # Generate current date in YYYY-MM-DD format
+          CURRENT_DATE=$(date +'%Y-%m-%d')
+
+          # Replace placeholders __VERSION__ and __DATE__ in the metainfo.xml file.
+          # Note: Assuming metainfo.xml is located in the 'flatpak' directory
+          # based on your manifest path. Adjust the path if it is in the root!
+          sed -i "s/__VERSION__/$VERSION/g" flatpak/io.github.zzerker.DAoCLogWatcher.metainfo.xml
+          sed -i "s/__DATE__/$CURRENT_DATE/g" flatpak/io.github.zzerker.DAoCLogWatcher.metainfo.xml
+
       - name: Build Flatpak
         run: |
           xvfb-run --auto-servernum flatpak-builder \
