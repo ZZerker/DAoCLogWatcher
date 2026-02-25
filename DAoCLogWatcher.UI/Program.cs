@@ -23,7 +23,7 @@ sealed class Program
         => AppBuilder.Configure<App>()
             .UsePlatformDetect()
             .WithInterFont()
-            .LogToTrace();
+            .LogToTrace()
             // EXPLICITLY SET THE WM_CLASS FOR X11 AND XWAYLAND SESSIONS
             // THIS ENSURES THE DESKTOP ENVIRONMENT RECOGNIZES THE WINDOW
             .With(new X11PlatformOptions {
