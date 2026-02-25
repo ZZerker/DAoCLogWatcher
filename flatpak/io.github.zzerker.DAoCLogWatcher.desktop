@@ -6,3 +6,4 @@ Exec=DAoCLogWatcher.UI
 Icon=io.github.zzerker.DAoCLogWatcher
 Terminal=false
 Categories=Game;Utility;
+StartupWMClass=io.github.zzerker.DAoCLogWatcher
