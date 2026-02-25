@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+    <id>io.github.zzerker.DAoCLogWatcher</id>
+    <launchable type="desktop-id">io.github.zzerker.DAoCLogWatcher.desktop</launchable>
+    <name>DAoC Log Watcher</name>
+    <summary>Dark Age of Camelot realm points and kill tracker</summary>
+    <metadata_license>CC0-1.0</metadata_license>
+    <project_license>GPLv3</project_license>
+    <developer id="com.daoclogwatcher">
+        <name>Zerker</name>
+    </developer>
+    <description>
+        <p>a Dark Age of Camelot realm points and kill tracker</p>
+    </description>
+    <releases>
+        <release version="0.1.4" date="2026-02-25" />
+    </releases>
+</component>
