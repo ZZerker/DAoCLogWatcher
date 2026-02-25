@@ -6,47 +6,51 @@ command: DAoCLogWatcher.UI
 
 finish-args:
   - --share=ipc
-  - --socket=fallback-x11   # X11 when not on Wayland
-  #- --socket=wayland
-  - --socket=x11
-  - --device=dri             # GPU acceleration for Avalonia rendering
-  - --filesystem=home        # read chat.log and Eden profile folder
+  # PROVIDE X11 ONLY IF WAYLAND IS NOT AVAILABLE ON THE HOST SYSTEM
+  - --socket=fallback-x11
+  # ALLOW NATIVE WAYLAND CONNECTION THROUGH THE SANDBOX
+  - --socket=wayland
+  # GPU ACCELERATION FOR AVALONIA RENDERING
+  - --device=dri
+  # READ CHAT.LOG AND EDEN PROFILE FOLDER
+  - --filesystem=home
 
 modules:
   - name: daoc-log-watcher
     buildsystem: simple
     build-commands:
-      # Install all app files into /app/lib so the exe can find its assemblies
+      # INSTALL ALL APP FILES
       - install -Dm755 -d /app/lib/daoclogwatcher
       - cp -a app/. /app/lib/daoclogwatcher/
       - chmod +x /app/lib/daoclogwatcher/DAoCLogWatcher.UI
-      # Install icon and desktop integration and metainfo
+
+      # INSTALL ICON, DESKTOP INTEGRATION AND METAINFO
       - install -Dm644 icon.svg /app/share/icons/hicolor/scalable/apps/io.github.zzerker.DAoCLogWatcher.svg
       - install -Dm644 io.github.zzerker.DAoCLogWatcher.desktop /app/share/applications/io.github.zzerker.DAoCLogWatcher.desktop
       - install -Dm644 io.github.zzerker.DAoCLogWatcher.metainfo.xml /app/share/metainfo/io.github.zzerker.DAoCLogWatcher.metainfo.xml
-      # Install the generated launcher script to /app/bin (on PATH)
+
+      # INSTALL THE GENERATED LAUNCHER SCRIPT
       - install -Dm755 launcher.sh /app/bin/DAoCLogWatcher.UI
+
     sources:
-      # Pre-built publish output copied here by the CI publish step
       - type: dir
         path: ../publish/flatpak
         dest: app
-      # SVG icon for desktop integration (not available as standalone file in publish output)
       - type: file
         path: ../DAoCLogWatcher.UI/Assets/icon2.svg
         dest-filename: icon.svg
-      # XDG desktop entry
       - type: file
         path: io.github.zzerker.DAoCLogWatcher.desktop
       - type: file
         path: io.github.zzerker.DAoCLogWatcher.svg
       - type: file
         path: io.github.zzerker.DAoCLogWatcher.metainfo.xml
-      # Launcher wrapper so .NET resolves assemblies from /app/lib/daoclogwatcher/
+
+      # LAUNCHER WRAPPER SCRIPT
       - type: script
         dest-filename: launcher.sh
         commands:
-          # On a Wayland session, unset DISPLAY so Avalonia doesn't attempt X11
-          # (fallback-x11 can leave DISPLAY set even when XWayland is unavailable)
-          - '[ -n "$WAYLAND_DISPLAY" ] && unset DISPLAY'
+          # SAFE WAY TO UNSET DISPLAY IF WAYLAND IS ACTIVE.
+          # USING 'IF' PREVENTS THE SCRIPT FROM CRASHING DUE TO 'SET -E'
+          - if [ -n "$WAYLAND_DISPLAY" ]; then unset DISPLAY; fi
           - exec /app/lib/daoclogwatcher/DAoCLogWatcher.UI "$@"
