@@ -213,10 +213,17 @@ jobs:
       contents: write
 
     steps:
-      - name: Download artifacts
+      - name: Download standard artifacts
         uses: actions/download-artifact@v4
         with:
+          pattern: "DAoCLogWatcher*"
           merge-multiple: true
+
+      - name: Download Velopack artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: velopack-win
+          path: velopack-win
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
