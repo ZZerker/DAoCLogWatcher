@@ -101,29 +101,30 @@
                 <StackPanel Spacing="18">
                     <TextBlock Text="Summary" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimary}" />
 
-                    <!-- My Characters -->
-                    <Border Background="{DynamicResource AppCardBackground}" CornerRadius="6" Padding="15"
-                            IsVisible="{Binding HasCharacters}">
-                        <StackPanel Spacing="8">
-                            <TextBlock Text="MY CHARACTERS" FontWeight="SemiBold" FontSize="11" Foreground="{DynamicResource AppTextMuted}" />
-                            <ItemsControl ItemsSource="{Binding CharacterKillStats}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Grid ColumnDefinitions="*,Auto" Margin="0,3,0,0">
-                                            <TextBlock Grid.Column="0" Text="{Binding Name}"
-                                                       Foreground="{DynamicResource AppTextSecondary}" FontSize="13" />
-                                            <TextBlock Grid.Column="1"
-                                                       Text="{Binding KillCount, StringFormat='{}{0} kills'}"
-                                                       Foreground="#FF00D968" FontWeight="Bold" FontSize="13" />
-                                        </Grid>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </StackPanel>
-                    </Border>
+                    <!-- commented out until reimplementation -->
+                    <!-- My Characters  --> 
+                    <!-- <Border Background="{DynamicResource AppCardBackground}" CornerRadius="6" Padding="15" -->
+                    <!--         IsVisible="{Binding HasCharacters}"> -->
+                    <!--     <StackPanel Spacing="8"> -->
+                    <!--         <TextBlock Text="MY CHARACTERS" FontWeight="SemiBold" FontSize="11" Foreground="{DynamicResource AppTextMuted}" /> -->
+                    <!--         <ItemsControl ItemsSource="{Binding CharacterKillStats}"> -->
+                    <!--             <ItemsControl.ItemTemplate> -->
+                    <!--                 <DataTemplate> -->
+                    <!--                     <Grid ColumnDefinitions="*,Auto" Margin="0,3,0,0"> -->
+                    <!--                         <TextBlock Grid.Column="0" Text="{Binding Name}" -->
+                    <!--                                    Foreground="{DynamicResource AppTextSecondary}" FontSize="13" /> -->
+                    <!--                         <TextBlock Grid.Column="1" -->
+                    <!--                                    Text="{Binding KillCount, StringFormat='{}{0} kills'}" -->
+                    <!--                                    Foreground="#FF00D968" FontWeight="Bold" FontSize="13" /> -->
+                    <!--                     </Grid> -->
+                    <!--                 </DataTemplate> -->
+                    <!--             </ItemsControl.ItemTemplate> -->
+                    <!--         </ItemsControl> -->
+                    <!--     </StackPanel> -->
+                    <!-- </Border> -->
 
-                    <Border Height="1" Background="{DynamicResource AppBorderBrush}"
-                            IsVisible="{Binding HasCharacters}" />
+                    <!-- <Border Height="1" Background="{DynamicResource AppBorderBrush}" -->
+                    <!--         IsVisible="{Binding HasCharacters}" /> -->
 
                     <Border Background="{DynamicResource AppCardBackground}" CornerRadius="6" Padding="15">
                         <StackPanel Spacing="10">

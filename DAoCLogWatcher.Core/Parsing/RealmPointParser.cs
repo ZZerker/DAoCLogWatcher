@@ -8,9 +8,6 @@ namespace DAoCLogWatcher.Core.Parsing;
 public sealed partial class RealmPointParser
 {
 	private static readonly Regex RealmPointRegex = GenerateRealmPointRegex();
-	private static readonly Regex PlayerNameRegex = new(
-		@"for (?:participating in )?the killing of (?<name>[\w]+)",
-		RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
 	private RealmPointEntry? pendingEntry;
 	private bool waitingForParticipationCheck;
@@ -51,7 +48,6 @@ public sealed partial class RealmPointParser
 							Timestamp = this.pendingEntry.Timestamp,
 							Points = this.pendingEntry.Points,
 							Source = pendingSource,
-							PlayerName = pendingSource == RealmPointSource.PlayerKill ? this.pendingEntry.PlayerName : null,
 							RawLine = this.pendingEntry.RawLine
 					};
 
@@ -89,13 +85,12 @@ public sealed partial class RealmPointParser
 		if(this.waitingForRelicCapture)
 		{
 			entry = new RealmPointEntry
-			        {
-					        Timestamp = timestamp,
-					        Points = points,
-					        Source = RealmPointSource.RelicCapture,
-					        PlayerName = null,
-					        RawLine = line
-			        };
+					{
+						Timestamp = timestamp,
+						Points = points,
+						Source = RealmPointSource.RelicCapture,
+						RawLine = line
+					};
 			this.waitingForRelicCapture = false;
 			Debug.WriteLine($"[Parser] Relic: {points} RP");
 			return true;
@@ -103,15 +98,11 @@ public sealed partial class RealmPointParser
 
 		if(source == RealmPointSource.Misc)
 		{
-			var playerNameMatch = PlayerNameRegex.Match(reason);
-			var playerName = playerNameMatch.Success ? playerNameMatch.Groups["name"].Value : null;
-
 			this.pendingEntry = new RealmPointEntry
 								{
 										Timestamp = timestamp,
 										Points = points,
 										Source = RealmPointSource.Misc,
-										PlayerName = playerName,
 										RawLine = line
 								};
 			this.waitingForParticipationCheck = true;
@@ -119,13 +110,12 @@ public sealed partial class RealmPointParser
 		}
 
 		entry = new RealmPointEntry
-		        {
-				        Timestamp = timestamp,
-				        Points = points,
-				        Source = source,
-				        PlayerName = null,
-				        RawLine = line
-		        };
+				{
+					Timestamp = timestamp,
+					Points = points,
+					Source = source,
+					RawLine = line
+				};
 
 		return true;
 	}

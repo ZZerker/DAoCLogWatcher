@@ -73,7 +73,6 @@ public sealed class RealmPointParserTests
         secondEntry.Should().NotBeNull();
         secondEntry!.Points.Should().Be(1234);
         secondEntry.Source.Should().Be(RealmPointSource.Misc);
-        secondEntry.PlayerName.Should().BeNull();
     }
 
     [Fact]
@@ -248,7 +247,6 @@ public sealed class RealmPointParserTests
         captureEntry.Should().NotBeNull();
         captureEntry!.Points.Should().Be(630);
         captureEntry.Source.Should().Be(RealmPointSource.Siege);
-        captureEntry.PlayerName.Should().BeNull();
     }
 
     [Fact]

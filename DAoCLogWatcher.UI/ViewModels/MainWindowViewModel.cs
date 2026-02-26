@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
@@ -34,28 +33,28 @@ public partial class MainWindowViewModel: ViewModelBase
 
 	[ObservableProperty] private bool isDarkTheme = true;
 	public string ThemeIcon => this.IsDarkTheme ? "☀ Light" : "🌙 Dark";
-	partial void OnIsDarkThemeChanged(bool _) => this.OnPropertyChanged(nameof(this.ThemeIcon));
+	partial void OnIsDarkThemeChanged(bool value) => this.OnPropertyChanged(nameof(this.ThemeIcon));
 
 	[RelayCommand]
 	private void ToggleTheme() => this.IsDarkTheme = !this.IsDarkTheme;
 
 	[ObservableProperty] private bool isSidebarVisible = true;
 	public string SidebarToggleIcon => this.IsSidebarVisible ? "◀ Summary" : "▶ Summary";
-	partial void OnIsSidebarVisibleChanged(bool _) => this.OnPropertyChanged(nameof(this.SidebarToggleIcon));
+	partial void OnIsSidebarVisibleChanged(bool value) => this.OnPropertyChanged(nameof(this.SidebarToggleIcon));
 
 	[RelayCommand]
 	private void ToggleSidebar() => this.IsSidebarVisible = !this.IsSidebarVisible;
 
 	[ObservableProperty] private bool isRpsChartVisible = true;
 	public string RpsChartToggleIcon => this.IsRpsChartVisible ? "▲" : "▼";
-	partial void OnIsRpsChartVisibleChanged(bool _) => this.OnPropertyChanged(nameof(this.RpsChartToggleIcon));
+	partial void OnIsRpsChartVisibleChanged(bool value) => this.OnPropertyChanged(nameof(this.RpsChartToggleIcon));
 
 	[RelayCommand]
 	private void ToggleRpsChart() => this.IsRpsChartVisible = !this.IsRpsChartVisible;
 
 	[ObservableProperty] private bool isRpChartVisible = true;
 	public string RpChartToggleIcon => this.IsRpChartVisible ? "▲" : "▼";
-	partial void OnIsRpChartVisibleChanged(bool _) => this.OnPropertyChanged(nameof(this.RpChartToggleIcon));
+	partial void OnIsRpChartVisibleChanged(bool value) => this.OnPropertyChanged(nameof(this.RpChartToggleIcon));
 
 	[RelayCommand]
 	private void ToggleRpChart() => this.IsRpChartVisible = !this.IsRpChartVisible;
@@ -70,15 +69,10 @@ public partial class MainWindowViewModel: ViewModelBase
 
 	public RealmPointSummary Summary { get; } = new();
 
-	public ObservableCollection<CharacterKillStat> CharacterKillStats { get; } = [];
-	private Dictionary<string, CharacterKillStat> characterKillLookup = new(StringComparer.OrdinalIgnoreCase);
-	public bool HasCharacters => this.CharacterKillStats.Count > 0;
-
 	public RpsChartData ChartData { get; } = new();
 
 	public MainWindowViewModel()
 	{
-		this.CharacterKillStats.CollectionChanged += (_, _) => this.OnPropertyChanged(nameof(this.HasCharacters));
 		_ = this.CheckForUpdatesAsync();
 	}
 
@@ -202,8 +196,6 @@ public partial class MainWindowViewModel: ViewModelBase
 			return;
 		}
 
-		Console.WriteLine($"[ProcessLogLine] Realm point entry: {entry.Points} RP, Source: {entry.Source}");
-
 		this.Summary.TotalRealmPoints += entry.Points;
 
 		var sessionStart = this.logWatcher?.CurrentSessionStart;
@@ -220,14 +212,6 @@ public partial class MainWindowViewModel: ViewModelBase
 			case RealmPointSource.PlayerKill:
 				this.Summary.PlayerKills++;
 				this.Summary.PlayerKillsRP += entry.Points;
-				if (entry.PlayerName != null && this.characterKillLookup.TryGetValue(entry.PlayerName, out var stat))
-				{
-					if (stat.KillCount == 0)
-					{
-						this.CharacterKillStats.Add(stat);
-					}
-					stat.KillCount++;
-				}
 				break;
 			case RealmPointSource.CampaignQuest:
 				this.Summary.CampaignQuests++;
@@ -266,10 +250,9 @@ public partial class MainWindowViewModel: ViewModelBase
 		}
 
 
-		Console.WriteLine($"[ProcessLogLine] Creating log entry for recognized event: {entry.Source}");
 		var details = entry.Source switch
 		{
-				RealmPointSource.PlayerKill => $"Player Kill{(entry.PlayerName != null?$": {entry.PlayerName}":"")}",
+				RealmPointSource.PlayerKill => "Player Kill",
 				RealmPointSource.CampaignQuest => "Campaign Quest completed",
 				RealmPointSource.Tick => "Battle Tick",
 				RealmPointSource.Siege => "Siege (Tower/Keep Capture)",
@@ -289,9 +272,7 @@ public partial class MainWindowViewModel: ViewModelBase
 				               Details = details
 		               };
 
-		Console.WriteLine($"[ProcessLogLine] Adding log entry: {logEntry.Timestamp} | {logEntry.Points} RP | {logEntry.Source} | {logEntry.Details}");
 		this.LogEntries.Insert(0, logEntry);
-		Console.WriteLine($"[ProcessLogLine] LogEntries.Count is now: {this.LogEntries.Count}");
 
 		// Keep only the last 1000 entries to prevent performance issues
 		while(this.LogEntries.Count > 1000)
@@ -315,13 +296,6 @@ public partial class MainWindowViewModel: ViewModelBase
 		this.LogEntries.Clear();
 		this.ChartData.Reset();
 
-		this.CharacterKillStats.Clear();
-		this.characterKillLookup.Clear();
-		foreach (var name in CharacterDiscoveryService.GetCharacterNames())
-		{
-			this.characterKillLookup[name] = new CharacterKillStat { Name = name };
-		}
-
 		var cts = new CancellationTokenSource();
 		this.cancellationTokenSource = cts;
 
@@ -333,8 +307,6 @@ public partial class MainWindowViewModel: ViewModelBase
 		var filterEnabled = this.EnableTimeFiltering || this.EnableTwelveHourFiltering || this.EnableSixHourFiltering;
 		var filterHours = this.EnableSixHourFiltering ? 6 : this.EnableTwelveHourFiltering ? 12 : 24;
 		this.logWatcher = new LogWatcher(this.CurrentFilePath, 0, filterEnabled, filterHours);
-
-		Console.WriteLine($"[StartWatching] Starting watch on: {this.CurrentFilePath}, TimeFilter: {filterEnabled}, FilterHours: {filterHours}");
 
 		try
 		{
@@ -353,7 +325,7 @@ public partial class MainWindowViewModel: ViewModelBase
 		}
 		catch(Exception ex)
 		{
-			Console.WriteLine($"[StartWatching] Error: {ex.Message}");
+			_ = ex;
 		}
 		finally
 		{
@@ -396,7 +368,7 @@ public partial class MainWindowViewModel: ViewModelBase
 		}
 		catch (Exception ex)
 		{
-			Console.WriteLine($"[Update] Check failed: {ex.Message}");
+			_ = ex;
 		}
 	}
 
@@ -414,7 +386,7 @@ public partial class MainWindowViewModel: ViewModelBase
 		}
 		catch (Exception ex)
 		{
-			Console.WriteLine($"[Update] Apply failed: {ex.Message}");
+			_ = ex;
 		}
 	}
 }
