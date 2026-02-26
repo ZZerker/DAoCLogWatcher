@@ -98,13 +98,27 @@ public sealed partial class RealmPointParser
 
 		if(source == RealmPointSource.Misc)
 		{
+			var subSource = DetermineSubSource(reason);
+			if(subSource != null)
+			{
+				entry = new RealmPointEntry
+						{
+							Timestamp = timestamp,
+							Points = points,
+							Source = RealmPointSource.Misc,
+							SubSource = subSource,
+							RawLine = line
+						};
+				return true;
+			}
+
 			this.pendingEntry = new RealmPointEntry
-								{
-										Timestamp = timestamp,
-										Points = points,
-										Source = RealmPointSource.Misc,
-										RawLine = line
-								};
+							{
+									Timestamp = timestamp,
+									Points = points,
+									Source = RealmPointSource.Misc,
+									RawLine = line
+							};
 			this.waitingForParticipationCheck = true;
 			return false;
 		}
@@ -114,6 +128,7 @@ public sealed partial class RealmPointParser
 					Timestamp = timestamp,
 					Points = points,
 					Source = source,
+					SubSource = DetermineSubSource(reason),
 					RawLine = line
 				};
 
@@ -131,9 +146,13 @@ public sealed partial class RealmPointParser
 		{
 			return RealmPointSource.CampaignQuest;
 		}
-		if(reason.Contains("War Supplies"))
+
+		if(reason.Contains("completing your mission")
+		   || reason.Contains("reaching Tier")
+		   || reason.Contains("Win Streak")
+		   || reason.Contains("War Supplies"))
 		{
-			return RealmPointSource.WarSupplies;
+			return RealmPointSource.TimedMission;
 		}
 
 		if(reason.Contains("Tower Capture")||reason.Contains("Keep Capture"))
@@ -158,6 +177,45 @@ public sealed partial class RealmPointParser
 
 		return RealmPointSource.Misc;
 	}
+
+	private static string? DetermineSubSource(string reason)
+	{
+		if(reason.Contains("completing your mission"))
+			return "Mission Complete";
+
+		var tierMatch = TierParticipationRegex().Match(reason);
+		if(tierMatch.Success)
+			return $"Tier {tierMatch.Groups["tier"].Value} Participation";
+
+		if(reason.Contains("Win Streak"))
+			return "Win Streak";
+
+		if(reason.Contains("War Supplies"))
+			return "War Supplies";
+
+		if(reason.Contains("Tower Capture"))
+			return "Tower Capture";
+
+		if(reason.Contains("Keep Capture"))
+			return "Keep Capture";
+
+		if(reason.Contains("Battle Tick"))
+			return "Battle Tick";
+
+		if(reason.Contains("Assault Order"))
+			return "Assault Order";
+
+		if(reason.Contains("support activity in battle"))
+			return "Support Activity";
+
+		if(reason.Contains("repair"))
+			return "Repair";
+
+		return null;
+	}
+
+	[GeneratedRegex(@"Tier (?<tier>\d+) Participation", RegexOptions.Compiled|RegexOptions.CultureInvariant)]
+	private static partial Regex TierParticipationRegex();
 
 	[GeneratedRegex(@"^\[(?<timestamp>\d{2}:\d{2}:\d{2})\] You get (?:an additional )?(?<points>\d+) realm points?(?<reason>.*)!$", RegexOptions.Compiled|RegexOptions.CultureInvariant)]
 	private static partial Regex GenerateRealmPointRegex();

@@ -10,5 +10,5 @@ public enum RealmPointSource
     SupportActivity,
     RelicCapture,
     Misc,
-    WarSupplies
+    TimedMission
 }

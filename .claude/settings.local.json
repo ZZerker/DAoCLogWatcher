@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet test DAoCLogWatcher.Tests/DAoCLogWatcher.Tests.csproj -c Release --no-restore)"
+    ]
+  }
+}

@@ -7,13 +7,13 @@ namespace DAoCLogWatcher.Tests.Core.Parsing;
 public sealed class RealmPointParserTests
 {
     [Theory]
-    [InlineData("[12:34:56] You get 1000 realm points for Campaign Quest!", 1000, RealmPointSource.CampaignQuest)]
-    [InlineData("[23:59:59] You get 500 realm points for Tower Capture!", 500, RealmPointSource.Siege)]
-    [InlineData("[00:00:01] You get 750 realm points for Keep Capture!", 750, RealmPointSource.Siege)]
-    [InlineData("[14:22:33] You get 2500 realm points for Battle Tick!", 2500, RealmPointSource.Tick)]
-    [InlineData("[08:15:42] You get 100 realm points for Assault Order!", 100, RealmPointSource.AssaultOrder)]
-    [InlineData("[19:45:12] You get 50 realm points for support activity in battle!", 50, RealmPointSource.SupportActivity)]
-    public void TryParse_ValidRealmPointLine_ParsesCorrectly(string line, int expectedPoints, RealmPointSource expectedSource)
+    [InlineData("[12:34:56] You get 1000 realm points for Campaign Quest!", 1000, RealmPointSource.CampaignQuest, null)]
+    [InlineData("[23:59:59] You get 500 realm points for Tower Capture!", 500, RealmPointSource.Siege, "Tower Capture")]
+    [InlineData("[00:00:01] You get 750 realm points for Keep Capture!", 750, RealmPointSource.Siege, "Keep Capture")]
+    [InlineData("[14:22:33] You get 2500 realm points for Battle Tick!", 2500, RealmPointSource.Tick, "Battle Tick")]
+    [InlineData("[08:15:42] You get 100 realm points for Assault Order!", 100, RealmPointSource.AssaultOrder, "Assault Order")]
+    [InlineData("[19:45:12] You get 50 realm points for support activity in battle!", 50, RealmPointSource.SupportActivity, "Support Activity")]
+    public void TryParse_ValidRealmPointLine_ParsesCorrectly(string line, int expectedPoints, RealmPointSource expectedSource, string expectedSubSource)
     {
         // Arrange
         var parser = new RealmPointParser();
@@ -26,6 +26,7 @@ public sealed class RealmPointParserTests
         entry.Should().NotBeNull();
         entry!.Points.Should().Be(expectedPoints);
         entry.Source.Should().Be(expectedSource);
+        entry.SubSource.Should().Be(expectedSubSource);
         entry.Timestamp.Should().NotBe(default);
         entry.RawLine.Should().Be(line);
     }
@@ -270,4 +271,84 @@ public sealed class RealmPointParserTests
         secondEntry.Should().NotBeNull();
         secondEntry!.Points.Should().Be(2000);
     }
+
+    [Theory]
+    [InlineData("[11:24:03] You get 250 realm points for completing your mission!", 250, "Mission Complete")]
+    [InlineData("[11:24:03] You get 250 realm points for reaching Tier 2 Participation!", 250, "Tier 2 Participation")]
+    [InlineData("[11:39:49] You get 3500 realm points for reaching Tier 3 Participation!", 3500, "Tier 3 Participation")]
+    [InlineData("[11:39:49] You get 11 realm points for reaching Tier 1 Participation!", 11, "Tier 1 Participation")]
+    [InlineData("[08:00:00] You get 500 realm points for War Supplies!", 500, "War Supplies")]
+    public void TryParse_TimedMissionLines_ClassifiedAsTimedMission(string line, int expectedPoints, string expectedSubSource)
+    {
+        // Arrange
+        var parser = new RealmPointParser();
+
+        // Act
+        var result = parser.TryParse(line, out var entry);
+
+        // Assert
+        result.Should().BeTrue();
+        entry.Should().NotBeNull();
+        entry!.Points.Should().Be(expectedPoints);
+        entry.Source.Should().Be(RealmPointSource.TimedMission);
+        entry.SubSource.Should().Be(expectedSubSource);
+    }
+
+    [Fact]
+    public void TryParse_WinStreakLine_ClassifiedAsTimedMission()
+    {
+        // Arrange
+        var parser = new RealmPointParser();
+
+        // Act
+        var result = parser.TryParse("[12:01:28] You get an additional 150 realm points due to your Win Streak!", out var entry);
+
+        // Assert
+        result.Should().BeTrue();
+        entry.Should().NotBeNull();
+        entry!.Points.Should().Be(150);
+        entry.Source.Should().Be(RealmPointSource.TimedMission);
+        entry.SubSource.Should().Be("Win Streak");
+    }
+
+    [Fact]
+    public void TryParse_WinStreakLine_NotSkippedLikeRealmRankBonus()
+    {
+        // Win Streak uses "an additional" phrasing but must NOT be filtered like realm rank / guild bonus
+        var parser = new RealmPointParser();
+
+        var result = parser.TryParse("[12:01:28] You get an additional 150 realm points due to your Win Streak!", out var entry);
+
+        result.Should().BeTrue();
+        entry.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void TryParse_NonTimedMissionSource_HasNullSubSource()
+    {
+        // Arrange
+        var parser = new RealmPointParser();
+
+        // Act
+        parser.TryParse("[12:34:56] You get 1000 realm points for Campaign Quest!", out var entry);
+
+        // Assert
+        entry.Should().NotBeNull();
+        entry!.SubSource.Should().BeNull();
+    }
+
+    [Fact]
+    public void TryParse_RepairLine_EmitsDirectlyWithRepairSubSource()
+    {
+        // Repair has an explicit reason so it must bypass the pending state and emit immediately
+        var parser = new RealmPointParser();
+
+        var result = parser.TryParse("[10:00:00] You get 75 realm points for repairing!", out var entry);
+
+        result.Should().BeTrue();
+        entry.Should().NotBeNull();
+        entry!.Source.Should().Be(RealmPointSource.Misc);
+        entry.SubSource.Should().Be("Repair");
+    }
 }
+

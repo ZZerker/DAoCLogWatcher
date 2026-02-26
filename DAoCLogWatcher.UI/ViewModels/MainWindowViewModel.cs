@@ -63,6 +63,8 @@ public partial class MainWindowViewModel: ViewModelBase
 	[ObservableProperty] private string? updateVersionText;
 	private UpdateInfo? pendingUpdate;
 
+	[ObservableProperty] private string? detectedCharacterName;
+
 	public ObservableCollection<RealmPointLogEntry> LogEntries { get; } = [];
 
 	private LogWatcher? logWatcher;
@@ -189,6 +191,9 @@ public partial class MainWindowViewModel: ViewModelBase
 
 	private void ProcessLogLine(LogLine logLine)
 	{
+		if(logLine.DetectedCharacterName != null)
+			this.DetectedCharacterName = logLine.DetectedCharacterName;
+
 		var entry = logLine.RealmPointEntry;
 
 		if(entry == null)
@@ -241,16 +246,16 @@ public partial class MainWindowViewModel: ViewModelBase
 				this.Summary.Misc++;
 				this.Summary.MiscRP += entry.Points;
 				break;
-			case RealmPointSource.WarSupplies:
-				this.Summary.Warsupplies++;
-				this.Summary.WarsuppliesRP += entry.Points;
+			case RealmPointSource.TimedMission:
+				this.Summary.TimedMissions++;
+				this.Summary.TimedMissionsRP += entry.Points;
 				break;
 			default:
 				throw new ArgumentOutOfRangeException();
 		}
 
 
-		var details = entry.Source switch
+		var sourceLabel = entry.Source switch
 		{
 				RealmPointSource.PlayerKill => "Player Kill",
 				RealmPointSource.CampaignQuest => "Campaign Quest completed",
@@ -259,18 +264,20 @@ public partial class MainWindowViewModel: ViewModelBase
 				RealmPointSource.AssaultOrder => "Assault Order",
 				RealmPointSource.SupportActivity => "Support Tick",
 				RealmPointSource.RelicCapture => "Relic Capture",
-				RealmPointSource.WarSupplies => "War Supplies",
+				RealmPointSource.TimedMission => "Timed Mission",
 				RealmPointSource.Misc => "Other",
 				_ => throw new UnreachableException()
 		};
 
+		var details = entry.SubSource ?? sourceLabel;
+
 		var logEntry = new RealmPointLogEntry
-		               {
-				               Timestamp = entry.Timestamp.ToString("HH:mm:ss"),
-				               Points = entry.Points,
-				               Source = entry.Source.ToString(),
-				               Details = details
-		               };
+					   {
+							   Timestamp = entry.Timestamp.ToString("HH:mm:ss"),
+							   Points = entry.Points,
+							   Source = entry.Source.ToString(),
+							   Details = details
+					   };
 
 		this.LogEntries.Insert(0, logEntry);
 
@@ -295,6 +302,7 @@ public partial class MainWindowViewModel: ViewModelBase
 		this.Summary.Reset();
 		this.LogEntries.Clear();
 		this.ChartData.Reset();
+		this.DetectedCharacterName = null;
 
 		var cts = new CancellationTokenSource();
 		this.cancellationTokenSource = cts;

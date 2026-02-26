@@ -365,6 +365,99 @@ public sealed class LogWatcherTests : IDisposable
     }
 
     [Fact]
+    public async Task WatchAsync_StatsLine_DetectsCharacterName()
+    {
+        // Arrange
+        var content =
+            "*** Chat Log Opened: Mon Feb 16 20:51:29 2026\n" +
+            "[20:54:35] Options: /stats [ rp | kills | deathblows | solo | irs | heal | rez | player <name|target>  ]\n" +
+            "Statistics for Kobil this Session:\n" +
+            "Total RP: 4717\n" +
+            "[20:55:00] You get 1000 realm points for Campaign Quest!\n";
+
+        await File.WriteAllTextAsync(this.testLogFilePath, content);
+        var watcher = new LogWatcher(this.testLogFilePath, enableTimeFiltering: false);
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+
+        LogLine? statsLine = null;
+
+        // Act
+        await foreach (var line in watcher.WatchAsync(cts.Token))
+        {
+            if (line.DetectedCharacterName != null)
+                statsLine = line;
+            if (line.Text.Contains("Campaign Quest"))
+            {
+                cts.Cancel();
+                break;
+            }
+        }
+
+        // Assert
+        statsLine.Should().NotBeNull();
+        statsLine!.DetectedCharacterName.Should().Be("Kobil");
+        watcher.CurrentCharacterName.Should().Be("Kobil");
+    }
+
+    [Fact]
+    public async Task WatchAsync_StatsLine_MostFrequentNameWins()
+    {
+        // Arrange – "Kobil" appears twice, "OtherPlayer" once; Kobil should win
+        var content =
+            "*** Chat Log Opened: Mon Feb 16 20:51:29 2026\n" +
+            "Statistics for Kobil this Session:\n" +
+            "Statistics for OtherPlayer this Session:\n" +
+            "Statistics for Kobil this Session:\n" +
+            "[20:55:00] You get 1000 realm points for Campaign Quest!\n";
+
+        await File.WriteAllTextAsync(this.testLogFilePath, content);
+        var watcher = new LogWatcher(this.testLogFilePath, enableTimeFiltering: false);
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+
+        await foreach (var line in watcher.WatchAsync(cts.Token))
+        {
+            if (line.Text.Contains("Campaign Quest"))
+            {
+                cts.Cancel();
+                break;
+            }
+        }
+
+        // Assert
+        watcher.CurrentCharacterName.Should().Be("Kobil");
+    }
+
+    [Fact]
+    public async Task WatchAsync_StatsLine_ResetsOnNewSession()
+    {
+        // Arrange – two sessions with different characters
+        var content =
+            "*** Chat Log Opened: Sat Feb 21 10:00:00 2026\n" +
+            "Statistics for Kobil this Session:\n" +
+            "[10:00:01] You get 500 realm points for Battle Tick!\n" +
+            "*** Chat Log Closed: Sat Feb 21 10:05:00 2026\n" +
+            "*** Chat Log Opened: Sat Feb 21 11:00:00 2026\n" +
+            "Statistics for AltChar this Session:\n" +
+            "[11:00:01] You get 200 realm points for Battle Tick!\n";
+
+        await File.WriteAllTextAsync(this.testLogFilePath, content);
+        var watcher = new LogWatcher(this.testLogFilePath, enableTimeFiltering: false);
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+
+        await foreach (var line in watcher.WatchAsync(cts.Token))
+        {
+            if (line.Text.Contains("11:00:01"))
+            {
+                cts.Cancel();
+                break;
+            }
+        }
+
+        // Assert – name from second session wins, not first
+        watcher.CurrentCharacterName.Should().Be("AltChar");
+    }
+
+    [Fact]
     public void Constructor_NullOrEmptyPath_ThrowsArgumentException()
     {
         // Act & Assert

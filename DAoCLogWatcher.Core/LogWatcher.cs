@@ -15,6 +15,7 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 
 	private static readonly Regex ChatLogOpenedRegex = GenerateChatLogOpenedRegex();
 	private static readonly Regex ChatLogClosedRegex = GenerateChatLogClosedRegex();
+	private static readonly Regex StatsCharacterRegex = GenerateStatsCharacterRegex();
 
 	private readonly string logFilePath;
 	private readonly int maxHistoryHours;
@@ -23,6 +24,7 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 	private readonly StringBuilder incompleteLineBuffer;
 	private DateTime? lastLogClosed;
 	private readonly bool skipOldEntries;
+	private readonly Dictionary<string, int> characterNameCounts = new();
 
 	public LogWatcher(string logFilePath, long startPosition = 0, bool enableTimeFiltering = false, int filterHours = 24)
 	{
@@ -39,6 +41,8 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 	public long LastPosition { get; private set; }
 
 	public DateTime? CurrentSessionStart { get; private set; }
+
+	public string? CurrentCharacterName { get; private set; }
 
 	public async ValueTask DisposeAsync()
 	{
@@ -105,6 +109,8 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 					this.ProcessLogClosedMarker(line);
 					this.ProcessLogOpenedMarker(line);
 
+					var detectedName = this.TryDetectCharacterName(line);
+
 					var shouldYield = !this.skipOldEntries||this.ShouldProcessLine(line);
 
 					if(shouldYield&&!string.IsNullOrWhiteSpace(line))
@@ -120,7 +126,8 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 							yield return new LogLine
 										 {
 												 Text = line,
-												 RealmPointEntry = entry
+												 RealmPointEntry = entry,
+												 DetectedCharacterName = detectedName != null ? this.CurrentCharacterName : null
 										 };
 						}
 					else
@@ -203,6 +210,8 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 				if(!isQuickReopen)
 				{
 					this.CurrentSessionStart = sessionDate;
+					this.CurrentCharacterName = null;
+					this.characterNameCounts.Clear();
 				}
 
 				this.lastLogClosed = null;
@@ -255,8 +264,24 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 		return lineDateTime >= cutoffTime;
 	}
 
+	private string? TryDetectCharacterName(string line)
+	{
+		var match = StatsCharacterRegex.Match(line);
+		if(!match.Success)
+			return null;
+
+		var name = match.Groups["name"].Value;
+		this.characterNameCounts.TryGetValue(name, out var count);
+		this.characterNameCounts[name] = count + 1;
+		this.CurrentCharacterName = this.characterNameCounts.MaxBy(kv => kv.Value).Key;
+		return name;
+	}
+
 	private void UpdatePosition(FileStream stream)
 	{
 		this.LastPosition = stream.Position;
 	}
+
+	[GeneratedRegex(@"^Statistics for (?<name>\w+) this Session:$", RegexOptions.CultureInvariant)]
+	private static partial Regex GenerateStatsCharacterRegex();
 }
