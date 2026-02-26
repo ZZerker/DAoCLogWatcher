@@ -8,10 +8,6 @@ using FluentAssertions;
 
 namespace DAoCLogWatcher.Tests.Integration;
 
-/// <summary>
-/// End-to-end integration tests that simulate the complete flow:
-/// Log File → LogWatcher → Parser → Summary → Verify Percentages
-/// </summary>
 public sealed class EndToEndTests : IDisposable
 {
     private readonly string testLogFilePath;

@@ -20,7 +20,7 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 	private readonly int maxHistoryHours;
 	private readonly byte[] readBuffer;
 	private FileStream? fileStream;
-	private string incompleteLineBuffer;
+	private readonly StringBuilder incompleteLineBuffer;
 	private DateTime? lastLogClosed;
 	private readonly bool skipOldEntries;
 
@@ -31,7 +31,7 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 		this.logFilePath = logFilePath;
 		this.LastPosition = startPosition;
 		this.readBuffer = new byte[BufferSize];
-		this.incompleteLineBuffer = string.Empty;
+		this.incompleteLineBuffer = new StringBuilder();
 		this.skipOldEntries = enableTimeFiltering&&startPosition == 0;
 		this.maxHistoryHours = filterHours;
 	}
@@ -40,7 +40,6 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 
 	public DateTime? CurrentSessionStart { get; private set; }
 
-	#region Interface Implementation
 	public async ValueTask DisposeAsync()
 	{
 		if(this.fileStream != null)
@@ -53,7 +52,6 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 	{
 		this.fileStream?.Dispose();
 	}
-	#endregion
 
 	public async IAsyncEnumerable<LogLine> WatchAsync([EnumeratorCancellation] CancellationToken cancellationToken = default)
 	{
@@ -144,7 +142,7 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 
 	private void AppendToLineBuffer(string text)
 	{
-		this.incompleteLineBuffer += text;
+		this.incompleteLineBuffer.Append(text);
 	}
 
 	private string DecodeBytes(int byteCount)
@@ -154,7 +152,7 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 
 	private string[] ExtractCompleteLines()
 	{
-		var allLines = this.incompleteLineBuffer.Split('\n');
+		var allLines = this.incompleteLineBuffer.ToString().Split('\n');
 		var completeLineCount = allLines.Length - 1;
 
 		if(completeLineCount <= 0)
@@ -169,7 +167,8 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 			completeLines[i] = allLines[i].TrimEnd('\r');
 		}
 
-		this.incompleteLineBuffer = allLines[^1];
+		this.incompleteLineBuffer.Clear();
+		this.incompleteLineBuffer.Append(allLines[^1]);
 
 		return completeLines;
 	}
@@ -221,7 +220,6 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 
 	private bool ShouldProcessLine(string line)
 	{
-		// Extract timestamp from line and check if it's within the filter window
 		if(!line.StartsWith('[')||line.Length < 11)
 		{
 			return true; // No timestamp, include by default

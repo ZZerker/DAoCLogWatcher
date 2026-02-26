@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,9 +19,6 @@ namespace DAoCLogWatcher.UI.ViewModels;
 
 public partial class MainWindowViewModel: ViewModelBase
 {
-	// Minimum rolling window: dampens the early spike without distorting values for most of the warm-up period
-	private const double MinRollingWindowHours = 10.0 / 60.0;
-
 	private CancellationTokenSource? cancellationTokenSource;
 	private System.Timers.Timer? rpsRefreshTimer;
 
@@ -41,7 +39,6 @@ public partial class MainWindowViewModel: ViewModelBase
 	[RelayCommand]
 	private void ToggleTheme() => this.IsDarkTheme = !this.IsDarkTheme;
 
-	// Sidebar collapse
 	[ObservableProperty] private bool isSidebarVisible = true;
 	public string SidebarToggleIcon => this.IsSidebarVisible ? "◀ Summary" : "▶ Summary";
 	partial void OnIsSidebarVisibleChanged(bool _) => this.OnPropertyChanged(nameof(this.SidebarToggleIcon));
@@ -49,7 +46,6 @@ public partial class MainWindowViewModel: ViewModelBase
 	[RelayCommand]
 	private void ToggleSidebar() => this.IsSidebarVisible = !this.IsSidebarVisible;
 
-	// Individual chart collapse
 	[ObservableProperty] private bool isRpsChartVisible = true;
 	public string RpsChartToggleIcon => this.IsRpsChartVisible ? "▲" : "▼";
 	partial void OnIsRpsChartVisibleChanged(bool _) => this.OnPropertyChanged(nameof(this.RpsChartToggleIcon));
@@ -68,33 +64,21 @@ public partial class MainWindowViewModel: ViewModelBase
 	[ObservableProperty] private string? updateVersionText;
 	private UpdateInfo? pendingUpdate;
 
-	[ObservableProperty] private ObservableCollection<RealmPointLogEntry> logEntries = [];
+	public ObservableCollection<RealmPointLogEntry> LogEntries { get; } = [];
 
 	private LogWatcher? logWatcher;
 
-	[ObservableProperty] private RealmPointSummary summary = new();
+	public RealmPointSummary Summary { get; } = new();
 
-	// Character kill tracking
 	public ObservableCollection<CharacterKillStat> CharacterKillStats { get; } = [];
 	private Dictionary<string, CharacterKillStat> characterKillLookup = new(StringComparer.OrdinalIgnoreCase);
 	public bool HasCharacters => this.CharacterKillStats.Count > 0;
 
-	// Chart data: (timestamp, cumulative RPs)
-	public List<(DateTime Time, double Rps)> ChartDataPoints { get; } = new();
-
-	// Rolling 1-hour RPS chart data: (timestamp, RP/h for last 60 min)
-	public List<(DateTime Time, double RpsPerHour)> RpsHourlyChartDataPoints { get; } = new();
-
-	// Raw entries used to compute rolling window RPS
-	private readonly List<(DateTime Time, int Points)> rawEntries = new();
-
-	private DateTime? chartStartTime;
-
-	public event EventHandler? ChartUpdateRequested;
+	public RpsChartData ChartData { get; } = new();
 
 	public MainWindowViewModel()
 	{
-		Console.WriteLine($"[ViewModel Constructor] Added {this.LogEntries.Count} demo entries");
+		this.CharacterKillStats.CollectionChanged += (_, _) => this.OnPropertyChanged(nameof(this.HasCharacters));
 		_ = this.CheckForUpdatesAsync();
 	}
 
@@ -139,11 +123,6 @@ public partial class MainWindowViewModel: ViewModelBase
 		}
 	}
 
-	/// <summary>
-	/// Resolves the DAoC chat.log path for the current platform.
-	/// On Windows: %USERPROFILE%\Documents\Electronic Arts\Dark Age of Camelot\chat.log
-	/// On Linux: DAoC runs via Wine; checks the default Wine prefix and common Lutris paths.
-	/// </summary>
 	private static string? FindDaocLogPath()
 	{
 		if (OperatingSystem.IsWindows())
@@ -154,7 +133,6 @@ public partial class MainWindowViewModel: ViewModelBase
 
 		var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 
-		// Common Wine/Lutris paths for DAoC on Linux
 		var candidates = new[]
 		{
 			// Default Wine prefix
@@ -228,8 +206,6 @@ public partial class MainWindowViewModel: ViewModelBase
 
 		this.Summary.TotalRealmPoints += entry.Points;
 
-		// Track first and last entry timestamps
-		// Use the session start from the log file if available, otherwise use today
 		var sessionStart = this.logWatcher?.CurrentSessionStart;
 		var sessionDate = sessionStart?.Date ?? DateTime.Now.Date;
 		var entryDateTime = sessionDate.Add(entry.Timestamp.ToTimeSpan());
@@ -243,18 +219,14 @@ public partial class MainWindowViewModel: ViewModelBase
 		{
 			case RealmPointSource.PlayerKill:
 				this.Summary.PlayerKills++;
-				this.Summary.PlayerKillsRp += entry.Points;
-				if (entry.PlayerName!=null)
+				this.Summary.PlayerKillsRP += entry.Points;
+				if (entry.PlayerName != null && this.characterKillLookup.TryGetValue(entry.PlayerName, out var stat))
 				{
-					if (entry.PlayerName != null && this.characterKillLookup.TryGetValue(entry.PlayerName, out var stat))
+					if (stat.KillCount == 0)
 					{
-						if (stat.KillCount == 0)
-						{
-							this.CharacterKillStats.Add(stat);
-							this.OnPropertyChanged(nameof(this.HasCharacters));
-						}
-						stat.KillCount++;
+						this.CharacterKillStats.Add(stat);
 					}
+					stat.KillCount++;
 				}
 				break;
 			case RealmPointSource.CampaignQuest:
@@ -306,7 +278,7 @@ public partial class MainWindowViewModel: ViewModelBase
 				RealmPointSource.RelicCapture => "Relic Capture",
 				RealmPointSource.WarSupplies => "War Supplies",
 				RealmPointSource.Misc => "Other",
-				_ => ""
+				_ => throw new UnreachableException()
 		};
 
 		var logEntry = new RealmPointLogEntry
@@ -327,37 +299,7 @@ public partial class MainWindowViewModel: ViewModelBase
 			this.LogEntries.RemoveAt(this.LogEntries.Count - 1);
 		}
 
-		// Update chart data
-		this.UpdateChartData(entryDateTime, entry.Points);
-	}
-
-	private void UpdateChartData(DateTime entryTime, int points)
-	{
-		this.chartStartTime ??= entryTime;
-
-		var cumulativeRps = this.Summary.TotalRealmPoints;
-		this.ChartDataPoints.Add((entryTime, cumulativeRps));
-
-		// Track raw entry for rolling RPS computation
-		this.rawEntries.Add((entryTime, points));
-
-		// Compute rolling 1-hour RPS at this point in time
-		var windowStart = entryTime.AddHours(-1);
-		var windowRps = 0;
-		foreach (var (t, p) in this.rawEntries)
-		{
-			if (t >= windowStart && t <= entryTime)
-				windowRps += p;
-		}
-		var actualWindowHours = Math.Max(
-			(entryTime - (this.chartStartTime.Value > windowStart ? this.chartStartTime.Value : windowStart)).TotalHours,
-			MinRollingWindowHours);
-		var rollingRpsPerHour = windowRps / actualWindowHours;
-
-		this.RpsHourlyChartDataPoints.Add((entryTime, rollingRpsPerHour));
-
-
-		this.ChartUpdateRequested?.Invoke(this, EventArgs.Empty);
+		this.ChartData.Add(entryDateTime, this.Summary.TotalRealmPoints, entry.Points);
 	}
 
 	[RelayCommand]
@@ -371,11 +313,7 @@ public partial class MainWindowViewModel: ViewModelBase
 		this.IsWatching = true;
 		this.Summary.Reset();
 		this.LogEntries.Clear();
-		this.ChartDataPoints.Clear();
-		this.RpsHourlyChartDataPoints.Clear();
-		this.rawEntries.Clear();
-		this.chartStartTime = null;
-		this.ChartUpdateRequested?.Invoke(this, EventArgs.Empty);
+		this.ChartData.Reset();
 
 		this.CharacterKillStats.Clear();
 		this.characterKillLookup.Clear();
@@ -384,12 +322,10 @@ public partial class MainWindowViewModel: ViewModelBase
 			this.characterKillLookup[name] = new CharacterKillStat { Name = name };
 		}
 
-		this.OnPropertyChanged(nameof(this.HasCharacters));
+		var cts = new CancellationTokenSource();
+		this.cancellationTokenSource = cts;
 
-		this.cancellationTokenSource = new CancellationTokenSource();
-
-		// Start the RPS refresh timer
-		this.rpsRefreshTimer = new System.Timers.Timer(5000); // 10 seconds
+		this.rpsRefreshTimer = new System.Timers.Timer(5000);
 		this.rpsRefreshTimer.Elapsed += (s, e) => Dispatcher.UIThread.InvokeAsync(() => this.Summary.RefreshRpsPerHour());
 		this.rpsRefreshTimer.AutoReset = true;
 		this.rpsRefreshTimer.Start();
@@ -402,14 +338,14 @@ public partial class MainWindowViewModel: ViewModelBase
 
 		try
 		{
-			await foreach(var logLine in this.logWatcher.WatchAsync(this.cancellationTokenSource.Token))
+			await foreach(var logLine in this.logWatcher.WatchAsync(cts.Token))
 			{
 				var capturedLine = logLine;
 				await Dispatcher.UIThread.InvokeAsync(() =>
-				                                      {
-					                                      this.ProcessLogLine(capturedLine);
-				                                      },
-				                                      DispatcherPriority.Normal);
+													  {
+														  this.ProcessLogLine(capturedLine);
+													  },
+													  DispatcherPriority.Normal);
 			}
 		}
 		catch(OperationCanceledException)
@@ -421,6 +357,12 @@ public partial class MainWindowViewModel: ViewModelBase
 		}
 		finally
 		{
+			this.rpsRefreshTimer?.Stop();
+			this.rpsRefreshTimer?.Dispose();
+			this.rpsRefreshTimer = null;
+			cts.Dispose();
+			if (ReferenceEquals(this.cancellationTokenSource, cts))
+				this.cancellationTokenSource = null;
 			this.IsWatching = false;
 		}
 	}
@@ -429,9 +371,6 @@ public partial class MainWindowViewModel: ViewModelBase
 	private void StopWatching()
 	{
 		this.cancellationTokenSource?.Cancel();
-		this.rpsRefreshTimer?.Stop();
-		this.rpsRefreshTimer?.Dispose();
-		this.rpsRefreshTimer = null;
 		this.IsWatching = false;
 	}
 

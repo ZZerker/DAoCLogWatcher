@@ -42,7 +42,7 @@ public partial class RealmPointSummary : ObservableObject
     private int misc;
 
     [ObservableProperty]
-    private int playerKillsRp;
+    private int playerKillsRP;
 
     [ObservableProperty]
     private int campaignQuestsRP;
@@ -70,7 +70,7 @@ public partial class RealmPointSummary : ObservableObject
 
     public int TotalEntries => this.PlayerKills + this.CampaignQuests + this.Ticks + this.Siege + this.AssaultOrder + this.SupportActivity + this.RelicCapture + this.Misc;
 
-    public double PlayerKillsPercentage => this.TotalRealmPoints > 0 ? (this.PlayerKillsRp * 100.0 / this.TotalRealmPoints) : 0;
+    public double PlayerKillsPercentage => this.TotalRealmPoints > 0 ? (this.PlayerKillsRP * 100.0 / this.TotalRealmPoints) : 0;
     public double CampaignQuestsPercentage => this.TotalRealmPoints > 0 ? (this.CampaignQuestsRP * 100.0 / this.TotalRealmPoints) : 0;
     public double TicksPercentage => this.TotalRealmPoints > 0 ? (this.TicksRP * 100.0 / this.TotalRealmPoints) : 0;
     public double SiegePercentage => this.TotalRealmPoints > 0 ? (this.SiegeRP * 100.0 / this.TotalRealmPoints) : 0;
@@ -121,7 +121,7 @@ public partial class RealmPointSummary : ObservableObject
         this.SupportActivity = 0;
         this.RelicCapture = 0;
         this.Misc = 0;
-        this.PlayerKillsRp = 0;
+        this.PlayerKillsRP = 0;
         this.CampaignQuestsRP = 0;
         this.TicksRP = 0;
         this.SiegeRP = 0;
@@ -129,19 +129,12 @@ public partial class RealmPointSummary : ObservableObject
         this.SupportActivityRP = 0;
         this.RelicCaptureRP = 0;
         this.MiscRP = 0;
-        this.warsupplies = 0;
-        this.warsuppliesRP= 0;  
-		this.OnPropertyChanged(nameof(this.TotalEntries));
-        this.OnPropertyChanged(nameof(this.PlayerKillsPercentage));
-        this.OnPropertyChanged(nameof(this.CampaignQuestsPercentage));
-        this.OnPropertyChanged(nameof(this.TicksPercentage));
-        this.OnPropertyChanged(nameof(this.SiegePercentage));
-        this.OnPropertyChanged(nameof(this.AssaultOrderPercentage));
-        this.OnPropertyChanged(nameof(this.SupportActivityPercentage));
-        this.OnPropertyChanged(nameof(this.RelicCapturePercentage));
-        this.OnPropertyChanged(nameof(this.MiscPercentage));
-        this.OnPropertyChanged(nameof(this.RpsPerHour));
-    }
+		this.Warsupplies = 0;
+		this.WarsuppliesRP = 0;
+		// Percentage and TotalEntries changes are raised by the individual setters above via OnXChanged.
+		// RpsPerHour has no setter-driven notification, so it must be raised explicitly.
+		this.OnPropertyChanged(nameof(this.RpsPerHour));
+	}
 
     public void RefreshRpsPerHour()
     {

@@ -25,23 +25,23 @@ public partial class MainWindow : Window
         this.InitializeChart();
         this.InitializeRpsHourlyChart();
 
-        this.DataContextChanged += (s, e) =>
-        {
-            if (this._vm != null)
-            {
-	            this._vm.ChartUpdateRequested -= this.OnChartUpdateRequested;
-	            this._vm.PropertyChanged -= this.OnViewModelPropertyChanged;
-	            this._vm = null;
-            }
+		this.DataContextChanged += (s, e) =>
+		{
+			if (this._vm != null)
+			{
+				this._vm.ChartData.UpdateRequested -= this.OnChartUpdateRequested;
+				this._vm.PropertyChanged -= this.OnViewModelPropertyChanged;
+				this._vm = null;
+			}
 
-            if (this.DataContext is ViewModels.MainWindowViewModel vm)
-            {
-	            this._vm = vm;
-                vm.ChartUpdateRequested += this.OnChartUpdateRequested;
-                vm.PropertyChanged += this.OnViewModelPropertyChanged;
-                this.ApplyTheme(vm.IsDarkTheme);
-            }
-        };
+			if (this.DataContext is ViewModels.MainWindowViewModel vm)
+			{
+				this._vm = vm;
+				vm.ChartData.UpdateRequested += this.OnChartUpdateRequested;
+				vm.PropertyChanged += this.OnViewModelPropertyChanged;
+				this.ApplyTheme(vm.IsDarkTheme);
+			}
+		};
     }
 
     private void InitializeChart()
@@ -101,14 +101,14 @@ public partial class MainWindow : Window
 			                                                          : new GridLength(0);
     }
 
-    private void OnChartUpdateRequested(object? sender, EventArgs e)
-    {
-        if (this.DataContext is ViewModels.MainWindowViewModel vm)
-        {
-	        this.UpdateChart(vm.ChartDataPoints);
-	        this.UpdateRpsHourlyChart(vm.RpsHourlyChartDataPoints);
-        }
-    }
+	private void OnChartUpdateRequested(object? sender, EventArgs e)
+	{
+		if (this.DataContext is ViewModels.MainWindowViewModel vm)
+		{
+			this.UpdateChart(vm.ChartData.CumulativeDataPoints);
+			this.UpdateRpsHourlyChart(vm.ChartData.HourlyDataPoints);
+		}
+	}
 
 	public void UpdateChart(System.Collections.Generic.List<(DateTime Time, double Rps)> dataPoints)
 	{

@@ -189,7 +189,7 @@
                     <StackPanel Spacing="6">
                         <StackPanel Orientation="Horizontal" Spacing="10">
                             <TextBlock Text="Player Kills:" MinWidth="130" Foreground="{DynamicResource AppTextSecondary}" />
-                            <TextBlock Text="{Binding Summary.PlayerKillsRp}" FontWeight="Bold" Foreground="#FF00D968" />
+                            <TextBlock Text="{Binding Summary.PlayerKillsRP}" FontWeight="Bold" Foreground="#FF00D968" />
                         </StackPanel>
 
                         <StackPanel Orientation="Horizontal" Spacing="10">

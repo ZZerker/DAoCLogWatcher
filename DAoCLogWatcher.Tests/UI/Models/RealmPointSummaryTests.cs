@@ -35,7 +35,7 @@ public sealed class RealmPointSummaryTests
         var summary = new RealmPointSummary
         {
             TotalRealmPoints = 10000,
-            PlayerKillsRp = 3000,      // 30%
+            PlayerKillsRP = 3000,      // 30%
             CampaignQuestsRP = 2000,   // 20%
             TicksRP = 2500,            // 25%
             SiegeRP = 1500,            // 15%
@@ -63,7 +63,7 @@ public sealed class RealmPointSummaryTests
         var summary = new RealmPointSummary
         {
             TotalRealmPoints = 10000,
-            PlayerKillsRp = 3000,
+            PlayerKillsRP = 3000,
             CampaignQuestsRP = 2000,
             TicksRP = 2500,
             SiegeRP = 1500,
@@ -98,7 +98,7 @@ public sealed class RealmPointSummaryTests
         var summary = new RealmPointSummary
         {
             TotalRealmPoints = total,
-            PlayerKillsRp = kills,
+            PlayerKillsRP = kills,
             CampaignQuestsRP = quests,
             TicksRP = ticks,
             SiegeRP = siege,
@@ -129,7 +129,7 @@ public sealed class RealmPointSummaryTests
         var summary = new RealmPointSummary
         {
             TotalRealmPoints = 0,
-            PlayerKillsRp = 0
+            PlayerKillsRP = 0
         };
 
         // Act & Assert
@@ -145,7 +145,7 @@ public sealed class RealmPointSummaryTests
         var summary = new RealmPointSummary
         {
             TotalRealmPoints = 5000,
-            PlayerKillsRp = 3000,
+            PlayerKillsRP = 3000,
             TicksRP = 3000  // 3000 + 3000 = 6000 > 5000 (inconsistent state)
         };
 
@@ -265,7 +265,7 @@ public sealed class RealmPointSummaryTests
             FirstEntryTime = DateTime.Now.AddHours(-1),
             LastEntryTime = DateTime.Now,
             PlayerKills = 5,
-            PlayerKillsRp = 3000,
+            PlayerKillsRP = 3000,
             CampaignQuests = 3,
             CampaignQuestsRP = 2000,
             Ticks = 10,
@@ -290,7 +290,7 @@ public sealed class RealmPointSummaryTests
         summary.FirstEntryTime.Should().BeNull();
         summary.LastEntryTime.Should().BeNull();
         summary.PlayerKills.Should().Be(0);
-        summary.PlayerKillsRp.Should().Be(0);
+        summary.PlayerKillsRP.Should().Be(0);
         summary.CampaignQuests.Should().Be(0);
         summary.CampaignQuestsRP.Should().Be(0);
         summary.Ticks.Should().Be(0);
@@ -319,7 +319,7 @@ public sealed class RealmPointSummaryTests
         var summary = new RealmPointSummary
         {
             TotalRealmPoints = total,
-            PlayerKillsRp = kills,
+            PlayerKillsRP = kills,
             CampaignQuestsRP = quests,
             TicksRP = ticks,
             SiegeRP = siege,
@@ -358,7 +358,7 @@ public sealed class RealmPointSummaryTests
         var summary = new RealmPointSummary
         {
             TotalRealmPoints = 10000,
-            PlayerKillsRp = 3000,
+            PlayerKillsRP = 3000,
             CampaignQuestsRP = 2000,
             TicksRP = 2500,
             SiegeRP = 1500,
@@ -369,7 +369,7 @@ public sealed class RealmPointSummaryTests
         };
 
         // Act
-        var sumOfIndividualRPs = summary.PlayerKillsRp +
+        var sumOfIndividualRPs = summary.PlayerKillsRP +
                                 summary.CampaignQuestsRP +
                                 summary.TicksRP +
                                 summary.SiegeRP +
