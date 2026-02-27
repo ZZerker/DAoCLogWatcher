@@ -428,6 +428,67 @@ public sealed class LogWatcherTests : IDisposable
     }
 
     [Fact]
+    public async Task WatchAsync_StatsLine_OutsideTimeWindow_NotDetected()
+    {
+        // Arrange – stats line appears before the filter cutoff (old context), should be ignored
+        var oldTime = DateTime.Now.AddHours(-8).ToString("HH:mm:ss");
+        var recentTime = DateTime.Now.AddHours(-1).ToString("HH:mm:ss");
+        var sessionDateStr = DateTime.Now.AddHours(-10).ToString("ddd MMM d HH:mm:ss yyyy", System.Globalization.CultureInfo.InvariantCulture);
+
+        var content =
+            $"*** Chat Log Opened: {sessionDateStr}\n" +
+            $"[{oldTime}] Options: /stats [ rp | kills | deathblows | solo | irs | heal | rez | player <name|target>  ]\n" +
+            "Statistics for OldContextChar this Session:\n" +
+            $"[{recentTime}] You get 500 realm points for Battle Tick!\n";
+
+        await File.WriteAllTextAsync(this.testLogFilePath, content);
+        var watcher = new LogWatcher(this.testLogFilePath, enableTimeFiltering: true, filterHours: 6);
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+
+        await foreach (var line in watcher.WatchAsync(cts.Token))
+        {
+            if (line.Text.Contains("Battle Tick"))
+            {
+                cts.Cancel();
+                break;
+            }
+        }
+
+        // Assert – stats line was outside the 6h window so character should not be detected
+        watcher.CurrentCharacterName.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task WatchAsync_StatsLine_InsideTimeWindow_IsDetected()
+    {
+        // Arrange – stats line appears within the filter window, should be detected
+        var recentTime = DateTime.Now.AddHours(-1).ToString("HH:mm:ss");
+        var sessionDateStr = DateTime.Now.AddHours(-2).ToString("ddd MMM d HH:mm:ss yyyy", System.Globalization.CultureInfo.InvariantCulture);
+
+        var content =
+            $"*** Chat Log Opened: {sessionDateStr}\n" +
+            $"[{recentTime}] Options: /stats [ rp | kills | deathblows | solo | irs | heal | rez | player <name|target>  ]\n" +
+            "Statistics for RecentChar this Session:\n" +
+            $"[{recentTime}] You get 500 realm points for Battle Tick!\n";
+
+        await File.WriteAllTextAsync(this.testLogFilePath, content);
+        var watcher = new LogWatcher(this.testLogFilePath, enableTimeFiltering: true, filterHours: 6);
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+
+        await foreach (var line in watcher.WatchAsync(cts.Token))
+        {
+            if (line.Text.Contains("Battle Tick"))
+            {
+                cts.Cancel();
+                break;
+            }
+        }
+
+        // Assert – stats line was within the 6h window so character should be detected
+        watcher.CurrentCharacterName.Should().Be("RecentChar");
+    }
+
+    [Fact]
     public async Task WatchAsync_StatsLine_ResetsOnNewSession()
     {
         // Arrange – two sessions with different characters
@@ -455,6 +516,75 @@ public sealed class LogWatcherTests : IDisposable
 
         // Assert – name from second session wins, not first
         watcher.CurrentCharacterName.Should().Be("AltChar");
+    }
+
+    [Fact]
+    public async Task WatchAsync_KillLine_SetsKillEvent()
+    {
+        // Arrange
+        var content =
+            "*** Chat Log Opened: Mon Feb 16 20:00:00 2026\n" +
+            "[20:34:52] Dfensze was just killed by Linkx in Emain Macha.\n" +
+            "[20:35:00] You get 500 realm points for Battle Tick!\n";
+
+        await File.WriteAllTextAsync(this.testLogFilePath, content);
+        var watcher = new LogWatcher(this.testLogFilePath, enableTimeFiltering: false);
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+
+        LogLine? killLine = null;
+
+        // Act
+        await foreach (var line in watcher.WatchAsync(cts.Token))
+        {
+            if (line.KillEvent != null)
+                killLine = line;
+            if (line.Text.Contains("Battle Tick"))
+            {
+                cts.Cancel();
+                break;
+            }
+        }
+
+        // Assert
+        killLine.Should().NotBeNull();
+        killLine!.KillEvent!.Victim.Should().Be("Dfensze");
+        killLine.KillEvent.Killer.Should().Be("Linkx");
+        killLine.KillEvent.Zone.Should().Be("Emain Macha");
+        killLine.KillEvent.Timestamp.Should().Be(new TimeOnly(20, 34, 52));
+    }
+
+    [Fact]
+    public async Task WatchAsync_KillLine_OutsideTimeWindow_KillEventNotEmitted()
+    {
+        // Arrange – kill line is outside the filter window, should not be yielded
+        var oldTime = DateTime.Now.AddHours(-8).ToString("HH:mm:ss");
+        var recentTime = DateTime.Now.AddHours(-1).ToString("HH:mm:ss");
+        var sessionDateStr = DateTime.Now.AddHours(-10).ToString("ddd MMM d HH:mm:ss yyyy", System.Globalization.CultureInfo.InvariantCulture);
+
+        var content =
+            $"*** Chat Log Opened: {sessionDateStr}\n" +
+            $"[{oldTime}] Dfensze was just killed by Linkx in Emain Macha.\n" +
+            $"[{recentTime}] You get 500 realm points for Battle Tick!\n";
+
+        await File.WriteAllTextAsync(this.testLogFilePath, content);
+        var watcher = new LogWatcher(this.testLogFilePath, enableTimeFiltering: true, filterHours: 6);
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+
+        var killLines = new List<LogLine>();
+
+        await foreach (var line in watcher.WatchAsync(cts.Token))
+        {
+            if (line.KillEvent != null)
+                killLines.Add(line);
+            if (line.Text.Contains("Battle Tick"))
+            {
+                cts.Cancel();
+                break;
+            }
+        }
+
+        // Assert – old kill line was outside 6h window, not yielded
+        killLines.Should().BeEmpty();
     }
 
     [Fact]

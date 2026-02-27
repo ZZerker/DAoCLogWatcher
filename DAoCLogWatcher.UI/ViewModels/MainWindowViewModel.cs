@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
@@ -59,11 +60,39 @@ public partial class MainWindowViewModel: ViewModelBase
 	[RelayCommand]
 	private void ToggleRpChart() => this.IsRpChartVisible = !this.IsRpChartVisible;
 
+	[ObservableProperty] private bool isAbsoluteNumbersVisible = true;
+	public string AbsoluteNumbersToggleIcon => this.IsAbsoluteNumbersVisible ? "▲" : "▼";
+	partial void OnIsAbsoluteNumbersVisibleChanged(bool value) => this.OnPropertyChanged(nameof(this.AbsoluteNumbersToggleIcon));
+
+	[RelayCommand]
+	private void ToggleAbsoluteNumbers() => this.IsAbsoluteNumbersVisible = !this.IsAbsoluteNumbersVisible;
+
+	[ObservableProperty] private bool isAbsoluteRpsVisible = true;
+	public string AbsoluteRpsToggleIcon => this.IsAbsoluteRpsVisible ? "▲" : "▼";
+	partial void OnIsAbsoluteRpsVisibleChanged(bool value) => this.OnPropertyChanged(nameof(this.AbsoluteRpsToggleIcon));
+
+	[RelayCommand]
+	private void ToggleAbsoluteRps() => this.IsAbsoluteRpsVisible = !this.IsAbsoluteRpsVisible;
+
+	[ObservableProperty] private bool isPercentagesVisible = true;
+	public string PercentagesToggleIcon => this.IsPercentagesVisible ? "▲" : "▼";
+	partial void OnIsPercentagesVisibleChanged(bool value) => this.OnPropertyChanged(nameof(this.PercentagesToggleIcon));
+
+	[RelayCommand]
+	private void TogglePercentages() => this.IsPercentagesVisible = !this.IsPercentagesVisible;
+
 	[ObservableProperty] private bool isUpdateAvailable;
 	[ObservableProperty] private string? updateVersionText;
 	private UpdateInfo? pendingUpdate;
 
 	[ObservableProperty] private string? detectedCharacterName;
+	[ObservableProperty] private int kills;
+	[ObservableProperty] private int deaths;
+	public double KdRatio => this.Deaths > 0 ? (double)this.Kills / this.Deaths : this.Kills;
+	partial void OnKillsChanged(int value) => this.OnPropertyChanged(nameof(this.KdRatio));
+	partial void OnDeathsChanged(int value) => this.OnPropertyChanged(nameof(this.KdRatio));
+
+	private readonly List<KillEvent> killEventBuffer = new();
 
 	public ObservableCollection<RealmPointLogEntry> LogEntries { get; } = [];
 
@@ -189,10 +218,41 @@ public partial class MainWindowViewModel: ViewModelBase
 		}
 	}
 
+	private void RecomputeKillStats()
+	{
+		var name = this.DetectedCharacterName;
+		if(name == null)
+		{
+			this.Kills = 0;
+			this.Deaths = 0;
+			return;
+		}
+
+		var kills = 0;
+		var deaths = 0;
+		foreach(var ev in this.killEventBuffer)
+		{
+			if(ev.Killer == name) kills++;
+			if(ev.Victim == name) deaths++;
+		}
+		this.Kills = kills;
+		this.Deaths = deaths;
+	}
+
 	private void ProcessLogLine(LogLine logLine)
 	{
 		if(logLine.DetectedCharacterName != null)
+		{
 			this.DetectedCharacterName = logLine.DetectedCharacterName;
+			this.RecomputeKillStats();
+		}
+
+		if(logLine.KillEvent != null)
+		{
+			this.killEventBuffer.Add(logLine.KillEvent);
+			if(this.DetectedCharacterName != null)
+				this.RecomputeKillStats();
+		}
 
 		var entry = logLine.RealmPointEntry;
 
@@ -303,6 +363,9 @@ public partial class MainWindowViewModel: ViewModelBase
 		this.LogEntries.Clear();
 		this.ChartData.Reset();
 		this.DetectedCharacterName = null;
+		this.killEventBuffer.Clear();
+		this.Kills = 0;
+		this.Deaths = 0;
 
 		var cts = new CancellationTokenSource();
 		this.cancellationTokenSource = cts;

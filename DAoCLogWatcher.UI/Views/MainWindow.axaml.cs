@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -8,6 +7,7 @@ using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Input.Platform;
 using Avalonia.Media.Imaging;
 using Avalonia.Styling;
 using ScottPlot;
@@ -42,6 +42,26 @@ public partial class MainWindow : Window
 				this.ApplyTheme(vm.IsDarkTheme);
 			}
 		};
+    }
+
+    protected override void OnOpened(EventArgs e)
+    {
+        base.OnOpened(e);
+
+        var screen = this.Screens.ScreenFromWindow(this);
+        if (screen == null) return;
+
+        var workH = screen.WorkingArea.Height / screen.Scaling;
+        if (workH < 1268)
+        {
+            this.Height = workH;
+
+            if (this.DataContext is ViewModels.MainWindowViewModel vm)
+            {
+                vm.IsAbsoluteNumbersVisible = false;
+                vm.IsAbsoluteRpsVisible     = false;
+            }
+        }
     }
 
     private void InitializeChart()
@@ -149,6 +169,7 @@ public partial class MainWindow : Window
 
         this.RpsHourlyChart.Refresh();
     }
+
     private async void OnScreenshotClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         => await this.CaptureToClipboardAsync();
 
@@ -166,60 +187,105 @@ public partial class MainWindow : Window
         using var bitmap = new RenderTargetBitmap(pixelSize, new Vector(96 * scaling, 96 * scaling));
         bitmap.Render(this);
 
-        using var stream = new MemoryStream();
-        bitmap.Save(stream);
-        var pngBytes = stream.ToArray();
-
         if (OperatingSystem.IsWindows())
-            SetPngClipboardWin32(pngBytes);
-        else
-            await SetPngClipboardLinuxAsync(pngBytes);
+            SetClipboardWin32(bitmap);
+        else if (topLevel.Clipboard is { } clipboard)
+            await clipboard.SetBitmapAsync(bitmap);
     }
 
+    // Sets two clipboard formats simultaneously so all Windows apps can paste:
+    //   CF_DIBV5 (format 17)  – Discord, Chrome, Paint, standard Windows apps
+    //   "PNG" custom format   – Paint.NET and other PNG-aware apps
     [SupportedOSPlatform("windows")]
-    private static void SetPngClipboardWin32(byte[] pngBytes)
+    private static void SetClipboardWin32(RenderTargetBitmap avBitmap)
     {
-        var format = RegisterClipboardFormat("PNG");
+        var w = avBitmap.PixelSize.Width;
+        var h = avBitmap.PixelSize.Height;
+        var stride = w * 4;
 
-        var hMem = GlobalAlloc(0x0002 /* GMEM_MOVEABLE */, (UIntPtr)pngBytes.Length);
-        if (hMem == IntPtr.Zero) return;
+        // --- PNG bytes ---
+        using var pngStream = new MemoryStream();
+        avBitmap.Save(pngStream);
+        var pngBytes = pngStream.ToArray();
 
-        var ptr = GlobalLock(hMem);
-        if (ptr == IntPtr.Zero)
+        // --- Raw pixels (BGRA on Windows / Skia backend) ---
+        var pixelsBgra = new byte[h * stride];
+        var gcHandle = GCHandle.Alloc(pixelsBgra, GCHandleType.Pinned);
+        try
         {
-            GlobalFree(hMem);
-            return;
+            avBitmap.CopyPixels(new Avalonia.PixelRect(0, 0, w, h),
+                                gcHandle.AddrOfPinnedObject(),
+                                pixelsBgra.Length,
+                                stride);
+        }
+        finally { gcHandle.Free(); }
+
+        // If Avalonia rendered RGBA instead of BGRA, swap R↔B so Windows sees BGRA.
+        if (avBitmap.Format == Avalonia.Platform.PixelFormat.Rgba8888)
+        {
+            for (var i = 0; i < pixelsBgra.Length; i += 4)
+                (pixelsBgra[i], pixelsBgra[i + 2]) = (pixelsBgra[i + 2], pixelsBgra[i]);
         }
 
-        Marshal.Copy(pngBytes, 0, ptr, pngBytes.Length);
-        GlobalUnlock(hMem);
+        // --- Build BITMAPV5HEADER (124 bytes) + pixel data ---
+        // Masks describe BGRA layout: Blue=0xFF, Green=0xFF00, Red=0xFF0000, Alpha=0xFF000000
+        const int V5Size = 124;
+        const uint CF_DIBV5 = 17;
 
-        if (!OpenClipboard(IntPtr.Zero))
-        {
-            GlobalFree(hMem);
-            return;
-        }
+        var dib = new byte[V5Size + pixelsBgra.Length];
+        var s = dib.AsSpan();
+        WriteLE32(s,   0, V5Size);                    // bV5Size
+        WriteLE32(s,   4, w);                         // bV5Width
+        WriteLE32(s,   8, -h);                        // bV5Height (negative = top-down)
+        WriteLE16(s,  12, 1);                         // bV5Planes
+        WriteLE16(s,  14, 32);                        // bV5BitCount
+        WriteLE32(s,  16, 3);                         // bV5Compression = BI_BITFIELDS
+        WriteLE32(s,  20, pixelsBgra.Length);         // bV5SizeImage
+        // offsets 24-39: XPels, YPels, ClrUsed, ClrImportant — leave as 0
+        WriteLE32(s,  40, unchecked((int)0x00FF0000)); // bV5RedMask
+        WriteLE32(s,  44, unchecked((int)0x0000FF00)); // bV5GreenMask
+        WriteLE32(s,  48, unchecked((int)0x000000FF)); // bV5BlueMask
+        WriteLE32(s,  52, unchecked((int)0xFF000000)); // bV5AlphaMask
+        WriteLE32(s,  56, 0x73524742);                // bV5CSType = LCS_sRGB
+        // CIEXYZTRIPLE (36 bytes at 60), gamma (12 bytes at 96) — leave as 0
+        WriteLE32(s, 108, 4);                         // bV5Intent = LCS_GM_IMAGES
+        // ProfileData, ProfileSize, Reserved — leave as 0
+        pixelsBgra.CopyTo(dib.AsMemory(V5Size));
 
+        // --- Write both formats to clipboard in one open/close ---
+        var pngFormat = RegisterClipboardFormat("PNG");
+        if (!OpenClipboard(IntPtr.Zero)) return;
         EmptyClipboard();
-        // On success the OS owns hMem; on failure we still own it and must free it.
-        if (SetClipboardData(format, hMem) == IntPtr.Zero)
-            GlobalFree(hMem);
-
+        PutGlobalMem(CF_DIBV5, dib);
+        PutGlobalMem(pngFormat, pngBytes);
         CloseClipboard();
     }
 
-    private static async Task SetPngClipboardLinuxAsync(byte[] pngBytes)
+    [SupportedOSPlatform("windows")]
+    private static void PutGlobalMem(uint format, byte[] data)
     {
-        var path = Path.Combine(Path.GetTempPath(), "daoc-screenshot.png");
-        await File.WriteAllBytesAsync(path, pngBytes);
-        using var process = Process.Start(new ProcessStartInfo
-        {
-            FileName = "bash",
-            Arguments = $"-c \"xclip -selection clipboard -t image/png -i '{path}'\"",
-            UseShellExecute = false,
-            CreateNoWindow = true
-        });
-        if (process != null) await process.WaitForExitAsync();
+        var hMem = GlobalAlloc(0x0002 /* GMEM_MOVEABLE */, (UIntPtr)data.Length);
+        if (hMem == IntPtr.Zero) return;
+        var ptr = GlobalLock(hMem);
+        if (ptr == IntPtr.Zero) { GlobalFree(hMem); return; }
+        Marshal.Copy(data, 0, ptr, data.Length);
+        GlobalUnlock(hMem);
+        if (SetClipboardData(format, hMem) == IntPtr.Zero)
+            GlobalFree(hMem);
+    }
+
+    private static void WriteLE32(Span<byte> buf, int offset, int value)
+    {
+        buf[offset]     = (byte) value;
+        buf[offset + 1] = (byte)(value >>  8);
+        buf[offset + 2] = (byte)(value >> 16);
+        buf[offset + 3] = (byte)(value >> 24);
+    }
+
+    private static void WriteLE16(Span<byte> buf, int offset, short value)
+    {
+        buf[offset]     = (byte) value;
+        buf[offset + 1] = (byte)(value >> 8);
     }
 
     [DllImport("user32.dll", EntryPoint = "RegisterClipboardFormatW", CharSet = CharSet.Unicode)]

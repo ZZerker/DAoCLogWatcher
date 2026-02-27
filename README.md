@@ -1,40 +1,56 @@
 # DAoC Log Watcher
-Currently in Beta Testing state. 
-A real-time Realm Point tracker for **Dark Age of Camelot (Eden)**. Load your chat log and instantly see how many RPs you're earning, where they're coming from, and how fast they're rolling in.
+
+> **Beta** — core features work, some RP categories may be misidentified. Please report issues on the [Issues](https://github.com/ZZerker/DAoCLogWatcher/issues) page.
+
+A real-time Realm Point tracker for **Dark Age of Camelot (Eden)**. Load your `chat.log` and instantly see how many RPs you're earning, where they're coming from, how fast they're rolling in, and your kill/death stats — all updated live as you play.
 
 ---
 
 ## Features
 
-- **Live tracking** — reads your chat log as the game writes it, no manual refreshing
-- **RP breakdown** by source ⚠️ *parsing & categorization in development — values may be inaccurate*:
-  - Player Kills
-  - Campaign Quests
-  - Battle Ticks
-  - Siege (Tower & Keep Captures)
-  - Assault Orders
-  - Support Activity
-  - Relic Captures
+- **Live log tracking** — reads your chat log as the game writes it, no manual refreshing needed
+- **RP breakdown** by source:
+  - Player Kills, Campaign Quests, Battle Ticks
+  - Siege (Tower & Keep Captures), Assault Orders
+  - Support Activity, Relic Captures, Timed Missions
 - **RP/h meter** — rolling realm points per hour, updated every 5 seconds
-- **Per-character kill counter** ⚠️ *in development — counts may be incorrect* — automatically reads your character roster from the Eden profile folder and tracks kills per character
-- **Charts** — cumulative RP over time and rolling RP/h graph
-- **Time filters** — optionally show only the last 6 or 24 hours of your log
+- **Character detection** — type `/stats` in-game and the app identifies your character, then shows live kills, deaths, and K/D ratio
+- **Charts** — cumulative RP over time and rolling RP/h graph, both collapsible
+- **Time filters** — limit the log to the last 6, 12, or 24 hours
+- **Screenshot to clipboard** — capture the full window to your clipboard with one click
+- **Auto-update** — the app checks for new releases on startup and prompts you to install them
 - **Dark & Light theme** — toggle any time
-- **Windows & Linux** supported (Linux via Wine / Lutris)
+- **Windows & Linux** supported (Linux via Wine / Lutris / Flatpak)
 
 ---
 
-## ⚠️ Known Issues (Beta)
+## Installation
 
-The following features are still in active development and may produce incorrect results:
+### Windows
 
-| Feature | Status |
-|---|---|
-| RP source categorization | Parsing of some log line formats is incomplete — sources may be misidentified |
-| Percentage breakdown | Calculated from categorized RPs, so inaccuracies above carry through |
-| Kill count per character | Character matching is unreliable — counts may be wrong or missing |
+1. Go to the [Releases](https://github.com/ZZerker/DAoCLogWatcher/releases/latest) page
+2. Download `DAoCLogWatcher-win-Setup.exe`
+3. Run the installer — the app installs and launches automatically
+4. Future updates are applied from within the app (no re-downloading needed)
 
-Please report unexpected behaviour on the [Issues](https://github.com/ZZerker/DAoCLogWatcher/issues) page.
+### Linux (Flatpak)
+
+1. Go to the [Releases](https://github.com/ZZerker/DAoCLogWatcher/releases/latest) page
+2. Download the `.flatpak` bundle
+3. Install it:
+   ```bash
+   flatpak install --user DAoCLogWatcher.flatpak
+   ```
+4. Run it:
+   ```bash
+   flatpak run io.github.zzerker.DAoCLogWatcher
+   ```
+
+### Linux (manual / Wine)
+
+1. Download the Linux archive from the [Releases](https://github.com/ZZerker/DAoCLogWatcher/releases/latest) page
+2. Extract and run `DAoCLogWatcher.UI`
+3. Make sure the [.NET 10 Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/10.0) is installed
 
 ---
 
@@ -42,24 +58,30 @@ Please report unexpected behaviour on the [Issues](https://github.com/ZZerker/DA
 
 ### 1. Enable chat logging in DAoC
 
-In-game, type:
+In-game, open the chat window and type:
 
 ```
 /chatlog
 ```
 
-This creates (or resumes) `chat.log` in your DAoC documents folder. You only need to do this once per session.
+This creates (or resumes) `chat.log` in your DAoC documents folder. You only need to do this **once per session** — the file persists between logins.
 
-### 2. Launch DAoC Log Watcher
+### 2. Open your log
 
-Download the latest release and run `DAoCLogWatcher.UI.exe` (Windows) or the equivalent binary on Linux.
-
-### 3. Open your log
-
-- Click **Open DAoC Log** — the app will try to find your `chat.log` automatically
-- Or click **Open Log File** and browse to it manually
+- Click **Open DAoC Log** — the app auto-detects your `chat.log` based on the default install path
+- Or click **Open Log File** to browse manually
 
 The app starts reading immediately and updates the display as new lines arrive.
+
+### 3. Identify your character
+
+Type `/stats` in-game at any point. DAoC writes a line like:
+
+```
+Statistics for Caranthir this Session:
+```
+
+The app detects this and displays your character name in the sidebar with live kill/death/K/D stats. Any kill or death events that occurred earlier in the session are retroactively counted once your name is known.
 
 ---
 
@@ -68,18 +90,32 @@ The app starts reading immediately and updates the display as new lines arrive.
 | Filter | What it shows |
 |---|---|
 | *(none)* | Everything in the log file |
-| **Last 24h only** | Only entries from the past 24 hours |
-| **Last 6h only** | Only entries from the past 6 hours |
+| **Last 24h** | Only entries from the past 24 hours |
+| **Last 12h** | Only entries from the past 12 hours |
+| **Last 6h** | Only entries from the past 6 hours |
 
-Filters apply from the moment you open a log — useful if your `chat.log` has many days of history and you only care about today.
+Filters are applied from the moment you open a log — useful when your `chat.log` spans many days and you only care about recent activity. Select a filter before clicking **Open DAoC Log**.
 
 ---
 
-## Character Kill Tracking
+## Character Detection & Kill Tracking
 
-The app reads your Eden profile folder (`%AppData%\Electronic Arts\Dark Age of Camelot\eden`) to find your character names. When a player kill is awarded, it matches the killed player's name against your roster and increments that character's kill counter in the **MY CHARACTERS** panel.
+The app detects your character by watching for the `/stats` output block in the log:
 
-If the panel is not visible, no character profiles were found in that folder.
+```
+Statistics for Theron this Session:
+Total RP: ...
+```
+
+Once detected, your character name appears at the top of the sidebar with:
+- **Kills** — times you appeared as the killer in a kill line
+- **Deaths** — times you appeared as the victim
+- **K/D** — kill/death ratio
+
+**Notes:**
+- Kill/death lines earlier in the session are retroactively applied as soon as your name is detected.
+- If you check another player with `/stats player <name>`, the app uses a frequency heuristic to ignore one-off lookups and keep your character name correct.
+- Stats reset each time you click **Open DAoC Log**.
 
 ---
 
@@ -88,23 +124,38 @@ If the panel is not visible, no character profiles were found in that folder.
 | Platform | Default path |
 |---|---|
 | Windows | `%USERPROFILE%\Documents\Electronic Arts\Dark Age of Camelot\chat.log` |
-| Linux (Wine) | `~/.wine/drive_c/users/<user>/My Documents/Electronic Arts/Dark Age of Camelot/chat.log` |
+| Linux (Wine default) | `~/.wine/drive_c/users/<user>/My Documents/Electronic Arts/Dark Age of Camelot/chat.log` |
 | Linux (Lutris) | `~/Games/dark-age-of-camelot/drive_c/users/<user>/My Documents/Electronic Arts/Dark Age of Camelot/chat.log` |
+
+If **Open DAoC Log** can't find the file automatically, use **Open Log File** to browse to it.
 
 ---
 
-## Requirements
+## ⚠️ Known Issues (Beta)
 
-- [.NET 10 Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)
-- Dark Age of Camelot (Eden server) with chat logging enabled (`/chatlog`)
+| Feature | Status |
+|---|---|
+| RP source categorization | Some log line formats are not yet parsed — sources may be misidentified or fall into "Other" |
+| Percentage breakdown | Derived from categorized RPs, so any misidentification above carries through |
+| Kill / death count | Requires at least one `/stats` in the log — events before the first `/stats` are retroactively counted once the name is detected |
+
+Please report unexpected behaviour on the [Issues](https://github.com/ZZerker/DAoCLogWatcher/issues) page.
 
 ---
 
 ## Building from Source
+
+Requirements: [.NET 10 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)
 
 ```bash
 git clone https://github.com/ZZerker/DAoCLogWatcher.git
 cd DAoCLogWatcher
 dotnet build
 dotnet run --project DAoCLogWatcher.UI
+```
+
+Run tests:
+
+```bash
+dotnet test DAoCLogWatcher.Tests/DAoCLogWatcher.Tests.csproj
 ```

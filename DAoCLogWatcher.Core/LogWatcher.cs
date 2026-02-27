@@ -16,6 +16,7 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 	private static readonly Regex ChatLogOpenedRegex = GenerateChatLogOpenedRegex();
 	private static readonly Regex ChatLogClosedRegex = GenerateChatLogClosedRegex();
 	private static readonly Regex StatsCharacterRegex = GenerateStatsCharacterRegex();
+	private static readonly Regex KillLineRegex = GenerateKillLineRegex();
 
 	private readonly string logFilePath;
 	private readonly int maxHistoryHours;
@@ -25,6 +26,7 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 	private DateTime? lastLogClosed;
 	private readonly bool skipOldEntries;
 	private readonly Dictionary<string, int> characterNameCounts = new();
+	private bool lastTimestampedLineWasInWindow = true;
 
 	public LogWatcher(string logFilePath, long startPosition = 0, bool enableTimeFiltering = false, int filterHours = 24)
 	{
@@ -109,9 +111,16 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 					this.ProcessLogClosedMarker(line);
 					this.ProcessLogOpenedMarker(line);
 
-					var detectedName = this.TryDetectCharacterName(line);
-
+					// Compute shouldYield once and reuse it to gate character detection on
+					// timestampless lines like "Statistics for X this Session:".
 					var shouldYield = !this.skipOldEntries||this.ShouldProcessLine(line);
+
+					if(this.skipOldEntries && line.StartsWith('['))
+						this.lastTimestampedLineWasInWindow = shouldYield;
+
+					var detectedName = (!this.skipOldEntries || this.lastTimestampedLineWasInWindow)
+						? this.TryDetectCharacterName(line)
+						: null;
 
 					if(shouldYield&&!string.IsNullOrWhiteSpace(line))
 						{
@@ -127,7 +136,8 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 										 {
 												 Text = line,
 												 RealmPointEntry = entry,
-												 DetectedCharacterName = detectedName != null ? this.CurrentCharacterName : null
+												 DetectedCharacterName = detectedName != null ? this.CurrentCharacterName : null,
+												 KillEvent = TryDetectKillEvent(line)
 										 };
 						}
 					else
@@ -284,4 +294,25 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 
 	[GeneratedRegex(@"^Statistics for (?<name>\w+) this Session:$", RegexOptions.CultureInvariant)]
 	private static partial Regex GenerateStatsCharacterRegex();
+
+	private static KillEvent? TryDetectKillEvent(string line)
+	{
+		var match = KillLineRegex.Match(line);
+		if(!match.Success)
+			return null;
+
+		if(!TimeOnly.TryParseExact(match.Groups["timestamp"].Value, "HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out var timestamp))
+			return null;
+
+		return new KillEvent
+			{
+				Timestamp = timestamp,
+				Victim = match.Groups["victim"].Value,
+				Killer = match.Groups["killer"].Value,
+				Zone = match.Groups["zone"].Value
+			};
+	}
+
+	[GeneratedRegex(@"^\[(?<timestamp>\d{2}:\d{2}:\d{2})\] (?<victim>\w+) was just killed by (?<killer>\w+) in (?<zone>.+)\.$", RegexOptions.Compiled|RegexOptions.CultureInvariant)]
+	private static partial Regex GenerateKillLineRegex();
 }

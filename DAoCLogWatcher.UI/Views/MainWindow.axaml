@@ -9,7 +9,7 @@
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/logo.ico"
         Title="DAoC Log Watcher"
-        Width="1400" Height="1070"
+        Width="1535" Height="1268"
         Background="{DynamicResource AppWindowBackground}">
 
     <Design.DataContext>
@@ -103,9 +103,23 @@
 
                     <Border Background="{DynamicResource AppCardBackground}" CornerRadius="6" Padding="15"
                             IsVisible="{Binding DetectedCharacterName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
-                        <StackPanel Spacing="4">
+                        <StackPanel Spacing="8">
                             <TextBlock Text="CHARACTER" FontWeight="SemiBold" FontSize="11" Foreground="{DynamicResource AppTextMuted}" />
                             <TextBlock Text="{Binding DetectedCharacterName}" FontSize="20" FontWeight="Bold" Foreground="#FF00D9FF" />
+                            <StackPanel Orientation="Horizontal" Spacing="16">
+                                <StackPanel Spacing="2">
+                                    <TextBlock Text="KILLS" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource AppTextMuted}" />
+                                    <TextBlock Text="{Binding Kills}" FontSize="16" FontWeight="Bold" Foreground="#FF00D968" />
+                                </StackPanel>
+                                <StackPanel Spacing="2">
+                                    <TextBlock Text="DEATHS" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource AppTextMuted}" />
+                                    <TextBlock Text="{Binding Deaths}" FontSize="16" FontWeight="Bold" Foreground="#FFDC3545" />
+                                </StackPanel>
+                                <StackPanel Spacing="2">
+                                    <TextBlock Text="K/D" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource AppTextMuted}" />
+                                    <TextBlock Text="{Binding KdRatio, StringFormat='{}{0:F2}'}" FontSize="16" FontWeight="Bold" Foreground="#FFFFAA00" />
+                                </StackPanel>
+                            </StackPanel>
                         </StackPanel>
                     </Border>
 
@@ -149,8 +163,13 @@
 
                     <Border Height="1" Background="{DynamicResource AppBorderBrush}" />
 
-                    <TextBlock Text="ABSOLUTE NUMBERS" FontWeight="SemiBold" FontSize="11" Foreground="{DynamicResource AppTextMuted}" />
-                    <StackPanel Spacing="6">
+                    <Grid>
+                        <TextBlock Text="ABSOLUTE NUMBERS" FontWeight="SemiBold" FontSize="11" Foreground="{DynamicResource AppTextMuted}" VerticalAlignment="Center" />
+                        <Button Content="{Binding AbsoluteNumbersToggleIcon}" Command="{Binding ToggleAbsoluteNumbersCommand}"
+                                HorizontalAlignment="Right" Background="Transparent"
+                                Foreground="{DynamicResource AppTextMuted}" Padding="6,2" BorderThickness="0" FontSize="14" />
+                    </Grid>
+                    <StackPanel Spacing="6" IsVisible="{Binding IsAbsoluteNumbersVisible}">
                         <StackPanel Orientation="Horizontal" Spacing="10">
                             <TextBlock Text="Player Kills:" MinWidth="130" Foreground="{DynamicResource AppTextSecondary}" />
                             <TextBlock Text="{Binding Summary.PlayerKills}" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimary}" />
@@ -199,8 +218,13 @@
 
                     <Border Height="1" Background="{DynamicResource AppBorderBrush}" />
 
-                    <TextBlock Text="ABSOLUTE RPs" FontWeight="SemiBold" FontSize="11" Foreground="{DynamicResource AppTextMuted}" />
-                    <StackPanel Spacing="6">
+                    <Grid>
+                        <TextBlock Text="ABSOLUTE RPs" FontWeight="SemiBold" FontSize="11" Foreground="{DynamicResource AppTextMuted}" VerticalAlignment="Center" />
+                        <Button Content="{Binding AbsoluteRpsToggleIcon}" Command="{Binding ToggleAbsoluteRpsCommand}"
+                                HorizontalAlignment="Right" Background="Transparent"
+                                Foreground="{DynamicResource AppTextMuted}" Padding="6,2" BorderThickness="0" FontSize="14" />
+                    </Grid>
+                    <StackPanel Spacing="6" IsVisible="{Binding IsAbsoluteRpsVisible}">
                         <StackPanel Orientation="Horizontal" Spacing="10">
                             <TextBlock Text="Player Kills:" MinWidth="130" Foreground="{DynamicResource AppTextSecondary}" />
                             <TextBlock Text="{Binding Summary.PlayerKillsRP}" FontWeight="Bold" Foreground="#FF00D968" />
@@ -249,8 +273,13 @@
 
                     <Border Height="1" Background="{DynamicResource AppBorderBrush}" />
 
-                    <TextBlock Text="PERCENTAGES" FontWeight="SemiBold" FontSize="11" Foreground="{DynamicResource AppTextMuted}" />
-                    <StackPanel Spacing="6">
+                    <Grid>
+                        <TextBlock Text="PERCENTAGES" FontWeight="SemiBold" FontSize="11" Foreground="{DynamicResource AppTextMuted}" VerticalAlignment="Center" />
+                        <Button Content="{Binding PercentagesToggleIcon}" Command="{Binding TogglePercentagesCommand}"
+                                HorizontalAlignment="Right" Background="Transparent"
+                                Foreground="{DynamicResource AppTextMuted}" Padding="6,2" BorderThickness="0" FontSize="14" />
+                    </Grid>
+                    <StackPanel Spacing="6" IsVisible="{Binding IsPercentagesVisible}">
                         <StackPanel Orientation="Horizontal" Spacing="10">
                             <TextBlock Text="Player Kills:" MinWidth="130" Foreground="{DynamicResource AppTextSecondary}" />
                             <TextBlock Text="{Binding Summary.PlayerKillsPercentage, StringFormat='{}{0:F1}%'}" FontWeight="Bold" Foreground="#FFFFAA00" />
@@ -307,7 +336,8 @@
                             <TextBlock Text="{Binding LogEntries.Count, StringFormat='({0} entries)'}" FontSize="14" VerticalAlignment="Center" Foreground="{DynamicResource AppTextMuted}" />
                         </StackPanel>
 
-                        <ScrollViewer Background="{DynamicResource AppCardBackground}" CornerRadius="6" Padding="10">
+                        <ScrollViewer Background="{DynamicResource AppCardBackground}" CornerRadius="6" Padding="10"
+                                      HorizontalScrollBarVisibility="Disabled">
                             <ItemsControl ItemsSource="{Binding LogEntries}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
