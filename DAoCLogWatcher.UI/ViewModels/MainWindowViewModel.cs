@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+using System;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,22 +10,23 @@ using CommunityToolkit.Mvvm.Input;
 using DAoCLogWatcher.Core;
 using DAoCLogWatcher.Core.Models;
 using DAoCLogWatcher.UI.Models;
-using Velopack;
-using Velopack.Sources;
+using DAoCLogWatcher.UI.Services;
 
 namespace DAoCLogWatcher.UI.ViewModels;
 
-public partial class MainWindowViewModel: ViewModelBase
+public partial class MainWindowViewModel : ViewModelBase
 {
 	private CancellationTokenSource? cancellationTokenSource;
 	private System.Timers.Timer? rpsRefreshTimer;
+	private LogWatcher? logWatcher;
+
+	private readonly UpdateService updateService = new();
+	private readonly RealmPointProcessor processor;
 
 	[ObservableProperty] private string? currentFilePath;
 
 	[ObservableProperty] [NotifyPropertyChangedFor(nameof(IsAnyFilterEnabled))] private bool enableSixHourFiltering;
-
 	[ObservableProperty] [NotifyPropertyChangedFor(nameof(IsAnyFilterEnabled))] private bool enableTwelveHourFiltering;
-
 	[ObservableProperty] [NotifyPropertyChangedFor(nameof(IsAnyFilterEnabled))] private bool enableTimeFiltering = true;
 
 	[ObservableProperty] private bool isWatching;
@@ -83,64 +82,45 @@ public partial class MainWindowViewModel: ViewModelBase
 
 	[ObservableProperty] private bool isUpdateAvailable;
 	[ObservableProperty] private string? updateVersionText;
-	private UpdateInfo? pendingUpdate;
 
 	[ObservableProperty] private string? detectedCharacterName;
 	[ObservableProperty] private int kills;
 	[ObservableProperty] private int deaths;
 	public double KdRatio => this.Deaths > 0 ? (double)this.Kills / this.Deaths : this.Kills;
-	partial void OnKillsChanged(int value) => this.OnPropertyChanged(nameof(this.KdRatio));
+	partial void OnKillsChanged(int value)  => this.OnPropertyChanged(nameof(this.KdRatio));
 	partial void OnDeathsChanged(int value) => this.OnPropertyChanged(nameof(this.KdRatio));
 
-	private readonly List<KillEvent> killEventBuffer = new();
-
 	public ObservableCollection<RealmPointLogEntry> LogEntries { get; } = [];
-
-	private LogWatcher? logWatcher;
-
 	public RealmPointSummary Summary { get; } = new();
-
 	public RpsChartData ChartData { get; } = new();
-
-	public MainWindowViewModel()
-	{
-		_ = this.CheckForUpdatesAsync();
-	}
 
 	public bool IsAnyFilterEnabled => this.EnableTimeFiltering || this.EnableSixHourFiltering || this.EnableTwelveHourFiltering;
 
+	public MainWindowViewModel()
+	{
+		this.processor = new RealmPointProcessor(this.Summary, this.ChartData);
+		_ = this.CheckForUpdatesAsync();
+	}
+
 	partial void OnEnableSixHourFilteringChanged(bool value)
 	{
-		if (value)
-		{
-			this.EnableTimeFiltering = false;
-			this.EnableTwelveHourFiltering = false;
-		}
+		if (value) { this.EnableTimeFiltering = false; this.EnableTwelveHourFiltering = false; }
 	}
 
 	partial void OnEnableTwelveHourFilteringChanged(bool value)
 	{
-		if (value)
-		{
-			this.EnableTimeFiltering = false;
-			this.EnableSixHourFiltering = false;
-		}
+		if (value) { this.EnableTimeFiltering = false; this.EnableSixHourFiltering = false; }
 	}
 
 	partial void OnEnableTimeFilteringChanged(bool value)
 	{
-		if (value)
-		{
-			this.EnableSixHourFiltering = false;
-			this.EnableTwelveHourFiltering = false;
-		}
+		if (value) { this.EnableSixHourFiltering = false; this.EnableTwelveHourFiltering = false; }
 	}
 
 	[RelayCommand]
 	private async Task OpenDaocLog()
 	{
-		var path = FindDaocLogPath();
-
+		var path = DaocLogPathService.FindDaocLogPath();
 		if (path != null && File.Exists(path))
 		{
 			this.CurrentFilePath = path;
@@ -148,222 +128,60 @@ public partial class MainWindowViewModel: ViewModelBase
 		}
 	}
 
-	private static string? FindDaocLogPath()
-	{
-		if (OperatingSystem.IsWindows())
-		{
-			var documents = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-			return Path.Combine(documents, "Electronic Arts", "Dark Age of Camelot", "chat.log");
-		}
-
-		var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-
-		var candidates = new[]
-		{
-			// Default Wine prefix
-			Path.Combine(home, ".wine", "drive_c", "users", Environment.UserName, "My Documents", "Electronic Arts", "Dark Age of Camelot", "chat.log"),
-			// Lutris default Wine prefix
-			Path.Combine(home, "Games", "dark-age-of-camelot", "drive_c", "users", Environment.UserName, "My Documents", "Electronic Arts", "Dark Age of Camelot", "chat.log"),
-			// Lutris with "Documents" folder name
-			Path.Combine(home, "Games", "dark-age-of-camelot", "drive_c", "users", Environment.UserName, "Documents", "Electronic Arts", "Dark Age of Camelot", "chat.log"),
-			// Lutris with "Documents" folder name
-			Path.Combine(home, "Games", "dark-age-of-camelot-eden", "drive_c", "users", Environment.UserName, "Documents", "Electronic Arts", "Dark Age of Camelot", "chat.log"),
-			// Default Users Home  "Documents" folder name
-			Path.Combine(home, "Documents", "Electronic Arts", "chat.log"),
-			// Default Users Home  "Documents" folder name (German)
-			Path.Combine(home, "Dokumente", "Electronic Arts", "chat.log"),
-		};
-
-		return Array.Find(candidates, File.Exists);
-	}
-
 	[RelayCommand]
 	private async Task OpenFile(IStorageProvider? storageProvider)
 	{
-		if(storageProvider == null)
-		{
-			return;
-		}
+		if (storageProvider == null) return;
 
 		var options = new FilePickerOpenOptions
-		              {
-				              Title = "Select DAoC Log File",
-				              AllowMultiple = false,
-				              FileTypeFilter =
-				              [
-						              new FilePickerFileType("Log Files")
-						                               {
-								                               Patterns =
-								                               [
-										                               "*.log"
-								                               ]
-						                               },
-						                               new FilePickerFileType("All Files")
-						                               {
-								                               Patterns =
-								                               [
-										                               "*.*"
-								                               ]
-						                               }
-				              ]
-		              };
+		{
+			Title = "Select DAoC Log File",
+			AllowMultiple = false,
+			FileTypeFilter =
+			[
+				new FilePickerFileType("Log Files") { Patterns = ["*.log"] },
+				new FilePickerFileType("All Files") { Patterns = ["*.*"] }
+			]
+		};
 
 		var result = await storageProvider.OpenFilePickerAsync(options);
-
-		if(result.Count > 0)
+		if (result.Count > 0)
 		{
-			var file = result[0];
-			this.CurrentFilePath = file.Path.LocalPath;
+			this.CurrentFilePath = result[0].Path.LocalPath;
 			await this.StartWatching();
 		}
 	}
 
-	private void RecomputeKillStats()
-	{
-		var name = this.DetectedCharacterName;
-		if(name == null)
-		{
-			this.Kills = 0;
-			this.Deaths = 0;
-			return;
-		}
-
-		var kills = 0;
-		var deaths = 0;
-		foreach(var ev in this.killEventBuffer)
-		{
-			if(ev.Killer == name) kills++;
-			if(ev.Victim == name) deaths++;
-		}
-		this.Kills = kills;
-		this.Deaths = deaths;
-	}
-
 	private void ProcessLogLine(LogLine logLine)
 	{
-		if(logLine.DetectedCharacterName != null)
+		var entry = this.processor.Process(
+			logLine,
+			this.logWatcher?.CurrentSessionStart,
+			out var characterChanged,
+			out var killStatsChanged);
+
+		if (characterChanged)  this.DetectedCharacterName = this.processor.DetectedCharacterName;
+		if (killStatsChanged)  { this.Kills = this.processor.Kills; this.Deaths = this.processor.Deaths; }
+
+		if (entry is not null)
 		{
-			this.DetectedCharacterName = logLine.DetectedCharacterName;
-			this.RecomputeKillStats();
+			this.LogEntries.Insert(0, entry);
+			while (this.LogEntries.Count > 1000)
+				this.LogEntries.RemoveAt(this.LogEntries.Count - 1);
 		}
-
-		if(logLine.KillEvent != null)
-		{
-			this.killEventBuffer.Add(logLine.KillEvent);
-			if(this.DetectedCharacterName != null)
-				this.RecomputeKillStats();
-		}
-
-		var entry = logLine.RealmPointEntry;
-
-		if(entry == null)
-		{
-			return;
-		}
-
-		this.Summary.TotalRealmPoints += entry.Points;
-
-		var sessionStart = this.logWatcher?.CurrentSessionStart;
-		var sessionDate = sessionStart?.Date ?? DateTime.Now.Date;
-		var entryDateTime = sessionDate.Add(entry.Timestamp.ToTimeSpan());
-		// Handle midnight crossing: if the reconstructed time is before the session start, the entry is from the next day
-		if (sessionStart.HasValue && entryDateTime < sessionStart.Value)
-			entryDateTime = entryDateTime.AddDays(1);
-		this.Summary.FirstEntryTime ??= entryDateTime;
-		this.Summary.LastEntryTime = entryDateTime;
-
-		switch(entry.Source)
-		{
-			case RealmPointSource.PlayerKill:
-				this.Summary.PlayerKills++;
-				this.Summary.PlayerKillsRP += entry.Points;
-				break;
-			case RealmPointSource.CampaignQuest:
-				this.Summary.CampaignQuests++;
-				this.Summary.CampaignQuestsRP += entry.Points;
-				break;
-			case RealmPointSource.Tick:
-				this.Summary.Ticks++;
-				this.Summary.TicksRP += entry.Points;
-				break;
-			case RealmPointSource.Siege:
-				this.Summary.Siege++;
-				this.Summary.SiegeRP += entry.Points;
-				break;
-			case RealmPointSource.AssaultOrder:
-				this.Summary.AssaultOrder++;
-				this.Summary.AssaultOrderRP += entry.Points;
-				break;
-			case RealmPointSource.SupportActivity:
-				this.Summary.SupportActivity++;
-				this.Summary.SupportActivityRP += entry.Points;
-				break;
-			case RealmPointSource.RelicCapture:
-				this.Summary.RelicCapture++;
-				this.Summary.RelicCaptureRP += entry.Points;
-				break;
-			case RealmPointSource.Misc:
-				this.Summary.Misc++;
-				this.Summary.MiscRP += entry.Points;
-				break;
-			case RealmPointSource.TimedMission:
-				this.Summary.TimedMissions++;
-				this.Summary.TimedMissionsRP += entry.Points;
-				break;
-			default:
-				throw new ArgumentOutOfRangeException();
-		}
-
-
-		var sourceLabel = entry.Source switch
-		{
-				RealmPointSource.PlayerKill => "Player Kill",
-				RealmPointSource.CampaignQuest => "Campaign Quest completed",
-				RealmPointSource.Tick => "Battle Tick",
-				RealmPointSource.Siege => "Siege (Tower/Keep Capture)",
-				RealmPointSource.AssaultOrder => "Assault Order",
-				RealmPointSource.SupportActivity => "Support Tick",
-				RealmPointSource.RelicCapture => "Relic Capture",
-				RealmPointSource.TimedMission => "Timed Mission",
-				RealmPointSource.Misc => "Other",
-				_ => throw new UnreachableException()
-		};
-
-		var details = entry.SubSource ?? sourceLabel;
-
-		var logEntry = new RealmPointLogEntry
-					   {
-							   Timestamp = entry.Timestamp.ToString("HH:mm:ss"),
-							   Points = entry.Points,
-							   Source = entry.Source.ToString(),
-							   Details = details
-					   };
-
-		this.LogEntries.Insert(0, logEntry);
-
-		// Keep only the last 1000 entries to prevent performance issues
-		while(this.LogEntries.Count > 1000)
-		{
-			this.LogEntries.RemoveAt(this.LogEntries.Count - 1);
-		}
-
-		this.ChartData.Add(entryDateTime, this.Summary.TotalRealmPoints, entry.Points);
 	}
 
 	[RelayCommand]
 	private async Task StartWatching()
 	{
-		if(string.IsNullOrWhiteSpace(this.CurrentFilePath)||this.IsWatching)
-		{
-			return;
-		}
+		if (string.IsNullOrWhiteSpace(this.CurrentFilePath) || this.IsWatching) return;
 
 		this.IsWatching = true;
 		this.Summary.Reset();
 		this.LogEntries.Clear();
 		this.ChartData.Reset();
+		this.processor.Reset();
 		this.DetectedCharacterName = null;
-		this.killEventBuffer.Clear();
 		this.Kills = 0;
 		this.Deaths = 0;
 
@@ -376,28 +194,21 @@ public partial class MainWindowViewModel: ViewModelBase
 		this.rpsRefreshTimer.Start();
 
 		var filterEnabled = this.EnableTimeFiltering || this.EnableTwelveHourFiltering || this.EnableSixHourFiltering;
-		var filterHours = this.EnableSixHourFiltering ? 6 : this.EnableTwelveHourFiltering ? 12 : 24;
+		var filterHours   = this.EnableSixHourFiltering ? 6 : this.EnableTwelveHourFiltering ? 12 : 24;
 		this.logWatcher = new LogWatcher(this.CurrentFilePath, 0, filterEnabled, filterHours);
 
 		try
 		{
-			await foreach(var logLine in this.logWatcher.WatchAsync(cts.Token))
+			await foreach (var logLine in this.logWatcher.WatchAsync(cts.Token))
 			{
 				var capturedLine = logLine;
-				await Dispatcher.UIThread.InvokeAsync(() =>
-													  {
-														  this.ProcessLogLine(capturedLine);
-													  },
-													  DispatcherPriority.Normal);
+				await Dispatcher.UIThread.InvokeAsync(
+					() => this.ProcessLogLine(capturedLine),
+					DispatcherPriority.Normal);
 			}
 		}
-		catch(OperationCanceledException)
-		{
-		}
-		catch(Exception ex)
-		{
-			_ = ex;
-		}
+		catch (OperationCanceledException) { }
+		catch (Exception ex) { _ = ex; }
 		finally
 		{
 			this.rpsRefreshTimer?.Stop();
@@ -419,45 +230,14 @@ public partial class MainWindowViewModel: ViewModelBase
 
 	private async Task CheckForUpdatesAsync()
 	{
-		try
-		{
-			var mgr = new UpdateManager(
-				new GithubSource("https://github.com/ZZerker/DAoCLogWatcher", null, false));
-
-			if (!mgr.IsInstalled)
-				return;
-
-			var update = await mgr.CheckForUpdatesAsync();
-			if (update == null)
-				return;
-
-			await mgr.DownloadUpdatesAsync(update);
-
-			this.pendingUpdate = update;
-			this.UpdateVersionText = $"v{update.TargetFullRelease.Version} available";
-			this.IsUpdateAvailable = true;
-		}
-		catch (Exception ex)
-		{
-			_ = ex;
-		}
+		var (text, available) = await this.updateService.CheckForUpdatesAsync();
+		this.UpdateVersionText = text;
+		this.IsUpdateAvailable = available;
 	}
 
 	[RelayCommand]
-	private void ApplyUpdateAndRestart()
-	{
-		if (this.pendingUpdate == null)
-			return;
+	private void DismissUpdate() => this.IsUpdateAvailable = false;
 
-		try
-		{
-			var mgr = new UpdateManager(
-				new GithubSource("https://github.com/ZZerker/DAoCLogWatcher", null, false));
-			mgr.ApplyUpdatesAndRestart(this.pendingUpdate);
-		}
-		catch (Exception ex)
-		{
-			_ = ex;
-		}
-	}
+	[RelayCommand]
+	private void ApplyUpdateAndRestart() => this.updateService.ApplyAndRestart();
 }

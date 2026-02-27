@@ -16,6 +16,7 @@
         <vm:MainWindowViewModel/>
     </Design.DataContext>
 
+    <Panel>
     <Grid RowDefinitions="Auto,*">
         <Border Grid.Row="0" Background="{DynamicResource AppPanelBackground}" Padding="15" Margin="0,0,0,10">
             <StackPanel Orientation="Horizontal" Spacing="10">
@@ -84,15 +85,6 @@
                            Margin="10,0,0,0"
                            Foreground="{DynamicResource AppTextMuted}"
                            FontSize="12" />
-                <Button Content="{Binding UpdateVersionText}"
-                        Command="{Binding ApplyUpdateAndRestartCommand}"
-                        IsVisible="{Binding IsUpdateAvailable}"
-                        Background="#FF28A745"
-                        Foreground="White"
-                        Padding="12,8"
-                        CornerRadius="6"
-                        BorderThickness="0"
-                        Margin="10,0,0,0" />
             </StackPanel>
         </Border>
 
@@ -211,7 +203,7 @@
                         </StackPanel>
 
                         <StackPanel Orientation="Horizontal" Spacing="10">
-                            <TextBlock Text="Unknown:" MinWidth="130" Foreground="{DynamicResource AppTextSecondary}" />
+                            <TextBlock Text="Misc:" MinWidth="130" Foreground="{DynamicResource AppTextSecondary}" />
                             <TextBlock Text="{Binding Summary.Misc}" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimary}" />
                         </StackPanel>
                     </StackPanel>
@@ -266,7 +258,7 @@
                         </StackPanel>
 
                         <StackPanel Orientation="Horizontal" Spacing="10">
-                            <TextBlock Text="Unknown:" MinWidth="130" Foreground="{DynamicResource AppTextSecondary}" />
+                            <TextBlock Text="Misc:" MinWidth="130" Foreground="{DynamicResource AppTextSecondary}" />
                             <TextBlock Text="{Binding Summary.MiscRP}" FontWeight="Bold" Foreground="#FF00D968" />
                         </StackPanel>
                     </StackPanel>
@@ -321,7 +313,7 @@
                         </StackPanel>
 
                         <StackPanel Orientation="Horizontal" Spacing="10">
-                            <TextBlock Text="Unknown:" MinWidth="130" Foreground="{DynamicResource AppTextSecondary}" />
+                            <TextBlock Text="Misc:" MinWidth="130" Foreground="{DynamicResource AppTextSecondary}" />
                             <TextBlock Text="{Binding Summary.MiscPercentage, StringFormat='{}{0:F1}%'}" FontWeight="Bold" Foreground="#FFFFAA00" />
                         </StackPanel>
                     </StackPanel>
@@ -404,4 +396,36 @@
         </Grid>
     </Grid>
 
+    <!-- Update available popup -->
+    <Border IsVisible="{Binding IsUpdateAvailable}"
+            HorizontalAlignment="Right" VerticalAlignment="Bottom"
+            Margin="0,0,30,30"
+            Background="{DynamicResource AppCardBackground}"
+            BorderBrush="#FF28A745" BorderThickness="1"
+            CornerRadius="8" Padding="16,12"
+            BoxShadow="0 4 20 0 #88000000">
+        <StackPanel Spacing="10" Width="260">
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Spacing="2">
+                    <TextBlock Text="Update Available" FontWeight="SemiBold" FontSize="13"
+                               Foreground="{DynamicResource AppTextPrimary}" />
+                    <TextBlock Text="{Binding UpdateVersionText}" FontSize="12"
+                               Foreground="#FF28A745" />
+                </StackPanel>
+                <Button Grid.Column="1" Content="✕"
+                        Command="{Binding DismissUpdateCommand}"
+                        Background="Transparent" BorderThickness="0"
+                        Foreground="{DynamicResource AppTextMuted}"
+                        Padding="6,2" FontSize="12"
+                        VerticalAlignment="Top" />
+            </Grid>
+            <Button Content="Update"
+                    Command="{Binding ApplyUpdateAndRestartCommand}"
+                    Background="#FF28A745" Foreground="White"
+                    Padding="10,7" CornerRadius="5" BorderThickness="0"
+                    HorizontalAlignment="Stretch" />
+        </StackPanel>
+    </Border>
+
+    </Panel>
 </Window>
