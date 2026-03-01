@@ -2,7 +2,7 @@
 
 > **Beta** — core features work, some RP categories may be misidentified. Please report issues on the [Issues](https://github.com/ZZerker/DAoCLogWatcher/issues) page.
 
-A real-time Realm Point tracker for **Dark Age of Camelot (Eden)**. Load your `chat.log` and instantly see how many RPs you're earning, where they're coming from, how fast they're rolling in, and your kill/death stats — all updated live as you play.
+A real-time Realm Point tracker for **Dark Age of Camelot (Eden)**. Load your `chat.log` and instantly see how many RPs you're earning, where they're coming from, how fast they're rolling in, and your kill/death stats, all updated live as you play.
 
 ![DAoC Log Watcher screenshot](DAoCLogWatcher.Core/TestFiles/DAoC_Log_Watcher.png)
 
