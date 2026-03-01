@@ -4,6 +4,8 @@
 
 A real-time Realm Point tracker for **Dark Age of Camelot (Eden)**. Load your `chat.log` and instantly see how many RPs you're earning, where they're coming from, how fast they're rolling in, and your kill/death stats — all updated live as you play.
 
+![DAoC Log Watcher screenshot](DAoCLogWatcher.Core/TestFiles/DAoC_Log_Watcher.png)
+
 ---
 
 ## Features
@@ -16,7 +18,7 @@ A real-time Realm Point tracker for **Dark Age of Camelot (Eden)**. Load your `c
 - **RP/h meter** — rolling realm points per hour, updated every 5 seconds
 - **Character detection** — type `/stats` in-game and the app identifies your character, then shows live kills, deaths, and K/D ratio
 - **Charts** — cumulative RP over time and rolling RP/h graph, both collapsible
-- **Time filters** — limit the log to the last 6, 12, or 24 hours
+- **Time filters** — limit the log to a preset window (1h–1 week) or a custom hours/minutes value
 - **Screenshot to clipboard** — capture the full window to your clipboard with one click
 - **Auto-update** — the app checks for new releases on startup and prompts you to install them
 - **Dark & Light theme** — toggle any time
@@ -89,12 +91,12 @@ The app detects this and displays your character name in the sidebar with live k
 
 | Filter | What it shows |
 |---|---|
-| *(none)* | Everything in the log file |
-| **Last 24h** | Only entries from the past 24 hours |
-| **Last 12h** | Only entries from the past 12 hours |
-| **Last 6h** | Only entries from the past 6 hours |
+| **All time** | Everything in the log file |
+| **Last 1 week** | Only entries from the past 7 days |
+| **Last 48h / 24h / 12h / 6h / 3h / 2h / 1h** | Rolling window of that duration |
+| **Custom…** | Opens a dialog — enter any number of hours and minutes |
 
-Filters are applied from the moment you open a log — useful when your `chat.log` spans many days and you only care about recent activity. Select a filter before clicking **Open DAoC Log**.
+Filters are applied from the moment you open a log — useful when your `chat.log` spans many days and you only care about recent activity. Changing the filter while the app is already watching automatically restarts the session with the new window.
 
 ---
 
