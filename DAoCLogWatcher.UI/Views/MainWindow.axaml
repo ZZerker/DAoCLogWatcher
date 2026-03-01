@@ -58,28 +58,21 @@
                         Padding="12,8"
                         CornerRadius="6"
                         BorderThickness="0" />
-                <Button Content="{Binding SidebarToggleIcon}"
-                        Command="{Binding ToggleSidebarCommand}"
-                        Background="#FF336655"
-                        Foreground="White"
-                        Padding="12,8"
-                        CornerRadius="6"
-                        BorderThickness="0" />
-                <CheckBox Content="Last 24h only"
-                          IsChecked="{Binding EnableTimeFiltering}"
+                <ComboBox SelectedIndex="{Binding SelectedTimeFilterIndex}"
                           VerticalAlignment="Center"
                           Margin="20,0,0,0"
-                          Foreground="{DynamicResource AppTextSecondary}" />
-                <CheckBox Content="Last 12h only"
-                          IsChecked="{Binding EnableTwelveHourFiltering}"
-                          VerticalAlignment="Center"
-                          Margin="10,0,0,0"
-                          Foreground="{DynamicResource AppTextSecondary}" />
-                <CheckBox Content="Last 6h only"
-                          IsChecked="{Binding EnableSixHourFiltering}"
-                          VerticalAlignment="Center"
-                          Margin="10,0,0,0"
-                          Foreground="{DynamicResource AppTextSecondary}" />
+                          MinWidth="120">
+                    <ComboBoxItem Content="All time" />
+                    <ComboBoxItem Content="Last 1 week" />
+                    <ComboBoxItem Content="Last 48h" />
+                    <ComboBoxItem Content="Last 24h" />
+                    <ComboBoxItem Content="Last 12h" />
+                    <ComboBoxItem Content="Last 6h" />
+                    <ComboBoxItem Content="Last 3h" />
+                    <ComboBoxItem Content="Last 2h" />
+                    <ComboBoxItem Content="Last 1h" />
+                    <ComboBoxItem Content="Custom…" />
+                </ComboBox>
                 <TextBlock Text="{Binding CurrentFilePath}"
                            VerticalAlignment="Center"
                            Margin="10,0,0,0"
@@ -91,7 +84,12 @@
         <Grid x:Name="MainContentGrid" Grid.Row="1" ColumnDefinitions="320,*" Margin="10,0,10,10">
             <Border Grid.Column="0" Background="{DynamicResource AppPanelBackground}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1" CornerRadius="8" Padding="20" Margin="0,0,10,0">
                 <StackPanel Spacing="18">
-                    <TextBlock Text="Summary" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimary}" />
+                    <Grid>
+                        <TextBlock Text="Summary" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimary}" VerticalAlignment="Center" />
+                        <Button Content="{Binding SidebarToggleIcon}" Command="{Binding ToggleSidebarCommand}"
+                                HorizontalAlignment="Right" Background="Transparent"
+                                Foreground="{DynamicResource AppTextMuted}" Padding="6,2" BorderThickness="0" FontSize="14" />
+                    </Grid>
 
                     <Border Background="{DynamicResource AppCardBackground}" CornerRadius="6" Padding="15"
                             IsVisible="{Binding DetectedCharacterName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
@@ -396,6 +394,17 @@
         </Grid>
     </Grid>
 
+    <!-- Sidebar reopen strip (visible only when sidebar is collapsed) -->
+    <Button IsVisible="{Binding !IsSidebarVisible}"
+            Command="{Binding ToggleSidebarCommand}"
+            Content="▶"
+            HorizontalAlignment="Left" VerticalAlignment="Center"
+            Margin="0"
+            Background="#FF336655" Foreground="White"
+            Padding="4,20" BorderThickness="0"
+            CornerRadius="0,6,6,0"
+            ToolTip.Tip="Show Summary" />
+
     <!-- Update available popup -->
     <Border IsVisible="{Binding IsUpdateAvailable}"
             HorizontalAlignment="Right" VerticalAlignment="Bottom"
@@ -424,6 +433,50 @@
                     Background="#FF28A745" Foreground="White"
                     Padding="10,7" CornerRadius="5" BorderThickness="0"
                     HorizontalAlignment="Stretch" />
+        </StackPanel>
+    </Border>
+
+    <!-- Custom time filter popup -->
+    <Border IsVisible="{Binding IsCustomPopupVisible}"
+            HorizontalAlignment="Left" VerticalAlignment="Top"
+            Margin="340,55,0,0"
+            Background="{DynamicResource AppCardBackground}"
+            BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1"
+            CornerRadius="8" Padding="16,14"
+            BoxShadow="0 4 20 0 #88000000">
+        <StackPanel Spacing="12" Width="220">
+            <TextBlock Text="Custom time window"
+                       FontWeight="SemiBold" FontSize="13"
+                       Foreground="{DynamicResource AppTextPrimary}" />
+            <Grid ColumnDefinitions="*,12,*">
+                <StackPanel Spacing="4">
+                    <TextBlock Text="Hours" FontSize="11" Foreground="{DynamicResource AppTextMuted}" />
+                    <NumericUpDown Value="{Binding CustomInputHours}"
+                                   Minimum="0" Maximum="9999"
+                                   Increment="1" FormatString="0"
+                                   ClipValueToMinMax="True" />
+                </StackPanel>
+                <StackPanel Grid.Column="2" Spacing="4">
+                    <TextBlock Text="Minutes" FontSize="11" Foreground="{DynamicResource AppTextMuted}" />
+                    <NumericUpDown Value="{Binding CustomInputMinutes}"
+                                   Minimum="0" Maximum="59"
+                                   Increment="5" FormatString="0"
+                                   ClipValueToMinMax="True" />
+                </StackPanel>
+            </Grid>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Content="Apply"
+                        Command="{Binding ApplyCustomFilterCommand}"
+                        Background="#FF00D9FF" Foreground="#FF1A1A2E"
+                        Padding="14,7" CornerRadius="5" BorderThickness="0"
+                        FontWeight="SemiBold" />
+                <Button Content="Cancel"
+                        Command="{Binding CancelCustomFilterCommand}"
+                        Background="Transparent"
+                        Foreground="{DynamicResource AppTextMuted}"
+                        Padding="10,7" CornerRadius="5" BorderThickness="1"
+                        BorderBrush="{DynamicResource AppBorderBrush}" />
+            </StackPanel>
         </StackPanel>
     </Border>
 

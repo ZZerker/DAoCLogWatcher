@@ -25,9 +25,13 @@ public partial class MainWindowViewModel : ViewModelBase
 
 	[ObservableProperty] private string? currentFilePath;
 
-	[ObservableProperty] [NotifyPropertyChangedFor(nameof(IsAnyFilterEnabled))] private bool enableSixHourFiltering;
-	[ObservableProperty] [NotifyPropertyChangedFor(nameof(IsAnyFilterEnabled))] private bool enableTwelveHourFiltering;
-	[ObservableProperty] [NotifyPropertyChangedFor(nameof(IsAnyFilterEnabled))] private bool enableTimeFiltering = true;
+	// 0=All time  1=1 week  2=48h  3=24h  4=12h  5=6h  6=3h  7=2h  8=1h  9=Custom
+	[ObservableProperty] private int selectedTimeFilterIndex = 3;
+	private int previousFilterIndex = 3;
+	private double customTotalHours = 1;
+	[ObservableProperty] private bool isCustomPopupVisible;
+	[ObservableProperty] private decimal? customInputHours = 1;
+	[ObservableProperty] private decimal? customInputMinutes = 0;
 
 	[ObservableProperty] private bool isWatching;
 
@@ -39,7 +43,7 @@ public partial class MainWindowViewModel : ViewModelBase
 	private void ToggleTheme() => this.IsDarkTheme = !this.IsDarkTheme;
 
 	[ObservableProperty] private bool isSidebarVisible = true;
-	public string SidebarToggleIcon => this.IsSidebarVisible ? "◀ Summary" : "▶ Summary";
+	public string SidebarToggleIcon => "◀";
 	partial void OnIsSidebarVisibleChanged(bool value) => this.OnPropertyChanged(nameof(this.SidebarToggleIcon));
 
 	[RelayCommand]
@@ -94,27 +98,54 @@ public partial class MainWindowViewModel : ViewModelBase
 	public RealmPointSummary Summary { get; } = new();
 	public RpsChartData ChartData { get; } = new();
 
-	public bool IsAnyFilterEnabled => this.EnableTimeFiltering || this.EnableSixHourFiltering || this.EnableTwelveHourFiltering;
-
 	public MainWindowViewModel()
 	{
 		this.processor = new RealmPointProcessor(this.Summary, this.ChartData);
 		_ = this.CheckForUpdatesAsync();
 	}
 
-	partial void OnEnableSixHourFilteringChanged(bool value)
+	private bool suppressFilterChange;
+
+	partial void OnSelectedTimeFilterIndexChanged(int value)
 	{
-		if (value) { this.EnableTimeFiltering = false; this.EnableTwelveHourFiltering = false; }
+		if (this.suppressFilterChange) return;
+		if (value == 9)
+		{
+			this.IsCustomPopupVisible = true;
+			return; // wait for Apply before restarting
+		}
+		this.previousFilterIndex = value;
+		this.IsCustomPopupVisible = false;
+		if (this.IsWatching)
+			_ = this.RestartAsync();
 	}
 
-	partial void OnEnableTwelveHourFilteringChanged(bool value)
+	[RelayCommand]
+	private void ApplyCustomFilter()
 	{
-		if (value) { this.EnableTimeFiltering = false; this.EnableSixHourFiltering = false; }
+		this.customTotalHours = (double)(this.CustomInputHours ?? 0) + (double)(this.CustomInputMinutes ?? 0) / 60.0;
+		if (this.customTotalHours <= 0) this.customTotalHours = 1.0 / 60; // minimum 1 min
+		this.previousFilterIndex = 9;
+		this.IsCustomPopupVisible = false;
+		if (this.IsWatching)
+			_ = this.RestartAsync();
 	}
 
-	partial void OnEnableTimeFilteringChanged(bool value)
+	[RelayCommand]
+	private void CancelCustomFilter()
 	{
-		if (value) { this.EnableSixHourFiltering = false; this.EnableTwelveHourFiltering = false; }
+		this.IsCustomPopupVisible = false;
+		this.suppressFilterChange = true;
+		this.SelectedTimeFilterIndex = this.previousFilterIndex;
+		this.suppressFilterChange = false;
+	}
+
+	private async Task RestartAsync()
+	{
+		this.cancellationTokenSource?.Cancel();
+		while (this.IsWatching)
+			await Task.Delay(50);
+		await this.StartWatching();
 	}
 
 	[RelayCommand]
@@ -193,8 +224,20 @@ public partial class MainWindowViewModel : ViewModelBase
 		this.rpsRefreshTimer.AutoReset = true;
 		this.rpsRefreshTimer.Start();
 
-		var filterEnabled = this.EnableTimeFiltering || this.EnableTwelveHourFiltering || this.EnableSixHourFiltering;
-		var filterHours   = this.EnableSixHourFiltering ? 6 : this.EnableTwelveHourFiltering ? 12 : 24;
+		var filterEnabled = this.SelectedTimeFilterIndex > 0;
+		var filterHours = this.SelectedTimeFilterIndex switch
+		{
+			1 => 168.0, // 1 week
+			2 => 48.0,
+			3 => 24.0,
+			4 => 12.0,
+			5 => 6.0,
+			6 => 3.0,
+			7 => 2.0,
+			8 => 1.0,
+			9 => this.customTotalHours,
+			_ => 24.0
+		};
 		this.logWatcher = new LogWatcher(this.CurrentFilePath, 0, filterEnabled, filterHours);
 
 		try

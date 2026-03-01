@@ -103,7 +103,7 @@ Filters are applied from the moment you open a log — useful when your `chat.lo
 The app detects your character by watching for the `/stats` output block in the log:
 
 ```
-Statistics for Theron this Session:
+Statistics for Caranthir this Session:
 Total RP: ...
 ```
 

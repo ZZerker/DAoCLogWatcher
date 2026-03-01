@@ -19,7 +19,7 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 	private static readonly Regex KillLineRegex = GenerateKillLineRegex();
 
 	private readonly string logFilePath;
-	private readonly int maxHistoryHours;
+	private readonly double maxHistoryHours;
 	private readonly byte[] readBuffer;
 	private FileStream? fileStream;
 	private readonly StringBuilder incompleteLineBuffer;
@@ -28,7 +28,7 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 	private readonly Dictionary<string, int> characterNameCounts = new();
 	private bool lastTimestampedLineWasInWindow = true;
 
-	public LogWatcher(string logFilePath, long startPosition = 0, bool enableTimeFiltering = false, int filterHours = 24)
+	public LogWatcher(string logFilePath, long startPosition = 0, bool enableTimeFiltering = false, double filterHours = 24)
 	{
 		ArgumentException.ThrowIfNullOrWhiteSpace(logFilePath);
 

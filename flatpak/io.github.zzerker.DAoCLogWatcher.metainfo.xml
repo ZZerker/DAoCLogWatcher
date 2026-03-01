@@ -5,14 +5,40 @@
     <name>DAoC Log Watcher</name>
     <summary>Dark Age of Camelot realm points and kill tracker</summary>
     <metadata_license>CC0-1.0</metadata_license>
-    <project_license>GPLv3</project_license>
-    <developer id="com.daoclogwatcher">
+    <project_license>GPL-3.0-only</project_license>
+
+    <developer id="io.github.zzerker">
         <name>Zerker</name>
     </developer>
+
+    <url type="homepage">https://github.com/ZZerker/DAoCLogWatcher</url>
+    <url type="bugtracker">https://github.com/ZZerker/DAoCLogWatcher/issues</url>
+    <url type="vcs-browser">https://github.com/ZZerker/DAoCLogWatcher</url>
+
     <description>
-        <p>a Dark Age of Camelot realm points and kill tracker</p>
+        <p>
+            DAoC Log Watcher is a real-time tracker for Dark Age of Camelot (Eden server).
+            It reads your chat log as you play and gives you live statistics without any manual refreshing.
+        </p>
+        <ul>
+            <li>Realm point breakdown by source: Player Kills, Campaign Quests, Battle Ticks, Siege, Assault Orders, Support Activity, Relic Captures, and Timed Missions</li>
+            <li>Rolling RP/h meter updated every 5 seconds</li>
+            <li>Character detection via the /stats command — automatically identifies your active character and tracks kills, deaths, and K/D ratio</li>
+            <li>Cumulative RP and rolling RP/h charts</li>
+            <li>Configurable time filters: All time, preset windows from 1 hour to 1 week, or a custom duration in hours and minutes</li>
+            <li>Screenshot to clipboard with one click</li>
+            <li>Dark and light theme</li>
+            <li>Auto-update on startup</li>
+        </ul>
     </description>
+
+    <content_rating type="oars-1.1" />
+
     <releases>
-        <release version="__VERSION__" date="__DATE__" />
+        <release version="__VERSION__" date="__DATE__">
+            <description>
+                <p>See the full changelog on GitHub.</p>
+            </description>
+        </release>
     </releases>
 </component>

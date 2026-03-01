@@ -1,7 +1,9 @@
 using System;
 using System.Linq;
+using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Styling;
 using DAoCLogWatcher.UI.Services;
 using ScottPlot;
@@ -12,12 +14,27 @@ public partial class MainWindow : Window
 {
     private ViewModels.MainWindowViewModel? _vm;
 
+    // Hover overlay plottables — re-created after every Plot.Clear()
+    private ScottPlot.Plottables.Scatter? rpScatter;
+    private ScottPlot.Plottables.Marker?  rpHighlight;
+    private ScottPlot.Plottables.Text?    rpTooltip;
+
+    private ScottPlot.Plottables.Scatter? rpsScatter;
+    private ScottPlot.Plottables.Marker?  rpsHighlight;
+    private ScottPlot.Plottables.Text?    rpsTooltip;
+
     public MainWindow()
     {
         this.InitializeComponent();
 
         this.InitializeChart();
         this.InitializeRpsHourlyChart();
+
+        this.RpChart.PointerMoved  += (s, e) => this.OnChartPointerMoved(e, this.RpChart,        this.rpScatter,  this.rpHighlight,  this.rpTooltip,  "RP");
+        this.RpChart.PointerExited += (s, e) => this.OnChartPointerExited(this.RpChart,           this.rpHighlight,  this.rpTooltip);
+
+        this.RpsHourlyChart.PointerMoved  += (s, e) => this.OnChartPointerMoved(e, this.RpsHourlyChart, this.rpsScatter, this.rpsHighlight, this.rpsTooltip, "RP/h");
+        this.RpsHourlyChart.PointerExited += (s, e) => this.OnChartPointerExited(this.RpsHourlyChart,    this.rpsHighlight, this.rpsTooltip);
 
         this.DataContextChanged += (s, e) =>
         {
@@ -38,9 +55,32 @@ public partial class MainWindow : Window
         };
     }
 
+    // Keep the title bar dark even when the window loses focus (Windows only)
+    [DllImport("dwmapi.dll")]
+    private static extern int DwmSetWindowAttribute(IntPtr hwnd, uint attr, ref int attrValue, uint attrSize);
+
+    private const uint IMMERSIVE_DARK_MODE = 20; // DWMWA_USE_IMMERSIVE_DARK_MODE, Windows 10+
+    private const uint CAPTION_COLOR       = 35; // DWMWA_CAPTION_COLOR, Windows 11+
+
+    private void ApplyDarkTitleBar()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        if (this.TryGetPlatformHandle() is not { } handle) return;
+
+        var hwnd = handle.Handle;
+        int dark = 1;
+        DwmSetWindowAttribute(hwnd, IMMERSIVE_DARK_MODE, ref dark, 4u);
+
+        // Pin caption to dark colour — silently no-ops on Windows 10
+        int captionColor = 0x00252525; // #252525 as 0x00BBGGRR (grey, so R=G=B)
+        DwmSetWindowAttribute(hwnd, CAPTION_COLOR, ref captionColor, 4u);
+    }
+
     protected override void OnOpened(EventArgs e)
     {
         base.OnOpened(e);
+
+        this.ApplyDarkTitleBar();
 
         var screen = this.Screens.ScreenFromWindow(this);
         if (screen == null) return;
@@ -63,6 +103,7 @@ public partial class MainWindow : Window
         ApplyChartStyle(this.RpChart, "#252525", "#1E1E1E", "#3A3A3A", "#2A2A2A", "#CCCCCC");
         this.RpChart.Plot.Axes.Bottom.TickGenerator = new ScottPlot.TickGenerators.DateTimeAutomatic();
         this.RpChart.Plot.YLabel("Total RPs");
+        (this.rpHighlight, this.rpTooltip) = AddHoverOverlays(this.RpChart, "#00D9FF");
         this.RpChart.Refresh();
     }
 
@@ -71,7 +112,31 @@ public partial class MainWindow : Window
         ApplyChartStyle(this.RpsHourlyChart, "#252525", "#1E1E1E", "#3A3A3A", "#2A2A2A", "#CCCCCC");
         this.RpsHourlyChart.Plot.Axes.Bottom.TickGenerator = new ScottPlot.TickGenerators.DateTimeAutomatic();
         this.RpsHourlyChart.Plot.YLabel("RP/h (rolling 1h)");
+        (this.rpsHighlight, this.rpsTooltip) = AddHoverOverlays(this.RpsHourlyChart, "#FFAA44");
         this.RpsHourlyChart.Refresh();
+    }
+
+    private static (ScottPlot.Plottables.Marker highlight, ScottPlot.Plottables.Text tooltip)
+        AddHoverOverlays(ScottPlot.Avalonia.AvaPlot chart, string accentHex)
+    {
+        var highlight = chart.Plot.Add.Marker(0, 0);
+        highlight.Shape     = MarkerShape.OpenCircle;
+        highlight.Size      = 12;
+        highlight.Color     = Color.FromHex(accentHex);
+        highlight.IsVisible = false;
+
+        var tooltip = chart.Plot.Add.Text("", 0, 0);
+        tooltip.IsVisible            = false;
+        tooltip.LabelFontSize        = 11;
+        tooltip.LabelFontColor       = Color.FromHex("#CCCCCC");
+        tooltip.LabelBackgroundColor = Color.FromHex("#1E1E1E");
+        tooltip.LabelBorderColor     = Color.FromHex(accentHex);
+        tooltip.LabelBorderWidth     = 1;
+        tooltip.LabelPadding         = 5;
+        tooltip.OffsetX              = 10;
+        tooltip.OffsetY              = -10;
+
+        return (highlight, tooltip);
     }
 
     private static void ApplyChartStyle(
@@ -126,41 +191,86 @@ public partial class MainWindow : Window
     private void UpdateChart(System.Collections.Generic.List<(DateTime Time, double Rps)> dataPoints)
     {
         this.RpChart.Plot.Clear();
+        this.rpScatter = null;
 
         if (dataPoints.Count > 0)
         {
             var times = dataPoints.Select(p => p.Time.ToOADate()).ToArray();
             var rps   = dataPoints.Select(p => p.Rps).ToArray();
 
-            var line = this.RpChart.Plot.Add.Scatter(times, rps);
-            line.Color      = Color.FromHex("#00D9FF");
-            line.LineWidth  = 2;
-            line.MarkerSize = 0;
+            this.rpScatter = this.RpChart.Plot.Add.Scatter(times, rps);
+            this.rpScatter.Color      = Color.FromHex("#00D9FF");
+            this.rpScatter.LineWidth  = 2;
+            this.rpScatter.MarkerSize = 0;
 
             this.RpChart.Plot.Axes.AutoScale();
         }
 
+        (this.rpHighlight, this.rpTooltip) = AddHoverOverlays(this.RpChart, "#00D9FF");
         this.RpChart.Refresh();
     }
 
     private void UpdateRpsHourlyChart(System.Collections.Generic.List<(DateTime Time, double RpsPerHour)> dataPoints)
     {
         this.RpsHourlyChart.Plot.Clear();
+        this.rpsScatter = null;
 
         if (dataPoints.Count > 0)
         {
             var times  = dataPoints.Select(p => p.Time.ToOADate()).ToArray();
             var values = dataPoints.Select(p => p.RpsPerHour).ToArray();
 
-            var line = this.RpsHourlyChart.Plot.Add.Scatter(times, values);
-            line.Color      = Color.FromHex("#FFAA44");
-            line.LineWidth  = 2;
-            line.MarkerSize = 0;
+            this.rpsScatter = this.RpsHourlyChart.Plot.Add.Scatter(times, values);
+            this.rpsScatter.Color      = Color.FromHex("#FFAA44");
+            this.rpsScatter.LineWidth  = 2;
+            this.rpsScatter.MarkerSize = 0;
 
             this.RpsHourlyChart.Plot.Axes.AutoScale();
         }
 
+        (this.rpsHighlight, this.rpsTooltip) = AddHoverOverlays(this.RpsHourlyChart, "#FFAA44");
         this.RpsHourlyChart.Refresh();
+    }
+
+    private void OnChartPointerMoved(
+        PointerEventArgs e,
+        ScottPlot.Avalonia.AvaPlot chart,
+        ScottPlot.Plottables.Scatter? scatter,
+        ScottPlot.Plottables.Marker? highlight,
+        ScottPlot.Plottables.Text? tooltip,
+        string unit)
+    {
+        if (scatter == null || highlight == null || tooltip == null) return;
+
+        var pos    = e.GetPosition(chart);
+        var pixel  = new Pixel((float)pos.X, (float)pos.Y);
+        var coords = chart.Plot.GetCoordinates(pixel);
+
+        var nearest = scatter.GetNearest(coords, chart.Plot.LastRender);
+
+        highlight.IsVisible = nearest.IsReal;
+        tooltip.IsVisible   = nearest.IsReal;
+
+        if (nearest.IsReal)
+        {
+            highlight.Location = nearest.Coordinates;
+            tooltip.Location   = nearest.Coordinates;
+            var time           = DateTime.FromOADate(nearest.X).ToString("HH:mm:ss");
+            tooltip.LabelText  = $"{time}\n{nearest.Y:N0} {unit}";
+        }
+
+        chart.Refresh();
+    }
+
+    private void OnChartPointerExited(
+        ScottPlot.Avalonia.AvaPlot chart,
+        ScottPlot.Plottables.Marker? highlight,
+        ScottPlot.Plottables.Text? tooltip)
+    {
+        if (highlight == null || tooltip == null) return;
+        highlight.IsVisible = false;
+        tooltip.IsVisible   = false;
+        chart.Refresh();
     }
 
     private async void OnScreenshotClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
