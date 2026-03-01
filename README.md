@@ -31,7 +31,7 @@ A real-time Realm Point tracker for **Dark Age of Camelot (Eden)**. Load your `c
 ### Windows
 
 1. Go to the [Releases](https://github.com/ZZerker/DAoCLogWatcher/releases/latest) page
-2. Download `DAoCLogWatcher-win-Setup.exe`
+2. Download [`DAoCLogWatcher-win-Setup.exe`](https://github.com/ZZerker/DAoCLogWatcher/releases/latest/download/DAoCLogWatcher-win-Setup.exe)
 3. Run the installer — the app installs and launches automatically
 4. Future updates are applied from within the app (no re-downloading needed)
 
