@@ -26,12 +26,10 @@ jobs:
       - name: Build
         run: dotnet build --no-restore -c Release
 
-      # ── NEW: INSTALL XVFB FOR HEADLESS AVALONIA TESTS ─────────────────────────
       - name: Install xvfb
         run: sudo apt-get update -y && sudo apt-get install -y xvfb
 
       - name: Test
-        # RUN TESTS IN A VIRTUAL DISPLAY TO PREVENT X11 CRASHES ON THE CI RUNNER
         run: xvfb-run dotnet test DAoCLogWatcher.Tests/DAoCLogWatcher.Tests.csproj --no-build -c Release --logger "trx;LogFileName=results.trx"
 
       - name: Upload test results
@@ -65,6 +63,12 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
+      - name: Generate icon2.ico
+        run: |
+          sudo apt-get install -y librsvg2-bin imagemagick
+          rsvg-convert -w 256 -h 256 -o /tmp/icon2.png DAoCLogWatcher.UI/Assets/icon2.svg
+          convert /tmp/icon2.png -define icon:auto-resize="256,128,64,48,32,16" DAoCLogWatcher.UI/Assets/icon2.ico
+
       - name: Publish
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
@@ -86,7 +90,6 @@ jobs:
           name: ${{ matrix.artifact }}
           path: ${{ matrix.artifact }}
 
-  # ── Create GitHub Release and attach binaries ────────────────────────────────
   # ── Build Flatpak bundle (only on version tags) ──────────────────────────────
   flatpak:
     name: Flatpak
@@ -127,18 +130,10 @@ jobs:
             -p:Version="$VERSION" \
             -o publish/flatpak
 
-      # ── NEW STEP: Inject dynamic version and date ────────────────────────────
       - name: Inject Release Tag and Date into Metainfo
         run: |
-          # Extract the version without the 'v' prefix (e.g., v1.2.3 -> 1.2.3)
           VERSION="${GITHUB_REF_NAME#v}"
-
-          # Generate current date in YYYY-MM-DD format
           CURRENT_DATE=$(date +'%Y-%m-%d')
-
-          # Replace placeholders __VERSION__ and __DATE__ in the metainfo.xml file.
-          # Note: Assuming metainfo.xml is located in the 'flatpak' directory
-          # based on your manifest path. Adjust the path if it is in the root!
           sed -i "s/__VERSION__/$VERSION/g" flatpak/io.github.zzerker.DAoCLogWatcher.metainfo.xml
           sed -i "s/__DATE__/$CURRENT_DATE/g" flatpak/io.github.zzerker.DAoCLogWatcher.metainfo.xml
 
@@ -178,6 +173,11 @@ jobs:
       - name: Install vpk
         run: dotnet tool install -g vpk
 
+      - name: Generate icon2.ico
+        run: |
+          magick -background none DAoCLogWatcher.UI/Assets/icon2.svg -resize 256x256 icon2.png
+          magick icon2.png -define icon:auto-resize="256,128,64,48,32,16" DAoCLogWatcher.UI/Assets/icon2.ico
+
       - name: Publish win-x64 for Velopack
         run: |
           $version = "${{ github.ref_name }}".TrimStart('v')
@@ -194,7 +194,7 @@ jobs:
             --packVersion $version `
             --packDir publish/win-x64 `
             --mainExe DAoCLogWatcher.UI.exe `
-            --icon DAoCLogWatcher.UI/Assets/logo.ico `
+            --icon DAoCLogWatcher.UI/Assets/icon2.ico `
             --outputDir releases/win
 
       - name: Upload Velopack artifacts

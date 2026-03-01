@@ -14,7 +14,6 @@ public partial class MainWindow : Window
 {
     private ViewModels.MainWindowViewModel? _vm;
 
-    // Hover overlay plottables — re-created after every Plot.Clear()
     private ScottPlot.Plottables.Scatter? rpScatter;
     private ScottPlot.Plottables.Marker?  rpHighlight;
     private ScottPlot.Plottables.Text?    rpTooltip;
@@ -55,7 +54,6 @@ public partial class MainWindow : Window
         };
     }
 
-    // Keep the title bar dark even when the window loses focus (Windows only)
     [DllImport("dwmapi.dll")]
     private static extern int DwmSetWindowAttribute(IntPtr hwnd, uint attr, ref int attrValue, uint attrSize);
 

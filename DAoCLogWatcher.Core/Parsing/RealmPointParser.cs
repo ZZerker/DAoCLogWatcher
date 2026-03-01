@@ -76,7 +76,6 @@ public sealed partial class RealmPointParser
 
 		if((reason.Contains("realm rank")||reason.Contains("guild's buff"))&&line.Contains("an additional"))
 		{
-			Debug.WriteLine($"[Parser] Skipped bonus: {points} RP");
 			return false;
 		}
 
