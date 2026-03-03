@@ -36,15 +36,14 @@ public sealed class RealmPointProcessor(RealmPointSummary summary, RpsChartData 
 			this.RecomputeKillStats(ref killStatsChanged);
 		}
 
-		if (logLine.KillEvent != null)
+		if (logLine is KillLogLine { Event: var killEvent })
 		{
-			this.killEventBuffer.Add(logLine.KillEvent);
+			this.killEventBuffer.Add(killEvent);
 			if (this.DetectedCharacterName != null)
 				this.RecomputeKillStats(ref killStatsChanged);
 		}
 
-		var entry = logLine.RealmPointEntry;
-		if (entry == null)
+		if (logLine is not RealmPointLogLine { Entry: var entry })
 			return null;
 
 		summary.TotalRealmPoints += entry.Points;

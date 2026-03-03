@@ -22,6 +22,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
 	private readonly UpdateService updateService = new();
 	private readonly RealmPointProcessor processor;
+	private readonly CombatProcessor combatProcessor;
 
 	[ObservableProperty] private string? currentFilePath;
 
@@ -97,10 +98,12 @@ public partial class MainWindowViewModel : ViewModelBase
 	public ObservableCollection<RealmPointLogEntry> LogEntries { get; } = [];
 	public RealmPointSummary Summary { get; } = new();
 	public RpsChartData ChartData { get; } = new();
+	public CombatSummary CombatSummary { get; } = new();
 
 	public MainWindowViewModel()
 	{
 		this.processor = new RealmPointProcessor(this.Summary, this.ChartData);
+		this.combatProcessor = new CombatProcessor(this.CombatSummary);
 		_ = this.CheckForUpdatesAsync();
 	}
 
@@ -191,6 +194,8 @@ public partial class MainWindowViewModel : ViewModelBase
 			out var characterChanged,
 			out var killStatsChanged);
 
+		this.combatProcessor.Process(logLine);
+
 		if (characterChanged)  this.DetectedCharacterName = this.processor.DetectedCharacterName;
 		if (killStatsChanged)  { this.Kills = this.processor.Kills; this.Deaths = this.processor.Deaths; }
 
@@ -212,6 +217,7 @@ public partial class MainWindowViewModel : ViewModelBase
 		this.LogEntries.Clear();
 		this.ChartData.Reset();
 		this.processor.Reset();
+		this.combatProcessor.Reset();
 		this.DetectedCharacterName = null;
 		this.Kills = 0;
 		this.Deaths = 0;

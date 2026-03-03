@@ -104,8 +104,8 @@ public sealed class LogWatcherTests : IDisposable
         // Assert
         lines.Should().HaveCount(1);
         lines[0].Text.Should().Contain("Campaign Quest");
-        lines[0].RealmPointEntry.Should().NotBeNull();
-        lines[0].RealmPointEntry!.Points.Should().Be(1000);
+        lines[0].Should().BeOfType<RealmPointLogLine>();
+        ((RealmPointLogLine)lines[0]).Entry.Points.Should().Be(1000);
     }
 
     [Fact]
@@ -531,13 +531,13 @@ public sealed class LogWatcherTests : IDisposable
         var watcher = new LogWatcher(this.testLogFilePath, enableTimeFiltering: false);
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
 
-        LogLine? killLine = null;
+        KillLogLine? killLine = null;
 
         // Act
         await foreach (var line in watcher.WatchAsync(cts.Token))
         {
-            if (line.KillEvent != null)
-                killLine = line;
+            if (line is KillLogLine kl)
+                killLine = kl;
             if (line.Text.Contains("Battle Tick"))
             {
                 cts.Cancel();
@@ -547,10 +547,10 @@ public sealed class LogWatcherTests : IDisposable
 
         // Assert
         killLine.Should().NotBeNull();
-        killLine!.KillEvent!.Victim.Should().Be("Dfensze");
-        killLine.KillEvent.Killer.Should().Be("Linkx");
-        killLine.KillEvent.Zone.Should().Be("Emain Macha");
-        killLine.KillEvent.Timestamp.Should().Be(new TimeOnly(20, 34, 52));
+        killLine!.Event.Victim.Should().Be("Dfensze");
+        killLine.Event.Killer.Should().Be("Linkx");
+        killLine.Event.Zone.Should().Be("Emain Macha");
+        killLine.Event.Timestamp.Should().Be(new TimeOnly(20, 34, 52));
     }
 
     [Fact]
@@ -570,12 +570,12 @@ public sealed class LogWatcherTests : IDisposable
         var watcher = new LogWatcher(this.testLogFilePath, enableTimeFiltering: true, filterHours: 6);
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
 
-        var killLines = new List<LogLine>();
+        var killLines = new List<KillLogLine>();
 
         await foreach (var line in watcher.WatchAsync(cts.Token))
         {
-            if (line.KillEvent != null)
-                killLines.Add(line);
+            if (line is KillLogLine kl)
+                killLines.Add(kl);
             if (line.Text.Contains("Battle Tick"))
             {
                 cts.Cancel();
@@ -629,14 +629,14 @@ public sealed class LogWatcherTests : IDisposable
 
         await File.WriteAllTextAsync(this.testLogFilePath, content);
 
-        var entries = new List<LogLine>();
+        var entries = new List<RealmPointLogLine>();
         var watcher = new LogWatcher(this.testLogFilePath, enableTimeFiltering: true, filterHours: 24);
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
 
         await foreach (var line in watcher.WatchAsync(cts.Token))
         {
-            if (line.RealmPointEntry != null)
-                entries.Add(line);
+            if (line is RealmPointLogLine rp)
+                entries.Add(rp);
         }
 
         entries.Should().BeEmpty("entries from 48 hours ago must be filtered out even when resolved on a timestamp-less line");
@@ -662,14 +662,14 @@ public sealed class LogWatcherTests : IDisposable
 
         await File.WriteAllTextAsync(this.testLogFilePath, content);
 
-        var entries = new List<LogLine>();
+        var entries = new List<RealmPointLogLine>();
         var watcher = new LogWatcher(this.testLogFilePath, enableTimeFiltering: true, filterHours: filterHours);
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
 
         await foreach (var line in watcher.WatchAsync(cts.Token))
         {
-            if (line.RealmPointEntry != null)
-                entries.Add(line);
+            if (line is RealmPointLogLine rp)
+                entries.Add(rp);
         }
 
         // Assert

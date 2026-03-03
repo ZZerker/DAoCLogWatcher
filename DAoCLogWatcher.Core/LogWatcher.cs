@@ -67,6 +67,7 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 		}
 
 		var parser = new RealmPointParser();
+		var combatParser = new CombatParser();
 
 		this.fileStream = new FileStream(this.logFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 0, true);
 
@@ -122,27 +123,37 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 						? this.TryDetectCharacterName(line)
 						: null;
 
+					// Always feed both parsers to keep state machines consistent.
+					parser.TryParse(line, out var entry);
+					combatParser.TryParse(line, out var damageEvent, out var healEvent);
+
 					if(shouldYield&&!string.IsNullOrWhiteSpace(line))
-						{
-							parser.TryParse(line, out var entry);
-
-							// Multi-line sequences (e.g. RP line → XP Guild Bonus → XP line) may
-							// resolve on a timestamp-less line that bypasses ShouldProcessLine.
-							// Re-check the resolved entry's own timestamp against the filter window.
-							if(this.skipOldEntries&&entry != null&&!this.ShouldProcessTimestamp(entry.Timestamp))
-								entry = null;
-
-							yield return new LogLine
-										 {
-												 Text = line,
-												 RealmPointEntry = entry,
-												 DetectedCharacterName = detectedName != null ? this.CurrentCharacterName : null,
-												 KillEvent = TryDetectKillEvent(line)
-										 };
-						}
-					else
 					{
-						parser.TryParse(line, out _);
+						// Multi-line sequences (e.g. RP line → XP Guild Bonus → XP line) may
+						// resolve on a timestamp-less line that bypasses ShouldProcessLine.
+						// Re-check the resolved entry's own timestamp against the filter window.
+						if(this.skipOldEntries&&entry != null&&!this.ShouldProcessTimestamp(entry.Timestamp))
+							entry = null;
+
+						if(this.skipOldEntries&&damageEvent != null&&!this.ShouldProcessTimestamp(damageEvent.Timestamp))
+							damageEvent = null;
+						if(this.skipOldEntries&&healEvent != null&&!this.ShouldProcessTimestamp(healEvent.Timestamp))
+							healEvent = null;
+
+						var characterNameForLine = detectedName != null ? this.CurrentCharacterName : null;
+						var killEvent = TryDetectKillEvent(line);
+
+						LogLine logLine = entry != null
+							? new RealmPointLogLine(line, entry) { DetectedCharacterName = characterNameForLine }
+							: damageEvent != null
+								? new DamageLogLine(line, damageEvent) { DetectedCharacterName = characterNameForLine }
+								: healEvent != null
+									? new HealLogLine(line, healEvent) { DetectedCharacterName = characterNameForLine }
+									: killEvent != null
+										? new KillLogLine(line, killEvent) { DetectedCharacterName = characterNameForLine }
+										: new UnknownLogLine(line) { DetectedCharacterName = characterNameForLine };
+
+						yield return logLine;
 					}
 				}
 			}
