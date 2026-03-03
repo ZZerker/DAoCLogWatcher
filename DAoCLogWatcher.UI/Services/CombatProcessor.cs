@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using DAoCLogWatcher.Core.Models;
 using DAoCLogWatcher.UI.Models;
 
@@ -25,8 +26,7 @@ public sealed class CombatProcessor(CombatSummary summary)
 			if(damage.CritDamage > 0)
 				summary.CritCount++;
 
-			summary.DamageByTarget.TryGetValue(damage.Target, out var existing);
-			summary.DamageByTarget[damage.Target] = existing + damage.TotalDamage;
+			summary.DamageByTarget.Accumulate(damage.Target, damage.TotalDamage);
 
 			var spellKey = damage.SpellName ?? "Melee";
 			summary.DamageBySpell.TryGetValue(spellKey, out var existingSpell);
@@ -35,17 +35,30 @@ public sealed class CombatProcessor(CombatSummary summary)
 		else
 		{
 			summary.TotalDamageTaken += damage.TotalDamage;
-
-			summary.DamageTakenByAttacker.TryGetValue(damage.Target, out var existingAttacker);
-			summary.DamageTakenByAttacker[damage.Target] = existingAttacker + damage.TotalDamage;
+			summary.DamageTakenByAttacker.Accumulate(damage.Target, damage.TotalDamage);
 		}
 	}
 
 	private void ProcessHeal(HealEvent heal)
 	{
-		summary.TotalHealsReceived += heal.HitPoints;
+		if(heal.IsOutgoing)
+		{
+			summary.TotalHealingDone += heal.HitPoints;
+			summary.HealsByTarget.Accumulate(heal.Target ?? "Unknown", heal.HitPoints);
+		}
+		else
+		{
+			summary.TotalHealsReceived += heal.HitPoints;
+			summary.HealsByHealer.Accumulate(heal.Healer ?? "Unknown", heal.HitPoints);
+		}
+	}
+}
 
-		summary.HealsByHealer.TryGetValue(heal.Healer, out var existing);
-		summary.HealsByHealer[heal.Healer] = existing + heal.HitPoints;
+file static class DictionaryExtensions
+{
+	public static void Accumulate<TKey>(this Dictionary<TKey, int> dict, TKey key, int value) where TKey : notnull
+	{
+		dict.TryGetValue(key, out var existing);
+		dict[key] = existing + value;
 	}
 }

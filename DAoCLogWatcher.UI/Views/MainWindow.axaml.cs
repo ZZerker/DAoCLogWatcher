@@ -31,6 +31,7 @@ public partial class MainWindow : Window
         this.InitializeHealsByHealerChart();
         this.InitializeAvgDmgBySpellChart();
         this.InitializeDmgByTargetChart();
+        this.InitializeHealsByTargetChart();
 
         this.RpChart.PointerMoved  += (s, e) => this.OnChartPointerMoved(e, this.RpChart,        this.rpScatter,  this.rpHighlight,  this.rpTooltip,  "RP");
         this.RpChart.PointerExited += (s, e) => this.OnChartPointerExited(this.RpChart,           this.rpHighlight,  this.rpTooltip);
@@ -45,6 +46,7 @@ public partial class MainWindow : Window
                 this._vm.ChartData.UpdateRequested          -= this.OnChartUpdateRequested;
                 this._vm.PropertyChanged                    -= this.OnViewModelPropertyChanged;
                 this._vm.CombatSummary.PropertyChanged      -= this.OnCombatSummaryPropertyChanged;
+                this._vm.CombatSummary.ResetRequested       -= this.OnCombatSummaryResetRequested;
                 this._vm = null;
             }
 
@@ -54,6 +56,7 @@ public partial class MainWindow : Window
                 vm.ChartData.UpdateRequested         += this.OnChartUpdateRequested;
                 vm.PropertyChanged                   += this.OnViewModelPropertyChanged;
                 vm.CombatSummary.PropertyChanged     += this.OnCombatSummaryPropertyChanged;
+                vm.CombatSummary.ResetRequested      += this.OnCombatSummaryResetRequested;
                 this.ApplyTheme(vm.IsDarkTheme);
             }
         };
@@ -169,11 +172,13 @@ public partial class MainWindow : Window
         ApplyChartStyle(this.HealsByHealerChart,  bg, dataBg, gridMaj, gridMin, fg);
         ApplyChartStyle(this.AvgDmgBySpellChart,  bg, dataBg, gridMaj, gridMin, fg);
         ApplyChartStyle(this.DmgByTargetChart,    bg, dataBg, gridMaj, gridMin, fg);
+        ApplyChartStyle(this.HealsByTargetChart,  bg, dataBg, gridMaj, gridMin, fg);
         this.RpChart.Refresh();
         this.RpsHourlyChart.Refresh();
         this.HealsByHealerChart.Refresh();
         this.AvgDmgBySpellChart.Refresh();
         this.DmgByTargetChart.Refresh();
+        this.HealsByTargetChart.Refresh();
     }
 
     private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -289,6 +294,7 @@ public partial class MainWindow : Window
     {
         ApplyChartStyle(this.HealsByHealerChart, "#252525", "#1E1E1E", "#3A3A3A", "#2A2A2A", "#CCCCCC");
         this.HealsByHealerChart.Plot.YLabel("HP healed");
+        this.HealsByHealerChart.UserInputProcessor.IsEnabled = false;
         this.HealsByHealerChart.Refresh();
     }
 
@@ -296,7 +302,16 @@ public partial class MainWindow : Window
     {
         ApplyChartStyle(this.AvgDmgBySpellChart, "#252525", "#1E1E1E", "#3A3A3A", "#2A2A2A", "#CCCCCC");
         this.AvgDmgBySpellChart.Plot.YLabel("Avg dmg / hit");
+        this.AvgDmgBySpellChart.UserInputProcessor.IsEnabled = false;
         this.AvgDmgBySpellChart.Refresh();
+    }
+
+    private void OnCombatSummaryResetRequested(object? sender, EventArgs e)
+    {
+        this.UpdateAvgDmgBySpellChart();
+        this.UpdateDmgByTargetChart();
+        this.UpdateHealsByHealerChart();
+        this.UpdateHealsByTargetChart();
     }
 
     private void OnCombatSummaryPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -307,6 +322,56 @@ public partial class MainWindow : Window
             this.UpdateAvgDmgBySpellChart();
         else if (e.PropertyName is "TotalDamageTaken")
             this.UpdateDmgByTargetChart();
+        else if (e.PropertyName is "TotalHealingDone")
+            this.UpdateHealsByTargetChart();
+    }
+
+    private void InitializeHealsByTargetChart()
+    {
+        ApplyChartStyle(this.HealsByTargetChart, "#252525", "#1E1E1E", "#3A3A3A", "#2A2A2A", "#CCCCCC");
+        this.HealsByTargetChart.Plot.YLabel("HP healed");
+        this.HealsByTargetChart.UserInputProcessor.IsEnabled = false;
+        this.HealsByTargetChart.Refresh();
+    }
+
+    private void UpdateHealsByTargetChart()
+    {
+        this.HealsByTargetChart.Plot.Clear();
+
+        if (this._vm != null && this._vm.CombatSummary.HealsByTarget.Count > 0)
+        {
+            var sorted = this._vm.CombatSummary.HealsByTarget
+                .OrderByDescending(kv => kv.Value)
+                .Take(7)
+                .ToList();
+
+            var bars = sorted.Select((kv, i) => new ScottPlot.Bar
+            {
+                Position  = i,
+                Value     = kv.Value,
+                FillColor = Color.FromHex("#00D968"),
+            }).ToArray();
+
+            this.HealsByTargetChart.Plot.Add.Bars(bars);
+
+            for (var i = 0; i < bars.Length; i++)
+            {
+                var label = this.HealsByTargetChart.Plot.Add.Text(bars[i].Value.ToString("N0"), i, bars[i].Value);
+                label.LabelFontSize        = 10;
+                label.LabelFontColor       = Color.FromHex("#CCCCCC");
+                label.LabelAlignment       = Alignment.LowerCenter;
+                label.OffsetY              = -4;
+            }
+
+            var positions = Enumerable.Range(0, sorted.Count).Select(i => (double)i).ToArray();
+            var labels    = sorted.Select(kv => kv.Key.Length > 12 ? kv.Key[..12] : kv.Key).ToArray();
+            this.HealsByTargetChart.Plot.Axes.Bottom.SetTicks(positions, labels);
+            this.HealsByTargetChart.Plot.Axes.AutoScale();
+            var yMax = bars.Max(b => b.Value);
+            this.HealsByTargetChart.Plot.Axes.SetLimitsY(0, yMax * 1.2);
+        }
+
+        this.HealsByTargetChart.Refresh();
     }
 
     private void UpdateHealsByHealerChart()
@@ -329,9 +394,9 @@ public partial class MainWindow : Window
 
             this.HealsByHealerChart.Plot.Add.Bars(bars);
 
-            foreach (var (bar, i) in bars.Select((b, i) => (b, i)))
+            for (var i = 0; i < bars.Length; i++)
             {
-                var label = this.HealsByHealerChart.Plot.Add.Text(bar.Value.ToString("N0"), i, bar.Value);
+                var label = this.HealsByHealerChart.Plot.Add.Text(bars[i].Value.ToString("N0"), i, bars[i].Value);
                 label.LabelFontSize        = 10;
                 label.LabelFontColor       = Color.FromHex("#CCCCCC");
                 label.LabelAlignment       = Alignment.LowerCenter;
@@ -353,6 +418,7 @@ public partial class MainWindow : Window
     {
         ApplyChartStyle(this.DmgByTargetChart, "#252525", "#1E1E1E", "#3A3A3A", "#2A2A2A", "#CCCCCC");
         this.DmgByTargetChart.Plot.YLabel("Dmg taken");
+        this.DmgByTargetChart.UserInputProcessor.IsEnabled = false;
         this.DmgByTargetChart.Refresh();
     }
 
@@ -376,9 +442,9 @@ public partial class MainWindow : Window
 
             this.DmgByTargetChart.Plot.Add.Bars(bars);
 
-            foreach (var (bar, i) in bars.Select((b, i) => (b, i)))
+            for (var i = 0; i < bars.Length; i++)
             {
-                var label = this.DmgByTargetChart.Plot.Add.Text(bar.Value.ToString("N0"), i, bar.Value);
+                var label = this.DmgByTargetChart.Plot.Add.Text(bars[i].Value.ToString("N0"), i, bars[i].Value);
                 label.LabelFontSize        = 10;
                 label.LabelFontColor       = Color.FromHex("#CCCCCC");
                 label.LabelAlignment       = Alignment.LowerCenter;
@@ -417,9 +483,9 @@ public partial class MainWindow : Window
 
             this.AvgDmgBySpellChart.Plot.Add.Bars(bars);
 
-            foreach (var (bar, i) in bars.Select((b, i) => (b, i)))
+            for (var i = 0; i < bars.Length; i++)
             {
-                var label = this.AvgDmgBySpellChart.Plot.Add.Text(bar.Value.ToString("N0"), i, bar.Value);
+                var label = this.AvgDmgBySpellChart.Plot.Add.Text(bars[i].Value.ToString("N0"), i, bars[i].Value);
                 label.LabelFontSize        = 10;
                 label.LabelFontColor       = Color.FromHex("#CCCCCC");
                 label.LabelAlignment       = Alignment.LowerCenter;

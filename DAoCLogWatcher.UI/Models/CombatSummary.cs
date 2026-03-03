@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using CommunityToolkit.Mvvm.ComponentModel;
 
@@ -13,6 +14,9 @@ public partial class CombatSummary : ObservableObject
 
 	[ObservableProperty]
 	private int totalHealsReceived;
+
+	[ObservableProperty]
+	private int totalHealingDone;
 
 	[ObservableProperty]
 	private int hitCount;
@@ -37,6 +41,9 @@ public partial class CombatSummary : ObservableObject
 	/// <summary>Total HP healed per healer (key = healer name).</summary>
 	public Dictionary<string, int> HealsByHealer { get; } = new();
 
+	/// <summary>Total HP you healed per target (key = target name; "yourself" for self-heals).</summary>
+	public Dictionary<string, int> HealsByTarget { get; } = new();
+
 	/// <summary>
 	/// Per attack type: key = spell name or "Melee", value = (TotalDamage, HitCount).
 	/// </summary>
@@ -45,17 +52,22 @@ public partial class CombatSummary : ObservableObject
 	/// <summary>Total damage received per attacker (key = attacker name).</summary>
 	public Dictionary<string, int> DamageTakenByAttacker { get; } = new();
 
+	public event EventHandler? ResetRequested;
+
 	public void Reset()
 	{
 		TotalDamageDealt = 0;
 		TotalDamageTaken = 0;
 		TotalHealsReceived = 0;
+		TotalHealingDone = 0;
 		HitCount = 0;
 		CritCount = 0;
 		TotalAbsorbed = 0;
 		DamageByTarget.Clear();
 		HealsByHealer.Clear();
+		HealsByTarget.Clear();
 		DamageBySpell.Clear();
 		DamageTakenByAttacker.Clear();
+		ResetRequested?.Invoke(this, EventArgs.Empty);
 	}
 }

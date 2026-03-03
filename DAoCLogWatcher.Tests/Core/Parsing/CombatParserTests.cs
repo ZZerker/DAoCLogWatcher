@@ -256,4 +256,48 @@ public sealed class CombatParserTests
     {
         parser.FlushPending().Should().BeNull();
     }
+
+    // ── Outgoing Heals ────────────────────────────────────────────────────────
+
+    [Fact]
+    public void TryParse_SelfHeal_ReturnsOutgoingHealWithTargetYourself()
+    {
+        parser.TryParse("[21:55:49] You heal yourself for 1060 hit points.", out _, out var heal);
+
+        heal.Should().NotBeNull();
+        heal!.IsOutgoing.Should().BeTrue();
+        heal.Target.Should().Be("yourself");
+        heal.HitPoints.Should().Be(1060);
+        heal.Timestamp.Should().Be(new TimeOnly(21, 55, 49));
+    }
+
+    [Fact]
+    public void TryParse_HealOther_ReturnsOutgoingHealWithTargetName()
+    {
+        parser.TryParse("[21:55:49] You heal Harko for 1060 hit points!", out _, out var heal);
+
+        heal.Should().NotBeNull();
+        heal!.IsOutgoing.Should().BeTrue();
+        heal.Target.Should().Be("Harko");
+        heal.HitPoints.Should().Be(1060);
+    }
+
+    [Fact]
+    public void TryParse_IncomingHeal_IsNotOutgoing()
+    {
+        parser.TryParse("[21:55:49] You are healed by Harko for 800 hit points.", out _, out var heal);
+
+        heal.Should().NotBeNull();
+        heal!.IsOutgoing.Should().BeFalse();
+        heal.Healer.Should().Be("Harko");
+        heal.HitPoints.Should().Be(800);
+    }
+
+    [Fact]
+    public void TryParse_IsFullyHealedLine_NoHealEvent()
+    {
+        var result = parser.TryParse("[21:55:49] Iwillskoll is fully healed.", out _, out var heal);
+
+        heal.Should().BeNull();
+    }
 }

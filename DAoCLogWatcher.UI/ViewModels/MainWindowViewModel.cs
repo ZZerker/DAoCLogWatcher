@@ -21,6 +21,7 @@ public partial class MainWindowViewModel : ViewModelBase
 	private LogWatcher? logWatcher;
 
 	private readonly UpdateService updateService = new();
+	private readonly AppSettings settings = SettingsService.Load();
 	private readonly RealmPointProcessor processor;
 	private readonly CombatProcessor combatProcessor;
 
@@ -31,6 +32,49 @@ public partial class MainWindowViewModel : ViewModelBase
 	private int previousFilterIndex = 3;
 	private double customTotalHours = 1;
 	[ObservableProperty] private bool isCustomPopupVisible;
+	[ObservableProperty] private bool isSettingsPopupVisible;
+
+	[ObservableProperty] private bool highlightMultiKills;
+	partial void OnHighlightMultiKillsChanged(bool value)
+	{
+		this.settings.HighlightMultiKills = value;
+		SettingsService.Save(this.settings);
+	}
+
+	[ObservableProperty] private string? customChatLogPath;
+	partial void OnCustomChatLogPathChanged(string? value)
+	{
+		this.settings.CustomChatLogPath = string.IsNullOrWhiteSpace(value) ? null : value;
+		SettingsService.Save(this.settings);
+	}
+
+	[RelayCommand]
+	private async Task BrowseChatLogPath(IStorageProvider? storageProvider)
+	{
+		if (storageProvider == null) return;
+		var options = new FilePickerOpenOptions
+		{
+			Title = "Select DAoC Chat Log",
+			AllowMultiple = false,
+			FileTypeFilter =
+			[
+				new FilePickerFileType("Log Files") { Patterns = ["*.log"] },
+				new FilePickerFileType("All Files") { Patterns = ["*.*"] }
+			]
+		};
+		var result = await storageProvider.OpenFilePickerAsync(options);
+		if (result.Count > 0)
+			this.CustomChatLogPath = result[0].Path.LocalPath;
+	}
+
+	[RelayCommand]
+	private void ClearChatLogPath() => this.CustomChatLogPath = null;
+
+	[RelayCommand]
+	private void ToggleSettingsPopup() => this.IsSettingsPopupVisible = !this.IsSettingsPopupVisible;
+
+	[RelayCommand]
+	private void CloseSettingsPopup() => this.IsSettingsPopupVisible = false;
 	[ObservableProperty] private decimal? customInputHours = 1;
 	[ObservableProperty] private decimal? customInputMinutes = 0;
 
@@ -85,6 +129,34 @@ public partial class MainWindowViewModel : ViewModelBase
 	[RelayCommand]
 	private void TogglePercentages() => this.IsPercentagesVisible = !this.IsPercentagesVisible;
 
+	[ObservableProperty] private bool isAvgDmgChartVisible = true;
+	public string AvgDmgChartToggleIcon => this.IsAvgDmgChartVisible ? "▲" : "▼";
+	partial void OnIsAvgDmgChartVisibleChanged(bool value) => this.OnPropertyChanged(nameof(this.AvgDmgChartToggleIcon));
+
+	[RelayCommand]
+	private void ToggleAvgDmgChart() => this.IsAvgDmgChartVisible = !this.IsAvgDmgChartVisible;
+
+	[ObservableProperty] private bool isDmgByAttackerChartVisible = true;
+	public string DmgByAttackerChartToggleIcon => this.IsDmgByAttackerChartVisible ? "▲" : "▼";
+	partial void OnIsDmgByAttackerChartVisibleChanged(bool value) => this.OnPropertyChanged(nameof(this.DmgByAttackerChartToggleIcon));
+
+	[RelayCommand]
+	private void ToggleDmgByAttackerChart() => this.IsDmgByAttackerChartVisible = !this.IsDmgByAttackerChartVisible;
+
+	[ObservableProperty] private bool isHealsByHealerChartVisible = true;
+	public string HealsByHealerChartToggleIcon => this.IsHealsByHealerChartVisible ? "▲" : "▼";
+	partial void OnIsHealsByHealerChartVisibleChanged(bool value) => this.OnPropertyChanged(nameof(this.HealsByHealerChartToggleIcon));
+
+	[RelayCommand]
+	private void ToggleHealsByHealerChart() => this.IsHealsByHealerChartVisible = !this.IsHealsByHealerChartVisible;
+
+	[ObservableProperty] private bool isHealsByTargetChartVisible = true;
+	public string HealsByTargetChartToggleIcon => this.IsHealsByTargetChartVisible ? "▲" : "▼";
+	partial void OnIsHealsByTargetChartVisibleChanged(bool value) => this.OnPropertyChanged(nameof(this.HealsByTargetChartToggleIcon));
+
+	[RelayCommand]
+	private void ToggleHealsByTargetChart() => this.IsHealsByTargetChartVisible = !this.IsHealsByTargetChartVisible;
+
 	[ObservableProperty] private bool isUpdateAvailable;
 	[ObservableProperty] private string? updateVersionText;
 
@@ -102,7 +174,10 @@ public partial class MainWindowViewModel : ViewModelBase
 
 	public MainWindowViewModel()
 	{
+		this.highlightMultiKills = this.settings.HighlightMultiKills;
+		this.customChatLogPath   = this.settings.CustomChatLogPath;
 		this.processor = new RealmPointProcessor(this.Summary, this.ChartData);
+		this.processor.MultiKillDetected += this.OnMultiKillDetected;
 		this.combatProcessor = new CombatProcessor(this.CombatSummary);
 		_ = this.CheckForUpdatesAsync();
 	}
@@ -154,7 +229,12 @@ public partial class MainWindowViewModel : ViewModelBase
 	[RelayCommand]
 	private async Task OpenDaocLog()
 	{
-		var path = DaocLogPathService.FindDaocLogPath();
+		string? path = null;
+		if (!string.IsNullOrWhiteSpace(this.CustomChatLogPath) && File.Exists(this.CustomChatLogPath))
+			path = this.CustomChatLogPath;
+		else
+			path = DaocLogPathService.FindDaocLogPath();
+
 		if (path != null && File.Exists(path))
 		{
 			this.CurrentFilePath = path;
@@ -200,11 +280,16 @@ public partial class MainWindowViewModel : ViewModelBase
 		if (killStatsChanged)  { this.Kills = this.processor.Kills; this.Deaths = this.processor.Deaths; }
 
 		if (entry is not null)
-		{
-			this.LogEntries.Insert(0, entry);
-			while (this.LogEntries.Count > 1000)
-				this.LogEntries.RemoveAt(this.LogEntries.Count - 1);
-		}
+			this.AddLogEntry(entry);
+	}
+
+	private void OnMultiKillDetected(object? sender, RealmPointLogEntry e) => this.AddLogEntry(e);
+
+	private void AddLogEntry(RealmPointLogEntry entry)
+	{
+		this.LogEntries.Insert(0, entry);
+		while (this.LogEntries.Count > 1000)
+			this.LogEntries.RemoveAt(this.LogEntries.Count - 1);
 	}
 
 	[RelayCommand]

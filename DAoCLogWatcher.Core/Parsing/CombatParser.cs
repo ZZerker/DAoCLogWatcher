@@ -71,7 +71,7 @@ public sealed partial class CombatParser
 			return flushedTaken != null;
 		}
 
-		// Try heal — flush any stale pending-dealt as well
+		// Try incoming heal (you are healed by someone)
 		var healMatch = HealRegex().Match(line);
 		if(healMatch.Success && ExtractTimestamp(healMatch, out var healTs))
 		{
@@ -80,6 +80,29 @@ public sealed partial class CombatParser
 				Timestamp = healTs,
 				Healer = healMatch.Groups["healer"].Value,
 				HitPoints = int.Parse(healMatch.Groups["hp"].Value, CultureInfo.InvariantCulture)
+			};
+			if(this.pendingDealt != null)
+			{
+				damage = this.pendingDealt.Value.ToDamageEvent(0);
+				this.pendingDealt = null;
+			}
+			else
+			{
+				damage = flushedTaken;
+			}
+			return true;
+		}
+
+		// Try outgoing heal (you heal yourself or a group member)
+		var outgoingHealMatch = OutgoingHealRegex().Match(line);
+		if(outgoingHealMatch.Success && ExtractTimestamp(outgoingHealMatch, out var outgoingHealTs))
+		{
+			heal = new HealEvent
+			{
+				Timestamp = outgoingHealTs,
+				Target = outgoingHealMatch.Groups["target"].Value,
+				HitPoints = int.Parse(outgoingHealMatch.Groups["hp"].Value, CultureInfo.InvariantCulture),
+				IsOutgoing = true
 			};
 			if(this.pendingDealt != null)
 			{
@@ -233,6 +256,12 @@ public sealed partial class CombatParser
 	[GeneratedRegex(@"^\[(?<ts>\d{2}:\d{2}:\d{2})\] You cast a (?<spell>.+?) spell!$",
 		RegexOptions.Compiled | RegexOptions.CultureInvariant)]
 	private static partial Regex SpellCastRegex();
+
+	// [HH:mm:ss] You heal {target} for {N} hit points.   (yourself — ends with .)
+	// [HH:mm:ss] You heal {target} for {N} hit points!   (others  — ends with !)
+	[GeneratedRegex(@"^\[(?<ts>\d{2}:\d{2}:\d{2})\] You heal (?<target>.+?) for (?<hp>\d+) hit points[.!]$",
+		RegexOptions.Compiled | RegexOptions.CultureInvariant)]
+	private static partial Regex OutgoingHealRegex();
 
 	private readonly record struct PendingDamage(TimeOnly Timestamp, string Target, int BaseDamage, int Absorbed, bool IsDealt, string? SpellName)
 	{
