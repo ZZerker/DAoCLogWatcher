@@ -30,6 +30,7 @@ jobs:
         run: sudo apt-get update -y && sudo apt-get install -y xvfb
 
       - name: Test
+        # RUN TESTS IN A VIRTUAL DISPLAY TO PREVENT X11 CRASHES ON THE CI RUNNER
         run: xvfb-run dotnet test DAoCLogWatcher.Tests/DAoCLogWatcher.Tests.csproj --no-build -c Release --logger "trx;LogFileName=results.trx"
 
       - name: Upload test results
@@ -38,57 +39,6 @@ jobs:
         with:
           name: test-results.zip
           path: '**/*.trx'
-
-  # ── Publish self-contained binaries (only on version tags) ──────────────────
-  publish:
-    name: Publish (${{ matrix.rid }})
-    needs: test
-    if: startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        include:
-          - rid: win-x64
-            artifact: DAoCLogWatcher-win-x64.zip
-            package_cmd: zip -r ../../DAoCLogWatcher-win-x64.zip .
-          - rid: linux-x64
-            artifact: DAoCLogWatcher-linux-x64.tar.gz
-            package_cmd: tar czf ../../DAoCLogWatcher-linux-x64.tar.gz .
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '10.0.x'
-
-      - name: Generate icon2.ico
-        run: |
-          sudo apt-get install -y librsvg2-bin imagemagick
-          rsvg-convert -w 256 -h 256 -o /tmp/icon2.png DAoCLogWatcher.UI/Assets/icon2.svg
-          convert /tmp/icon2.png -define icon:auto-resize="256,128,64,48,32,16" DAoCLogWatcher.UI/Assets/icon2.ico
-
-      - name: Publish
-        run: |
-          VERSION="${GITHUB_REF_NAME#v}"
-          dotnet publish DAoCLogWatcher.UI/DAoCLogWatcher.UI.csproj \
-            -c Release \
-            -r ${{ matrix.rid }} \
-            --self-contained true \
-            -p:PublishSingleFile=true \
-            -p:IncludeNativeLibrariesForSelfExtract=true \
-            -p:Version="$VERSION" \
-            -o publish/${{ matrix.rid }}
-
-      - name: Package
-        run: cd publish/${{ matrix.rid }} && ${{ matrix.package_cmd }}
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.artifact }}
-          path: ${{ matrix.artifact }}
 
   # ── Build Flatpak bundle (only on version tags) ──────────────────────────────
   flatpak:
@@ -156,82 +106,24 @@ jobs:
           name: DAoCLogWatcher.flatpak
           path: DAoCLogWatcher.flatpak
 
-  # ── Build Velopack Windows installer (only on version tags) ─────────────────
-  velopack-windows:
-    name: Velopack Windows
-    needs: test
-    if: startsWith(github.ref, 'refs/tags/v')
-    runs-on: windows-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '10.0.x'
-
-      - name: Install vpk
-        run: dotnet tool install -g vpk
-
-      - name: Generate icon2.ico
-        run: |
-          magick -background none DAoCLogWatcher.UI/Assets/icon2.svg -resize 256x256 icon2.png
-          magick icon2.png -define icon:auto-resize="256,128,64,48,32,16" DAoCLogWatcher.UI/Assets/icon2.ico
-
-      - name: Publish win-x64 for Velopack
-        run: |
-          $version = "${{ github.ref_name }}".TrimStart('v')
-          dotnet publish DAoCLogWatcher.UI/DAoCLogWatcher.UI.csproj `
-            -c Release -r win-x64 --self-contained true `
-            -p:Version="$version" `
-            -o publish/win-x64
-
-      - name: Pack with Velopack
-        run: |
-          $version = "${{ github.ref_name }}".TrimStart('v')
-          vpk pack `
-            --packId DAoCLogWatcher `
-            --packVersion $version `
-            --packDir publish/win-x64 `
-            --mainExe DAoCLogWatcher.UI.exe `
-            --icon DAoCLogWatcher.UI/Assets/icon2.ico `
-            --outputDir releases/win
-
-      - name: Upload Velopack artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: velopack-win
-          path: releases/win/
-
-  # ── Create GitHub Release and attach binaries ────────────────────────────────
+  # ── Create GitHub Release and attach Flatpak ────────────────────────────────
   release:
     name: Create Release
-    needs: [publish, flatpak, velopack-windows]
+    needs: [flatpak]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
       contents: write
 
     steps:
-      - name: Download standard artifacts
+      - name: Download Flatpak artifact
         uses: actions/download-artifact@v4
         with:
-          pattern: "DAoCLogWatcher*"
-          merge-multiple: true
-
-      - name: Download Velopack artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: velopack-win
-          path: velopack-win
+          name: DAoCLogWatcher.flatpak
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            DAoCLogWatcher-win-x64.zip
-            DAoCLogWatcher-linux-x64.tar.gz
-            DAoCLogWatcher.flatpak
-            velopack-win/*
+          files: DAoCLogWatcher.flatpak
           generate_release_notes: true
           prerelease: ${{ contains(github.ref_name, '-beta') || contains(github.ref_name, '-rc') }}
