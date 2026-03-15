@@ -5,6 +5,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Styling;
+using Avalonia.Threading;
 using DAoCLogWatcher.UI.Services;
 using ScottPlot;
 
@@ -13,6 +14,8 @@ namespace DAoCLogWatcher.UI.Views;
 public partial class MainWindow : Window
 {
     private ViewModels.MainWindowViewModel? _vm;
+
+    private DispatcherTimer? combatChartDebounceTimer;
 
     private ScottPlot.Plottables.Scatter? rpScatter;
     private ScottPlot.Plottables.Marker?  rpHighlight;
@@ -28,6 +31,10 @@ public partial class MainWindow : Window
 
         this.InitializeChart();
         this.InitializeRpsHourlyChart();
+        this.InitializeHealsByHealerChart();
+        this.InitializeAvgDmgBySpellChart();
+        this.InitializeDmgByTargetChart();
+        this.InitializeHealsByTargetChart();
 
         this.RpChart.PointerMoved  += (s, e) => this.OnChartPointerMoved(e, this.RpChart,        this.rpScatter,  this.rpHighlight,  this.rpTooltip,  "RP");
         this.RpChart.PointerExited += (s, e) => this.OnChartPointerExited(this.RpChart,           this.rpHighlight,  this.rpTooltip);
@@ -39,16 +46,20 @@ public partial class MainWindow : Window
         {
             if (this._vm != null)
             {
-                this._vm.ChartData.UpdateRequested -= this.OnChartUpdateRequested;
-                this._vm.PropertyChanged           -= this.OnViewModelPropertyChanged;
+                this._vm.ChartData.UpdateRequested          -= this.OnChartUpdateRequested;
+                this._vm.PropertyChanged                    -= this.OnViewModelPropertyChanged;
+                this._vm.CombatSummary.PropertyChanged      -= this.OnCombatSummaryPropertyChanged;
+                this._vm.CombatSummary.ResetRequested       -= this.OnCombatSummaryResetRequested;
                 this._vm = null;
             }
 
             if (this.DataContext is ViewModels.MainWindowViewModel vm)
             {
                 this._vm = vm;
-                vm.ChartData.UpdateRequested += this.OnChartUpdateRequested;
-                vm.PropertyChanged           += this.OnViewModelPropertyChanged;
+                vm.ChartData.UpdateRequested         += this.OnChartUpdateRequested;
+                vm.PropertyChanged                   += this.OnViewModelPropertyChanged;
+                vm.CombatSummary.PropertyChanged     += this.OnCombatSummaryPropertyChanged;
+                vm.CombatSummary.ResetRequested      += this.OnCombatSummaryResetRequested;
                 this.ApplyTheme(vm.IsDarkTheme);
             }
         };
@@ -79,6 +90,12 @@ public partial class MainWindow : Window
         base.OnOpened(e);
 
         this.ApplyDarkTitleBar();
+
+        // Move to a secondary screen if one is available — DAoC typically runs full-screen
+        // on the primary monitor, so prefer any non-primary screen for the log watcher.
+        var secondary = this.Screens.All.FirstOrDefault(s => !s.IsPrimary);
+        if (secondary != null)
+            this.Position = secondary.WorkingArea.TopLeft;
 
         var screen = this.Screens.ScreenFromWindow(this);
         if (screen == null) return;
@@ -159,10 +176,18 @@ public partial class MainWindow : Window
         var gridMin = isDark ? "#2A2A2A" : "#EBEBEB";
         var fg      = isDark ? "#CCCCCC" : "#333333";
 
-        ApplyChartStyle(this.RpChart,        bg, dataBg, gridMaj, gridMin, fg);
-        ApplyChartStyle(this.RpsHourlyChart, bg, dataBg, gridMaj, gridMin, fg);
+        ApplyChartStyle(this.RpChart,             bg, dataBg, gridMaj, gridMin, fg);
+        ApplyChartStyle(this.RpsHourlyChart,      bg, dataBg, gridMaj, gridMin, fg);
+        ApplyChartStyle(this.HealsByHealerChart,  bg, dataBg, gridMaj, gridMin, fg);
+        ApplyChartStyle(this.AvgDmgBySpellChart,  bg, dataBg, gridMaj, gridMin, fg);
+        ApplyChartStyle(this.DmgByTargetChart,    bg, dataBg, gridMaj, gridMin, fg);
+        ApplyChartStyle(this.HealsByTargetChart,  bg, dataBg, gridMaj, gridMin, fg);
         this.RpChart.Refresh();
         this.RpsHourlyChart.Refresh();
+        this.HealsByHealerChart.Refresh();
+        this.AvgDmgBySpellChart.Refresh();
+        this.DmgByTargetChart.Refresh();
+        this.HealsByTargetChart.Refresh();
     }
 
     private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -188,45 +213,51 @@ public partial class MainWindow : Window
 
     private void UpdateChart(System.Collections.Generic.List<(DateTime Time, double Rps)> dataPoints)
     {
-        this.RpChart.Plot.Clear();
-        this.rpScatter = null;
-
-        if (dataPoints.Count > 0)
+        lock (this.RpChart.Plot.Sync)
         {
-            var times = dataPoints.Select(p => p.Time.ToOADate()).ToArray();
-            var rps   = dataPoints.Select(p => p.Rps).ToArray();
+            this.RpChart.Plot.Clear();
+            this.rpScatter = null;
 
-            this.rpScatter = this.RpChart.Plot.Add.Scatter(times, rps);
-            this.rpScatter.Color      = Color.FromHex("#00D9FF");
-            this.rpScatter.LineWidth  = 2;
-            this.rpScatter.MarkerSize = 0;
+            if (dataPoints.Count > 0)
+            {
+                var times = dataPoints.Select(p => p.Time.ToOADate()).ToArray();
+                var rps   = dataPoints.Select(p => p.Rps).ToArray();
 
-            this.RpChart.Plot.Axes.AutoScale();
+                this.rpScatter = this.RpChart.Plot.Add.Scatter(times, rps);
+                this.rpScatter.Color      = Color.FromHex("#00D9FF");
+                this.rpScatter.LineWidth  = 2;
+                this.rpScatter.MarkerSize = 0;
+
+                this.RpChart.Plot.Axes.AutoScale();
+            }
+
+            (this.rpHighlight, this.rpTooltip) = AddHoverOverlays(this.RpChart, "#00D9FF");
         }
-
-        (this.rpHighlight, this.rpTooltip) = AddHoverOverlays(this.RpChart, "#00D9FF");
         this.RpChart.Refresh();
     }
 
     private void UpdateRpsHourlyChart(System.Collections.Generic.List<(DateTime Time, double RpsPerHour)> dataPoints)
     {
-        this.RpsHourlyChart.Plot.Clear();
-        this.rpsScatter = null;
-
-        if (dataPoints.Count > 0)
+        lock (this.RpsHourlyChart.Plot.Sync)
         {
-            var times  = dataPoints.Select(p => p.Time.ToOADate()).ToArray();
-            var values = dataPoints.Select(p => p.RpsPerHour).ToArray();
+            this.RpsHourlyChart.Plot.Clear();
+            this.rpsScatter = null;
 
-            this.rpsScatter = this.RpsHourlyChart.Plot.Add.Scatter(times, values);
-            this.rpsScatter.Color      = Color.FromHex("#FFAA44");
-            this.rpsScatter.LineWidth  = 2;
-            this.rpsScatter.MarkerSize = 0;
+            if (dataPoints.Count > 0)
+            {
+                var times  = dataPoints.Select(p => p.Time.ToOADate()).ToArray();
+                var values = dataPoints.Select(p => p.RpsPerHour).ToArray();
 
-            this.RpsHourlyChart.Plot.Axes.AutoScale();
+                this.rpsScatter = this.RpsHourlyChart.Plot.Add.Scatter(times, values);
+                this.rpsScatter.Color      = Color.FromHex("#FFAA44");
+                this.rpsScatter.LineWidth  = 2;
+                this.rpsScatter.MarkerSize = 0;
+
+                this.RpsHourlyChart.Plot.Axes.AutoScale();
+            }
+
+            (this.rpsHighlight, this.rpsTooltip) = AddHoverOverlays(this.RpsHourlyChart, "#FFAA44");
         }
-
-        (this.rpsHighlight, this.rpsTooltip) = AddHoverOverlays(this.RpsHourlyChart, "#FFAA44");
         this.RpsHourlyChart.Refresh();
     }
 
@@ -273,4 +304,239 @@ public partial class MainWindow : Window
 
     private async void OnScreenshotClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         => await ClipboardService.CaptureWindowToClipboardAsync(this);
+
+    private void InitializeHealsByHealerChart()
+    {
+        ApplyChartStyle(this.HealsByHealerChart, "#252525", "#1E1E1E", "#3A3A3A", "#2A2A2A", "#CCCCCC");
+        this.HealsByHealerChart.Plot.YLabel("HP healed");
+        this.HealsByHealerChart.UserInputProcessor.IsEnabled = false;
+        this.HealsByHealerChart.Refresh();
+    }
+
+    private void InitializeAvgDmgBySpellChart()
+    {
+        ApplyChartStyle(this.AvgDmgBySpellChart, "#252525", "#1E1E1E", "#3A3A3A", "#2A2A2A", "#CCCCCC");
+        this.AvgDmgBySpellChart.Plot.YLabel("Avg dmg / hit");
+        this.AvgDmgBySpellChart.UserInputProcessor.IsEnabled = false;
+        this.AvgDmgBySpellChart.Refresh();
+    }
+
+    private void OnCombatSummaryResetRequested(object? sender, EventArgs e)
+    {
+        this.UpdateAvgDmgBySpellChart();
+        this.UpdateDmgByTargetChart();
+        this.UpdateHealsByHealerChart();
+        this.UpdateHealsByTargetChart();
+    }
+
+    private void OnCombatSummaryPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is not ("TotalHealsReceived" or "TotalDamageDealt" or "TotalDamageTaken" or "TotalHealingDone"))
+            return;
+
+        if (this.combatChartDebounceTimer == null)
+        {
+            this.combatChartDebounceTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
+            this.combatChartDebounceTimer.Tick += (_, _) =>
+            {
+                this.combatChartDebounceTimer.Stop();
+                this.UpdateAllCombatCharts();
+            };
+        }
+        this.combatChartDebounceTimer.Stop();
+        this.combatChartDebounceTimer.Start();
+    }
+
+    private void UpdateAllCombatCharts()
+    {
+        this.UpdateAvgDmgBySpellChart();
+        this.UpdateDmgByTargetChart();
+        this.UpdateHealsByHealerChart();
+        this.UpdateHealsByTargetChart();
+    }
+
+    private void InitializeHealsByTargetChart()
+    {
+        ApplyChartStyle(this.HealsByTargetChart, "#252525", "#1E1E1E", "#3A3A3A", "#2A2A2A", "#CCCCCC");
+        this.HealsByTargetChart.Plot.YLabel("HP healed");
+        this.HealsByTargetChart.UserInputProcessor.IsEnabled = false;
+        this.HealsByTargetChart.Refresh();
+    }
+
+    private void UpdateHealsByTargetChart()
+    {
+        lock (this.HealsByTargetChart.Plot.Sync)
+        {
+            this.HealsByTargetChart.Plot.Clear();
+
+            if (this._vm != null && this._vm.CombatSummary.HealsByTarget.Count > 0)
+            {
+                var sorted = this._vm.CombatSummary.HealsByTarget
+                    .OrderByDescending(kv => kv.Value)
+                    .Take(7)
+                    .ToList();
+
+                var bars = sorted.Select((kv, i) => new ScottPlot.Bar
+                {
+                    Position  = i,
+                    Value     = kv.Value,
+                    FillColor = Color.FromHex("#00D968"),
+                }).ToArray();
+
+                this.HealsByTargetChart.Plot.Add.Bars(bars);
+
+                for (var i = 0; i < bars.Length; i++)
+                {
+                    var label = this.HealsByTargetChart.Plot.Add.Text(bars[i].Value.ToString("N0"), i, bars[i].Value);
+                    label.LabelFontSize        = 10;
+                    label.LabelFontColor       = Color.FromHex("#CCCCCC");
+                    label.LabelAlignment       = Alignment.LowerCenter;
+                    label.OffsetY              = -4;
+                }
+
+                var positions = Enumerable.Range(0, sorted.Count).Select(i => (double)i).ToArray();
+                var labels    = sorted.Select(kv => kv.Key.Length > 12 ? kv.Key[..12] : kv.Key).ToArray();
+                this.HealsByTargetChart.Plot.Axes.Bottom.SetTicks(positions, labels);
+                this.HealsByTargetChart.Plot.Axes.AutoScale();
+                var yMax = bars.Max(b => b.Value);
+                this.HealsByTargetChart.Plot.Axes.SetLimitsY(0, yMax * 1.2);
+            }
+        }
+        this.HealsByTargetChart.Refresh();
+    }
+
+    private void UpdateHealsByHealerChart()
+    {
+        lock (this.HealsByHealerChart.Plot.Sync)
+        {
+            this.HealsByHealerChart.Plot.Clear();
+
+            if (this._vm != null && this._vm.CombatSummary.HealsByHealer.Count > 0)
+            {
+                var sorted = this._vm.CombatSummary.HealsByHealer
+                    .OrderByDescending(kv => kv.Value)
+                    .Take(7)
+                    .ToList();
+
+                var bars = sorted.Select((kv, i) => new ScottPlot.Bar
+                {
+                    Position  = i,
+                    Value     = kv.Value,
+                    FillColor = Color.FromHex("#00D968"),
+                }).ToArray();
+
+                this.HealsByHealerChart.Plot.Add.Bars(bars);
+
+                for (var i = 0; i < bars.Length; i++)
+                {
+                    var label = this.HealsByHealerChart.Plot.Add.Text(bars[i].Value.ToString("N0"), i, bars[i].Value);
+                    label.LabelFontSize        = 10;
+                    label.LabelFontColor       = Color.FromHex("#CCCCCC");
+                    label.LabelAlignment       = Alignment.LowerCenter;
+                    label.OffsetY              = -4;
+                }
+
+                var positions = Enumerable.Range(0, sorted.Count).Select(i => (double)i).ToArray();
+                var labels    = sorted.Select(kv => kv.Key.Length > 12 ? kv.Key[..12] : kv.Key).ToArray();
+                this.HealsByHealerChart.Plot.Axes.Bottom.SetTicks(positions, labels);
+                this.HealsByHealerChart.Plot.Axes.AutoScale();
+                var healYMax = bars.Max(b => b.Value);
+                this.HealsByHealerChart.Plot.Axes.SetLimitsY(0, healYMax * 1.2);
+            }
+        }
+        this.HealsByHealerChart.Refresh();
+    }
+
+    private void InitializeDmgByTargetChart()
+    {
+        ApplyChartStyle(this.DmgByTargetChart, "#252525", "#1E1E1E", "#3A3A3A", "#2A2A2A", "#CCCCCC");
+        this.DmgByTargetChart.Plot.YLabel("Dmg taken");
+        this.DmgByTargetChart.UserInputProcessor.IsEnabled = false;
+        this.DmgByTargetChart.Refresh();
+    }
+
+    private void UpdateDmgByTargetChart()
+    {
+        lock (this.DmgByTargetChart.Plot.Sync)
+        {
+            this.DmgByTargetChart.Plot.Clear();
+
+            if (this._vm != null && this._vm.CombatSummary.DamageTakenByAttacker.Count > 0)
+            {
+                var sorted = this._vm.CombatSummary.DamageTakenByAttacker
+                    .OrderByDescending(kv => kv.Value)
+                    .Take(7)
+                    .ToList();
+
+                var bars = sorted.Select((kv, i) => new ScottPlot.Bar
+                {
+                    Position  = i,
+                    Value     = kv.Value,
+                    FillColor = Color.FromHex("#DC3545"),
+                }).ToArray();
+
+                this.DmgByTargetChart.Plot.Add.Bars(bars);
+
+                for (var i = 0; i < bars.Length; i++)
+                {
+                    var label = this.DmgByTargetChart.Plot.Add.Text(bars[i].Value.ToString("N0"), i, bars[i].Value);
+                    label.LabelFontSize        = 10;
+                    label.LabelFontColor       = Color.FromHex("#CCCCCC");
+                    label.LabelAlignment       = Alignment.LowerCenter;
+                    label.OffsetY              = -4;
+                }
+
+                var positions = Enumerable.Range(0, sorted.Count).Select(i => (double)i).ToArray();
+                var labels    = sorted.Select(kv => kv.Key.Length > 14 ? kv.Key[..14] : kv.Key).ToArray();
+                this.DmgByTargetChart.Plot.Axes.Bottom.SetTicks(positions, labels);
+                this.DmgByTargetChart.Plot.Axes.AutoScale();
+                var dmgTakenYMax = bars.Max(b => b.Value);
+                this.DmgByTargetChart.Plot.Axes.SetLimitsY(0, dmgTakenYMax * 1.2);
+            }
+        }
+        this.DmgByTargetChart.Refresh();
+    }
+
+    private void UpdateAvgDmgBySpellChart()
+    {
+        lock (this.AvgDmgBySpellChart.Plot.Sync)
+        {
+            this.AvgDmgBySpellChart.Plot.Clear();
+
+            if (this._vm != null && this._vm.CombatSummary.DamageBySpell.Count > 0)
+            {
+                var sorted = this._vm.CombatSummary.DamageBySpell
+                    .Where(kv => kv.Value.HitCount > 0)
+                    .OrderByDescending(kv => kv.Value.TotalDamage / kv.Value.HitCount)
+                    .Take(7)
+                    .ToList();
+
+                var bars = sorted.Select((kv, i) => new ScottPlot.Bar
+                {
+                    Position  = i,
+                    Value     = kv.Value.TotalDamage / kv.Value.HitCount,
+                    FillColor = Color.FromHex("#FF6644"),
+                }).ToArray();
+
+                this.AvgDmgBySpellChart.Plot.Add.Bars(bars);
+
+                for (var i = 0; i < bars.Length; i++)
+                {
+                    var label = this.AvgDmgBySpellChart.Plot.Add.Text(bars[i].Value.ToString("N0"), i, bars[i].Value);
+                    label.LabelFontSize        = 10;
+                    label.LabelFontColor       = Color.FromHex("#CCCCCC");
+                    label.LabelAlignment       = Alignment.LowerCenter;
+                    label.OffsetY              = -4;
+                }
+
+                var positions = Enumerable.Range(0, sorted.Count).Select(i => (double)i).ToArray();
+                var labels    = sorted.Select(kv => kv.Key.Length > 14 ? kv.Key[..14] : kv.Key).ToArray();
+                this.AvgDmgBySpellChart.Plot.Axes.Bottom.SetTicks(positions, labels);
+                this.AvgDmgBySpellChart.Plot.Axes.AutoScale();
+                var spellYMax = bars.Max(b => b.Value);
+                this.AvgDmgBySpellChart.Plot.Axes.SetLimitsY(0, spellYMax * 1.2);
+            }
+        }
+        this.AvgDmgBySpellChart.Refresh();
+    }
 }

@@ -45,9 +45,9 @@ public sealed class EndToEndTests : IDisposable
         // Act - Process all log entries
         await foreach (var logLine in watcher.WatchAsync(cts.Token))
         {
-            if (logLine.RealmPointEntry != null)
+            if (logLine is RealmPointLogLine { Entry: var rpEntry })
             {
-                summary.ProcessEntry(logLine.RealmPointEntry);
+                summary.ProcessEntry(rpEntry);
             }
         }
 
@@ -87,9 +87,9 @@ public sealed class EndToEndTests : IDisposable
         // Act
         await foreach (var logLine in watcher.WatchAsync(cts.Token))
         {
-            if (logLine.RealmPointEntry != null)
+            if (logLine is RealmPointLogLine { Entry: var rpEntry })
             {
-                summary.ProcessEntry(logLine.RealmPointEntry);
+                summary.ProcessEntry(rpEntry);
             }
         }
 
@@ -119,9 +119,9 @@ public sealed class EndToEndTests : IDisposable
         // Act
         await foreach (var logLine in watcher.WatchAsync(cts.Token))
         {
-            if (logLine.RealmPointEntry != null)
+            if (logLine is RealmPointLogLine { Entry: var rpEntry })
             {
-                summary.ProcessEntry(logLine.RealmPointEntry);
+                summary.ProcessEntry(rpEntry);
             }
         }
 
@@ -155,9 +155,9 @@ public sealed class EndToEndTests : IDisposable
         // Act
         await foreach (var logLine in watcher.WatchAsync(cts.Token))
         {
-            if (logLine.RealmPointEntry != null)
+            if (logLine is RealmPointLogLine { Entry: var rpEntry })
             {
-                summary.ProcessEntry(logLine.RealmPointEntry);
+                summary.ProcessEntry(rpEntry);
             }
         }
 
@@ -202,9 +202,9 @@ public sealed class EndToEndTests : IDisposable
         // Act
         await foreach (var logLine in watcher.WatchAsync(cts.Token))
         {
-            if (logLine.RealmPointEntry != null)
+            if (logLine is RealmPointLogLine { Entry: var rpEntry })
             {
-                summary.ProcessEntry(logLine.RealmPointEntry);
+                summary.ProcessEntry(rpEntry);
             }
         }
 
@@ -227,9 +227,9 @@ public sealed class EndToEndTests : IDisposable
         // Act
         await foreach (var logLine in watcher.WatchAsync(cts.Token))
         {
-            if (logLine.RealmPointEntry != null)
+            if (logLine is RealmPointLogLine { Entry: var rpEntry })
             {
-                summary.ProcessEntry(logLine.RealmPointEntry);
+                summary.ProcessEntry(rpEntry);
             }
         }
 

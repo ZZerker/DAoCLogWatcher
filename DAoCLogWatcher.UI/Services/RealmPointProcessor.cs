@@ -9,6 +9,12 @@ namespace DAoCLogWatcher.UI.Services;
 public sealed class RealmPointProcessor(RealmPointSummary summary, RpsChartData chartData)
 {
 	private readonly List<KillEvent> killEventBuffer = new();
+	private int killWindowRpCount;
+	private int killWindowRps;
+	private TimeOnly killWindowStart;
+	private RealmPointLogEntry? killWindowFirstEntry;
+
+	public event EventHandler<RealmPointLogEntry>? MultiKillDetected;
 
 	public string? DetectedCharacterName { get; private set; }
 	public int Kills { get; private set; }
@@ -29,6 +35,25 @@ public sealed class RealmPointProcessor(RealmPointSummary summary, RpsChartData 
 		characterChanged = false;
 		killStatsChanged = false;
 
+		if (this.killWindowRpCount > 0)
+		{
+			var currentTs = logLine switch
+			{
+				KillLogLine k       => (TimeOnly?)k.Event.Timestamp,
+				RealmPointLogLine r => r.Entry.Timestamp,
+				DamageLogLine d     => d.Event.Timestamp,
+				HealLogLine h       => h.Event.Timestamp,
+				_                   => null
+			};
+			if (currentTs.HasValue)
+			{
+				var diffSec = (currentTs.Value.ToTimeSpan() - this.killWindowStart.ToTimeSpan()).TotalSeconds;
+				if (diffSec < 0) diffSec += TimeSpan.FromDays(1).TotalSeconds;
+				if (diffSec > 5 + this.killWindowRpCount * 0.2)
+					this.FinalizeKillWindow();
+			}
+		}
+
 		if (logLine.DetectedCharacterName != null && logLine.DetectedCharacterName != this.DetectedCharacterName)
 		{
 			this.DetectedCharacterName = logLine.DetectedCharacterName;
@@ -36,15 +61,14 @@ public sealed class RealmPointProcessor(RealmPointSummary summary, RpsChartData 
 			this.RecomputeKillStats(ref killStatsChanged);
 		}
 
-		if (logLine.KillEvent != null)
+		if (logLine is KillLogLine { Event: var killEvent })
 		{
-			this.killEventBuffer.Add(logLine.KillEvent);
+			this.killEventBuffer.Add(killEvent);
 			if (this.DetectedCharacterName != null)
 				this.RecomputeKillStats(ref killStatsChanged);
 		}
 
-		var entry = logLine.RealmPointEntry;
-		if (entry == null)
+		if (logLine is not RealmPointLogLine { Entry: var entry })
 			return null;
 
 		summary.TotalRealmPoints += entry.Points;
@@ -58,11 +82,17 @@ public sealed class RealmPointProcessor(RealmPointSummary summary, RpsChartData 
 		summary.FirstEntryTime ??= entryDateTime;
 		summary.LastEntryTime = entryDateTime;
 
+		var isFirstKillInWindow = entry.Source == RealmPointSource.PlayerKill && this.killWindowRpCount == 0;
+
 		switch (entry.Source)
 		{
 			case RealmPointSource.PlayerKill:
 				summary.PlayerKills++;
 				summary.PlayerKillsRP += entry.Points;
+				if (this.killWindowRpCount == 0)
+					this.killWindowStart = entry.Timestamp;
+				this.killWindowRpCount++;
+				this.killWindowRps += entry.Points;
 				break;
 			case RealmPointSource.CampaignQuest:
 				summary.CampaignQuests++;
@@ -116,21 +146,54 @@ public sealed class RealmPointProcessor(RealmPointSummary summary, RpsChartData 
 
 		chartData.Add(entryDateTime, summary.TotalRealmPoints, entry.Points);
 
-		return new RealmPointLogEntry
+		var details = entry.Victim != null
+			? (entry.SubSource != null ? $"{entry.Victim} ({entry.SubSource})" : entry.Victim)
+			: entry.SubSource ?? sourceLabel;
+
+		var logEntry = new RealmPointLogEntry
 		{
 			Timestamp = entry.Timestamp.ToString("HH:mm:ss"),
 			Points    = entry.Points,
 			Source    = entry.Source.ToString(),
-			Details   = entry.SubSource ?? sourceLabel
+			Details   = details
 		};
+
+		if (isFirstKillInWindow)
+			this.killWindowFirstEntry = logEntry;
+
+		return logEntry;
 	}
 
 	public void Reset()
 	{
+		this.killWindowRpCount = 0;
+		this.killWindowRps = 0;
+		this.killWindowFirstEntry = null;
 		this.killEventBuffer.Clear();
 		this.DetectedCharacterName = null;
 		this.Kills = 0;
 		this.Deaths = 0;
+	}
+
+	private void FinalizeKillWindow()
+	{
+		if (this.killWindowRpCount >= 3)
+		{
+			if (this.killWindowFirstEntry != null)
+				this.killWindowFirstEntry.IsMultiKill = true;
+
+			this.MultiKillDetected?.Invoke(this, new RealmPointLogEntry
+			{
+				Timestamp   = this.killWindowStart.ToString("HH:mm:ss"),
+				Points      = this.killWindowRps,
+				Source      = "Multi-Kill",
+				Details     = $"{this.killWindowRpCount}x player kills",
+				IsMultiKill = true
+			});
+		}
+		this.killWindowRpCount = 0;
+		this.killWindowRps = 0;
+		this.killWindowFirstEntry = null;
 	}
 
 	private void RecomputeKillStats(ref bool killStatsChanged)

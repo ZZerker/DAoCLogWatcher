@@ -24,6 +24,20 @@ A real-time Realm Point tracker for **Dark Age of Camelot (Eden)**. Load your `c
 - **Dark & Light theme** — toggle any time
 - **Windows & Linux** supported (Linux via Wine / Lutris / Flatpak)
 
+### 🧪 Beta Features
+
+- **Combat tracking** — a dedicated Combat tab shows stats parsed live from your combat log:
+  - **Damage dealt** — total, hit count, average per hit, and crit count / crit rate
+  - **Damage taken** — total received and breakdown by attacker
+  - **Heals received** — total HP healed and breakdown by healer
+  - **Outgoing heals** — total HP you healed and breakdown by target
+  - **Miss & resist rates** — melee miss rate (misses + blocks) and spell resist rate, tracked separately
+  - **Attack type breakdown** — avg damage per weapon / spell, shown as a bar chart
+- **Combat log tab** — scrollable per-hit log showing timestamp, direction, damage, source (weapon or spell name), and target
+- **Heal log tab** — scrollable per-heal log showing timestamp, HP, direction, and who was healed
+
+> Combat parsing covers weapon attacks (`You attack X with your Y`), spell hits, crits, heals, misses, blocks, and spell resists. Results depend on log line formats — edge cases may not yet be handled.
+
 ---
 
 ## Installation
