@@ -8,6 +8,12 @@ public class AppSettings
 {
 	public bool HighlightMultiKills { get; set; } = true;
 	public string? CustomChatLogPath { get; set; }
+
+	// Tab visibility (all default on)
+	public bool ShowRealmPointsTab { get; set; } = true;
+	public bool ShowCombatTab { get; set; } = true;
+	public bool ShowHealLogTab { get; set; } = true;
+	public bool ShowCombatLogTab { get; set; } = true;
 }
 
 public static class SettingsService

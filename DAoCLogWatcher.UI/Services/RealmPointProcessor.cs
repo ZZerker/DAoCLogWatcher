@@ -146,12 +146,16 @@ public sealed class RealmPointProcessor(RealmPointSummary summary, RpsChartData 
 
 		chartData.Add(entryDateTime, summary.TotalRealmPoints, entry.Points);
 
+		var details = entry.Victim != null
+			? (entry.SubSource != null ? $"{entry.Victim} ({entry.SubSource})" : entry.Victim)
+			: entry.SubSource ?? sourceLabel;
+
 		var logEntry = new RealmPointLogEntry
 		{
 			Timestamp = entry.Timestamp.ToString("HH:mm:ss"),
 			Points    = entry.Points,
 			Source    = entry.Source.ToString(),
-			Details   = entry.SubSource ?? sourceLabel
+			Details   = details
 		};
 
 		if (isFirstKillInWindow)

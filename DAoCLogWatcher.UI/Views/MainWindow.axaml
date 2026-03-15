@@ -106,6 +106,15 @@
                            Margin="10,0,0,0"
                            Foreground="{DynamicResource AppTextMuted}"
                            FontSize="12" />
+                <StackPanel Orientation="Horizontal" Spacing="6"
+                            IsVisible="{Binding IsParsing}"
+                            VerticalAlignment="Center" Margin="10,0,0,0">
+                    <ProgressBar IsIndeterminate="True" Width="60" Height="4"
+                                 VerticalAlignment="Center"
+                                 Foreground="#FF00D9FF" />
+                    <TextBlock Text="Parsing..." FontSize="12"
+                               Foreground="#FF00D9FF" VerticalAlignment="Center" />
+                </StackPanel>
             </StackPanel>
             </DockPanel>
         </Border>
@@ -351,7 +360,7 @@
                 <TabControl>
 
                     <!-- ── Realm Points tab ── -->
-                    <TabItem Header="Realm Points">
+                    <TabItem Header="Realm Points" IsVisible="{Binding IsRealmPointsTabVisible}">
                         <Grid RowDefinitions="*,Auto" Margin="10,10,10,0">
                             <DockPanel Grid.Row="0">
                                 <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,15">
@@ -428,7 +437,7 @@
                     </TabItem>
 
                     <!-- ── Combat tab ── -->
-                    <TabItem Header="Combat">
+                    <TabItem Header="Combat" IsVisible="{Binding IsCombatTabVisible}">
                         <ScrollViewer Margin="10,10,10,0" HorizontalScrollBarVisibility="Disabled">
                             <StackPanel Spacing="18">
 
@@ -460,6 +469,16 @@
                                             <StackPanel Spacing="2">
                                                 <TextBlock Text="ABSORBED" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource AppTextMuted}" />
                                                 <TextBlock Text="{Binding CombatSummary.TotalAbsorbed}" FontSize="28" FontWeight="Bold" Foreground="{DynamicResource AppTextMuted}" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Spacing="30">
+                                            <StackPanel Spacing="2">
+                                                <TextBlock Text="MELEE MISS" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource AppTextMuted}" />
+                                                <TextBlock Text="{Binding CombatSummary.MeleeMissRate, StringFormat='{}{0:F1}%'}" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimary}" />
+                                            </StackPanel>
+                                            <StackPanel Spacing="2">
+                                                <TextBlock Text="SPELL RESIST" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource AppTextMuted}" />
+                                                <TextBlock Text="{Binding CombatSummary.SpellResistRate, StringFormat='{}{0:F1}%'}" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimary}" />
                                             </StackPanel>
                                         </StackPanel>
                                         <Grid>
@@ -519,6 +538,108 @@
 
                             </StackPanel>
                         </ScrollViewer>
+                    </TabItem>
+
+                    <!-- ── Heal Log tab ── -->
+                    <TabItem Header="Heal Log" IsVisible="{Binding IsHealLogTabVisible}">
+                        <Grid RowDefinitions="*" Margin="10,10,10,0">
+                            <DockPanel>
+                                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,15">
+                                    <TextBlock Text="Heal Log" FontSize="22" FontWeight="Bold" Margin="0,0,15,0" Foreground="{DynamicResource AppTextPrimary}" />
+                                    <TextBlock Text="{Binding HealLogEntries.Count, StringFormat='({0} entries)'}" FontSize="14" VerticalAlignment="Center" Foreground="{DynamicResource AppTextMuted}" />
+                                </StackPanel>
+
+                                <ScrollViewer Background="{DynamicResource AppCardBackground}" CornerRadius="6" Padding="10"
+                                              HorizontalScrollBarVisibility="Disabled">
+                                    <ItemsControl ItemsSource="{Binding HealLogEntries}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border BorderBrush="{DynamicResource AppRowBorder}" BorderThickness="0,0,0,1" Padding="10,8"
+                                                        Background="Transparent">
+                                                    <Grid ColumnDefinitions="Auto,Auto,Auto,*">
+                                                        <TextBlock Grid.Column="0" Text="{Binding Timestamp}"
+                                                                   Foreground="{DynamicResource AppTextMuted}"
+                                                                   FontFamily="Consolas,Courier New,monospace"
+                                                                   FontSize="13"
+                                                                   Margin="0,0,20,0"
+                                                                   MinWidth="80" />
+                                                        <TextBlock Grid.Column="1" Text="{Binding HitPoints, StringFormat='+{0} HP'}"
+                                                                   FontWeight="Bold"
+                                                                   FontSize="13"
+                                                                   Margin="0,0,20,0"
+                                                                   MinWidth="90"
+                                                                   Foreground="#FF00D968" />
+                                                        <TextBlock Grid.Column="2" Text="{Binding DirectionLabel}"
+                                                                   FontSize="13"
+                                                                   Margin="0,0,20,0"
+                                                                   MinWidth="80"
+                                                                   Foreground="#FF00D9FF" />
+                                                        <TextBlock Grid.Column="3" Text="{Binding Who}"
+                                                                   Foreground="{DynamicResource AppTextSecondary}"
+                                                                   FontSize="13" />
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                            </DockPanel>
+                        </Grid>
+                    </TabItem>
+
+                    <!-- ── Combat Log tab ── -->
+                    <TabItem Header="Combat Log" IsVisible="{Binding IsCombatLogTabVisible}">
+                        <Grid RowDefinitions="*" Margin="10,10,10,0">
+                            <DockPanel>
+                                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,15">
+                                    <TextBlock Text="Combat Log" FontSize="22" FontWeight="Bold" Margin="0,0,15,0" Foreground="{DynamicResource AppTextPrimary}" />
+                                    <TextBlock Text="{Binding CombatLogEntries.Count, StringFormat='({0} entries)'}" FontSize="14" VerticalAlignment="Center" Foreground="{DynamicResource AppTextMuted}" />
+                                </StackPanel>
+
+                                <ScrollViewer Background="{DynamicResource AppCardBackground}" CornerRadius="6" Padding="10"
+                                              HorizontalScrollBarVisibility="Disabled">
+                                    <ItemsControl ItemsSource="{Binding CombatLogEntries}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border BorderBrush="{DynamicResource AppRowBorder}" BorderThickness="0,0,0,1" Padding="10,8"
+                                                        Background="Transparent">
+                                                    <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,*">
+                                                        <TextBlock Grid.Column="0" Text="{Binding Timestamp}"
+                                                                   Foreground="{DynamicResource AppTextMuted}"
+                                                                   FontFamily="Consolas,Courier New,monospace"
+                                                                   FontSize="13"
+                                                                   Margin="0,0,20,0"
+                                                                   MinWidth="80" />
+                                                        <Grid Grid.Column="1" MinWidth="55" Margin="0,0,20,0">
+                                                            <TextBlock Text="Dealt" FontSize="13" FontWeight="Bold"
+                                                                       IsVisible="{Binding IsDealt}"
+                                                                       Foreground="#FF00D968" />
+                                                            <TextBlock Text="Taken" FontSize="13" FontWeight="Bold"
+                                                                       IsVisible="{Binding !IsDealt}"
+                                                                       Foreground="#FFDC3545" />
+                                                        </Grid>
+                                                        <TextBlock Grid.Column="2" Text="{Binding TotalDamage}"
+                                                                   FontWeight="Bold"
+                                                                   FontSize="13"
+                                                                   Margin="0,0,20,0"
+                                                                   MinWidth="70"
+                                                                   Foreground="#FFFF6644" />
+                                                        <TextBlock Grid.Column="3" Text="{Binding Source}"
+                                                                   FontSize="13"
+                                                                   Margin="0,0,20,0"
+                                                                   MinWidth="100"
+                                                                   Foreground="#FF00D9FF" />
+                                                        <TextBlock Grid.Column="4" Text="{Binding Target}"
+                                                                   Foreground="{DynamicResource AppTextSecondary}"
+                                                                   FontSize="13" />
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                            </DockPanel>
+                        </Grid>
                     </TabItem>
 
                 </TabControl>
@@ -645,6 +766,36 @@
                               IsChecked="{Binding HighlightMultiKills}"
                               OffContent="" OnContent=""
                               VerticalAlignment="Center" />
+            </Grid>
+            <Rectangle Fill="{DynamicResource AppBorderBrush}" Height="1" />
+            <TextBlock Text="TABS" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource AppTextMuted}" />
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel VerticalAlignment="Center" Spacing="2">
+                    <TextBlock Text="Realm Points Tab" Foreground="{DynamicResource AppTextPrimary}" FontSize="12" />
+                </StackPanel>
+                <ToggleSwitch Grid.Column="1" IsChecked="{Binding IsRealmPointsTabVisible}"
+                              OffContent="" OnContent="" VerticalAlignment="Center" />
+            </Grid>
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel VerticalAlignment="Center" Spacing="2">
+                    <TextBlock Text="Combat Stats Tab" Foreground="{DynamicResource AppTextPrimary}" FontSize="12" />
+                </StackPanel>
+                <ToggleSwitch Grid.Column="1" IsChecked="{Binding IsCombatTabVisible}"
+                              OffContent="" OnContent="" VerticalAlignment="Center" />
+            </Grid>
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel VerticalAlignment="Center" Spacing="2">
+                    <TextBlock Text="Heal Log Tab" Foreground="{DynamicResource AppTextPrimary}" FontSize="12" />
+                </StackPanel>
+                <ToggleSwitch Grid.Column="1" IsChecked="{Binding IsHealLogTabVisible}"
+                              OffContent="" OnContent="" VerticalAlignment="Center" />
+            </Grid>
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel VerticalAlignment="Center" Spacing="2">
+                    <TextBlock Text="Combat Log Tab" Foreground="{DynamicResource AppTextPrimary}" FontSize="12" />
+                </StackPanel>
+                <ToggleSwitch Grid.Column="1" IsChecked="{Binding IsCombatLogTabVisible}"
+                              OffContent="" OnContent="" VerticalAlignment="Center" />
             </Grid>
             <Rectangle Fill="{DynamicResource AppBorderBrush}" Height="1" />
             <StackPanel Spacing="6">

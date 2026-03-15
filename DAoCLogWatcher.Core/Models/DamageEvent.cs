@@ -12,8 +12,10 @@ public sealed record DamageEvent
 	public required bool IsDealt { get; init; }
 	/// <summary>Additional crit damage, 0 when not a critical hit.</summary>
 	public int CritDamage { get; init; }
-	/// <summary>Spell name when the hit originated from a cast; null for melee/unknown.</summary>
+	/// <summary>Spell name when the hit originated from a cast; weapon name when IsWeaponAttack; null for unknown.</summary>
 	public string? SpellName { get; init; }
+	/// <summary>True when the hit came from a weapon swing ("You attack X with your Y and hit"); false for spells/generic.</summary>
+	public bool IsWeaponAttack { get; init; }
 
 	public int TotalDamage => BaseDamage + CritDamage;
 }

@@ -5,6 +5,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Styling;
+using Avalonia.Threading;
 using DAoCLogWatcher.UI.Services;
 using ScottPlot;
 
@@ -13,6 +14,8 @@ namespace DAoCLogWatcher.UI.Views;
 public partial class MainWindow : Window
 {
     private ViewModels.MainWindowViewModel? _vm;
+
+    private DispatcherTimer? combatChartDebounceTimer;
 
     private ScottPlot.Plottables.Scatter? rpScatter;
     private ScottPlot.Plottables.Marker?  rpHighlight;
@@ -204,45 +207,51 @@ public partial class MainWindow : Window
 
     private void UpdateChart(System.Collections.Generic.List<(DateTime Time, double Rps)> dataPoints)
     {
-        this.RpChart.Plot.Clear();
-        this.rpScatter = null;
-
-        if (dataPoints.Count > 0)
+        lock (this.RpChart.Plot.Sync)
         {
-            var times = dataPoints.Select(p => p.Time.ToOADate()).ToArray();
-            var rps   = dataPoints.Select(p => p.Rps).ToArray();
+            this.RpChart.Plot.Clear();
+            this.rpScatter = null;
 
-            this.rpScatter = this.RpChart.Plot.Add.Scatter(times, rps);
-            this.rpScatter.Color      = Color.FromHex("#00D9FF");
-            this.rpScatter.LineWidth  = 2;
-            this.rpScatter.MarkerSize = 0;
+            if (dataPoints.Count > 0)
+            {
+                var times = dataPoints.Select(p => p.Time.ToOADate()).ToArray();
+                var rps   = dataPoints.Select(p => p.Rps).ToArray();
 
-            this.RpChart.Plot.Axes.AutoScale();
+                this.rpScatter = this.RpChart.Plot.Add.Scatter(times, rps);
+                this.rpScatter.Color      = Color.FromHex("#00D9FF");
+                this.rpScatter.LineWidth  = 2;
+                this.rpScatter.MarkerSize = 0;
+
+                this.RpChart.Plot.Axes.AutoScale();
+            }
+
+            (this.rpHighlight, this.rpTooltip) = AddHoverOverlays(this.RpChart, "#00D9FF");
         }
-
-        (this.rpHighlight, this.rpTooltip) = AddHoverOverlays(this.RpChart, "#00D9FF");
         this.RpChart.Refresh();
     }
 
     private void UpdateRpsHourlyChart(System.Collections.Generic.List<(DateTime Time, double RpsPerHour)> dataPoints)
     {
-        this.RpsHourlyChart.Plot.Clear();
-        this.rpsScatter = null;
-
-        if (dataPoints.Count > 0)
+        lock (this.RpsHourlyChart.Plot.Sync)
         {
-            var times  = dataPoints.Select(p => p.Time.ToOADate()).ToArray();
-            var values = dataPoints.Select(p => p.RpsPerHour).ToArray();
+            this.RpsHourlyChart.Plot.Clear();
+            this.rpsScatter = null;
 
-            this.rpsScatter = this.RpsHourlyChart.Plot.Add.Scatter(times, values);
-            this.rpsScatter.Color      = Color.FromHex("#FFAA44");
-            this.rpsScatter.LineWidth  = 2;
-            this.rpsScatter.MarkerSize = 0;
+            if (dataPoints.Count > 0)
+            {
+                var times  = dataPoints.Select(p => p.Time.ToOADate()).ToArray();
+                var values = dataPoints.Select(p => p.RpsPerHour).ToArray();
 
-            this.RpsHourlyChart.Plot.Axes.AutoScale();
+                this.rpsScatter = this.RpsHourlyChart.Plot.Add.Scatter(times, values);
+                this.rpsScatter.Color      = Color.FromHex("#FFAA44");
+                this.rpsScatter.LineWidth  = 2;
+                this.rpsScatter.MarkerSize = 0;
+
+                this.RpsHourlyChart.Plot.Axes.AutoScale();
+            }
+
+            (this.rpsHighlight, this.rpsTooltip) = AddHoverOverlays(this.RpsHourlyChart, "#FFAA44");
         }
-
-        (this.rpsHighlight, this.rpsTooltip) = AddHoverOverlays(this.RpsHourlyChart, "#FFAA44");
         this.RpsHourlyChart.Refresh();
     }
 
@@ -316,14 +325,28 @@ public partial class MainWindow : Window
 
     private void OnCombatSummaryPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is "TotalHealsReceived")
-            this.UpdateHealsByHealerChart();
-        else if (e.PropertyName is "TotalDamageDealt")
-            this.UpdateAvgDmgBySpellChart();
-        else if (e.PropertyName is "TotalDamageTaken")
-            this.UpdateDmgByTargetChart();
-        else if (e.PropertyName is "TotalHealingDone")
-            this.UpdateHealsByTargetChart();
+        if (e.PropertyName is not ("TotalHealsReceived" or "TotalDamageDealt" or "TotalDamageTaken" or "TotalHealingDone"))
+            return;
+
+        if (this.combatChartDebounceTimer == null)
+        {
+            this.combatChartDebounceTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
+            this.combatChartDebounceTimer.Tick += (_, _) =>
+            {
+                this.combatChartDebounceTimer.Stop();
+                this.UpdateAllCombatCharts();
+            };
+        }
+        this.combatChartDebounceTimer.Stop();
+        this.combatChartDebounceTimer.Start();
+    }
+
+    private void UpdateAllCombatCharts()
+    {
+        this.UpdateAvgDmgBySpellChart();
+        this.UpdateDmgByTargetChart();
+        this.UpdateHealsByHealerChart();
+        this.UpdateHealsByTargetChart();
     }
 
     private void InitializeHealsByTargetChart()
@@ -336,81 +359,85 @@ public partial class MainWindow : Window
 
     private void UpdateHealsByTargetChart()
     {
-        this.HealsByTargetChart.Plot.Clear();
-
-        if (this._vm != null && this._vm.CombatSummary.HealsByTarget.Count > 0)
+        lock (this.HealsByTargetChart.Plot.Sync)
         {
-            var sorted = this._vm.CombatSummary.HealsByTarget
-                .OrderByDescending(kv => kv.Value)
-                .Take(7)
-                .ToList();
+            this.HealsByTargetChart.Plot.Clear();
 
-            var bars = sorted.Select((kv, i) => new ScottPlot.Bar
+            if (this._vm != null && this._vm.CombatSummary.HealsByTarget.Count > 0)
             {
-                Position  = i,
-                Value     = kv.Value,
-                FillColor = Color.FromHex("#00D968"),
-            }).ToArray();
+                var sorted = this._vm.CombatSummary.HealsByTarget
+                    .OrderByDescending(kv => kv.Value)
+                    .Take(7)
+                    .ToList();
 
-            this.HealsByTargetChart.Plot.Add.Bars(bars);
+                var bars = sorted.Select((kv, i) => new ScottPlot.Bar
+                {
+                    Position  = i,
+                    Value     = kv.Value,
+                    FillColor = Color.FromHex("#00D968"),
+                }).ToArray();
 
-            for (var i = 0; i < bars.Length; i++)
-            {
-                var label = this.HealsByTargetChart.Plot.Add.Text(bars[i].Value.ToString("N0"), i, bars[i].Value);
-                label.LabelFontSize        = 10;
-                label.LabelFontColor       = Color.FromHex("#CCCCCC");
-                label.LabelAlignment       = Alignment.LowerCenter;
-                label.OffsetY              = -4;
+                this.HealsByTargetChart.Plot.Add.Bars(bars);
+
+                for (var i = 0; i < bars.Length; i++)
+                {
+                    var label = this.HealsByTargetChart.Plot.Add.Text(bars[i].Value.ToString("N0"), i, bars[i].Value);
+                    label.LabelFontSize        = 10;
+                    label.LabelFontColor       = Color.FromHex("#CCCCCC");
+                    label.LabelAlignment       = Alignment.LowerCenter;
+                    label.OffsetY              = -4;
+                }
+
+                var positions = Enumerable.Range(0, sorted.Count).Select(i => (double)i).ToArray();
+                var labels    = sorted.Select(kv => kv.Key.Length > 12 ? kv.Key[..12] : kv.Key).ToArray();
+                this.HealsByTargetChart.Plot.Axes.Bottom.SetTicks(positions, labels);
+                this.HealsByTargetChart.Plot.Axes.AutoScale();
+                var yMax = bars.Max(b => b.Value);
+                this.HealsByTargetChart.Plot.Axes.SetLimitsY(0, yMax * 1.2);
             }
-
-            var positions = Enumerable.Range(0, sorted.Count).Select(i => (double)i).ToArray();
-            var labels    = sorted.Select(kv => kv.Key.Length > 12 ? kv.Key[..12] : kv.Key).ToArray();
-            this.HealsByTargetChart.Plot.Axes.Bottom.SetTicks(positions, labels);
-            this.HealsByTargetChart.Plot.Axes.AutoScale();
-            var yMax = bars.Max(b => b.Value);
-            this.HealsByTargetChart.Plot.Axes.SetLimitsY(0, yMax * 1.2);
         }
-
         this.HealsByTargetChart.Refresh();
     }
 
     private void UpdateHealsByHealerChart()
     {
-        this.HealsByHealerChart.Plot.Clear();
-
-        if (this._vm != null && this._vm.CombatSummary.HealsByHealer.Count > 0)
+        lock (this.HealsByHealerChart.Plot.Sync)
         {
-            var sorted = this._vm.CombatSummary.HealsByHealer
-                .OrderByDescending(kv => kv.Value)
-                .Take(7)
-                .ToList();
+            this.HealsByHealerChart.Plot.Clear();
 
-            var bars = sorted.Select((kv, i) => new ScottPlot.Bar
+            if (this._vm != null && this._vm.CombatSummary.HealsByHealer.Count > 0)
             {
-                Position  = i,
-                Value     = kv.Value,
-                FillColor = Color.FromHex("#00D968"),
-            }).ToArray();
+                var sorted = this._vm.CombatSummary.HealsByHealer
+                    .OrderByDescending(kv => kv.Value)
+                    .Take(7)
+                    .ToList();
 
-            this.HealsByHealerChart.Plot.Add.Bars(bars);
+                var bars = sorted.Select((kv, i) => new ScottPlot.Bar
+                {
+                    Position  = i,
+                    Value     = kv.Value,
+                    FillColor = Color.FromHex("#00D968"),
+                }).ToArray();
 
-            for (var i = 0; i < bars.Length; i++)
-            {
-                var label = this.HealsByHealerChart.Plot.Add.Text(bars[i].Value.ToString("N0"), i, bars[i].Value);
-                label.LabelFontSize        = 10;
-                label.LabelFontColor       = Color.FromHex("#CCCCCC");
-                label.LabelAlignment       = Alignment.LowerCenter;
-                label.OffsetY              = -4;
+                this.HealsByHealerChart.Plot.Add.Bars(bars);
+
+                for (var i = 0; i < bars.Length; i++)
+                {
+                    var label = this.HealsByHealerChart.Plot.Add.Text(bars[i].Value.ToString("N0"), i, bars[i].Value);
+                    label.LabelFontSize        = 10;
+                    label.LabelFontColor       = Color.FromHex("#CCCCCC");
+                    label.LabelAlignment       = Alignment.LowerCenter;
+                    label.OffsetY              = -4;
+                }
+
+                var positions = Enumerable.Range(0, sorted.Count).Select(i => (double)i).ToArray();
+                var labels    = sorted.Select(kv => kv.Key.Length > 12 ? kv.Key[..12] : kv.Key).ToArray();
+                this.HealsByHealerChart.Plot.Axes.Bottom.SetTicks(positions, labels);
+                this.HealsByHealerChart.Plot.Axes.AutoScale();
+                var healYMax = bars.Max(b => b.Value);
+                this.HealsByHealerChart.Plot.Axes.SetLimitsY(0, healYMax * 1.2);
             }
-
-            var positions = Enumerable.Range(0, sorted.Count).Select(i => (double)i).ToArray();
-            var labels    = sorted.Select(kv => kv.Key.Length > 12 ? kv.Key[..12] : kv.Key).ToArray();
-            this.HealsByHealerChart.Plot.Axes.Bottom.SetTicks(positions, labels);
-            this.HealsByHealerChart.Plot.Axes.AutoScale();
-            var healYMax = bars.Max(b => b.Value);
-            this.HealsByHealerChart.Plot.Axes.SetLimitsY(0, healYMax * 1.2);
         }
-
         this.HealsByHealerChart.Refresh();
     }
 
@@ -424,82 +451,86 @@ public partial class MainWindow : Window
 
     private void UpdateDmgByTargetChart()
     {
-        this.DmgByTargetChart.Plot.Clear();
-
-        if (this._vm != null && this._vm.CombatSummary.DamageTakenByAttacker.Count > 0)
+        lock (this.DmgByTargetChart.Plot.Sync)
         {
-            var sorted = this._vm.CombatSummary.DamageTakenByAttacker
-                .OrderByDescending(kv => kv.Value)
-                .Take(7)
-                .ToList();
+            this.DmgByTargetChart.Plot.Clear();
 
-            var bars = sorted.Select((kv, i) => new ScottPlot.Bar
+            if (this._vm != null && this._vm.CombatSummary.DamageTakenByAttacker.Count > 0)
             {
-                Position  = i,
-                Value     = kv.Value,
-                FillColor = Color.FromHex("#DC3545"),
-            }).ToArray();
+                var sorted = this._vm.CombatSummary.DamageTakenByAttacker
+                    .OrderByDescending(kv => kv.Value)
+                    .Take(7)
+                    .ToList();
 
-            this.DmgByTargetChart.Plot.Add.Bars(bars);
+                var bars = sorted.Select((kv, i) => new ScottPlot.Bar
+                {
+                    Position  = i,
+                    Value     = kv.Value,
+                    FillColor = Color.FromHex("#DC3545"),
+                }).ToArray();
 
-            for (var i = 0; i < bars.Length; i++)
-            {
-                var label = this.DmgByTargetChart.Plot.Add.Text(bars[i].Value.ToString("N0"), i, bars[i].Value);
-                label.LabelFontSize        = 10;
-                label.LabelFontColor       = Color.FromHex("#CCCCCC");
-                label.LabelAlignment       = Alignment.LowerCenter;
-                label.OffsetY              = -4;
+                this.DmgByTargetChart.Plot.Add.Bars(bars);
+
+                for (var i = 0; i < bars.Length; i++)
+                {
+                    var label = this.DmgByTargetChart.Plot.Add.Text(bars[i].Value.ToString("N0"), i, bars[i].Value);
+                    label.LabelFontSize        = 10;
+                    label.LabelFontColor       = Color.FromHex("#CCCCCC");
+                    label.LabelAlignment       = Alignment.LowerCenter;
+                    label.OffsetY              = -4;
+                }
+
+                var positions = Enumerable.Range(0, sorted.Count).Select(i => (double)i).ToArray();
+                var labels    = sorted.Select(kv => kv.Key.Length > 14 ? kv.Key[..14] : kv.Key).ToArray();
+                this.DmgByTargetChart.Plot.Axes.Bottom.SetTicks(positions, labels);
+                this.DmgByTargetChart.Plot.Axes.AutoScale();
+                var dmgTakenYMax = bars.Max(b => b.Value);
+                this.DmgByTargetChart.Plot.Axes.SetLimitsY(0, dmgTakenYMax * 1.2);
             }
-
-            var positions = Enumerable.Range(0, sorted.Count).Select(i => (double)i).ToArray();
-            var labels    = sorted.Select(kv => kv.Key.Length > 14 ? kv.Key[..14] : kv.Key).ToArray();
-            this.DmgByTargetChart.Plot.Axes.Bottom.SetTicks(positions, labels);
-            this.DmgByTargetChart.Plot.Axes.AutoScale();
-            var dmgTakenYMax = bars.Max(b => b.Value);
-            this.DmgByTargetChart.Plot.Axes.SetLimitsY(0, dmgTakenYMax * 1.2);
         }
-
         this.DmgByTargetChart.Refresh();
     }
 
     private void UpdateAvgDmgBySpellChart()
     {
-        this.AvgDmgBySpellChart.Plot.Clear();
-
-        if (this._vm != null && this._vm.CombatSummary.DamageBySpell.Count > 0)
+        lock (this.AvgDmgBySpellChart.Plot.Sync)
         {
-            var sorted = this._vm.CombatSummary.DamageBySpell
-                .Where(kv => kv.Value.HitCount > 0)
-                .OrderByDescending(kv => kv.Value.TotalDamage / kv.Value.HitCount)
-                .Take(7)
-                .ToList();
+            this.AvgDmgBySpellChart.Plot.Clear();
 
-            var bars = sorted.Select((kv, i) => new ScottPlot.Bar
+            if (this._vm != null && this._vm.CombatSummary.DamageBySpell.Count > 0)
             {
-                Position  = i,
-                Value     = kv.Value.TotalDamage / kv.Value.HitCount,
-                FillColor = Color.FromHex("#FF6644"),
-            }).ToArray();
+                var sorted = this._vm.CombatSummary.DamageBySpell
+                    .Where(kv => kv.Value.HitCount > 0)
+                    .OrderByDescending(kv => kv.Value.TotalDamage / kv.Value.HitCount)
+                    .Take(7)
+                    .ToList();
 
-            this.AvgDmgBySpellChart.Plot.Add.Bars(bars);
+                var bars = sorted.Select((kv, i) => new ScottPlot.Bar
+                {
+                    Position  = i,
+                    Value     = kv.Value.TotalDamage / kv.Value.HitCount,
+                    FillColor = Color.FromHex("#FF6644"),
+                }).ToArray();
 
-            for (var i = 0; i < bars.Length; i++)
-            {
-                var label = this.AvgDmgBySpellChart.Plot.Add.Text(bars[i].Value.ToString("N0"), i, bars[i].Value);
-                label.LabelFontSize        = 10;
-                label.LabelFontColor       = Color.FromHex("#CCCCCC");
-                label.LabelAlignment       = Alignment.LowerCenter;
-                label.OffsetY              = -4;
+                this.AvgDmgBySpellChart.Plot.Add.Bars(bars);
+
+                for (var i = 0; i < bars.Length; i++)
+                {
+                    var label = this.AvgDmgBySpellChart.Plot.Add.Text(bars[i].Value.ToString("N0"), i, bars[i].Value);
+                    label.LabelFontSize        = 10;
+                    label.LabelFontColor       = Color.FromHex("#CCCCCC");
+                    label.LabelAlignment       = Alignment.LowerCenter;
+                    label.OffsetY              = -4;
+                }
+
+                var positions = Enumerable.Range(0, sorted.Count).Select(i => (double)i).ToArray();
+                var labels    = sorted.Select(kv => kv.Key.Length > 14 ? kv.Key[..14] : kv.Key).ToArray();
+                this.AvgDmgBySpellChart.Plot.Axes.Bottom.SetTicks(positions, labels);
+                this.AvgDmgBySpellChart.Plot.Axes.AutoScale();
+                var spellYMax = bars.Max(b => b.Value);
+                this.AvgDmgBySpellChart.Plot.Axes.SetLimitsY(0, spellYMax * 1.2);
             }
-
-            var positions = Enumerable.Range(0, sorted.Count).Select(i => (double)i).ToArray();
-            var labels    = sorted.Select(kv => kv.Key.Length > 14 ? kv.Key[..14] : kv.Key).ToArray();
-            this.AvgDmgBySpellChart.Plot.Axes.Bottom.SetTicks(positions, labels);
-            this.AvgDmgBySpellChart.Plot.Axes.AutoScale();
-            var spellYMax = bars.Max(b => b.Value);
-            this.AvgDmgBySpellChart.Plot.Axes.SetLimitsY(0, spellYMax * 1.2);
         }
-
         this.AvgDmgBySpellChart.Refresh();
     }
 }

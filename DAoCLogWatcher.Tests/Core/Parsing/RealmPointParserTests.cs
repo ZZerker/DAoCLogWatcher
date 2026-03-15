@@ -350,5 +350,124 @@ public sealed class RealmPointParserTests
         entry!.Source.Should().Be(RealmPointSource.Misc);
         entry.SubSource.Should().Be("Repair");
     }
+
+    [Fact]
+    public void TryParse_ArenaMatchLine_ClassifiedAsTimedMission()
+    {
+        var parser = new RealmPointParser();
+
+        var result = parser.TryParse(
+            "[14:34:50] You get 2000 realm points for participating in an Arena Match!", out var entry);
+
+        result.Should().BeTrue();
+        entry.Should().NotBeNull();
+        entry!.Points.Should().Be(2000);
+        entry.Source.Should().Be(RealmPointSource.TimedMission);
+        entry.SubSource.Should().Be("Arena Match");
+    }
+
+    [Fact]
+    public void TryParse_ArenaMatchFollowedByWinStreak_BothCounted()
+    {
+        // From GitHub issue #1 — Arena sequence:
+        //   [14:34:50] You get 2000 realm points for participating in an Arena Match!
+        //   [14:34:50] You get an additional 2000 realm points due to your Win Streak!
+        var parser = new RealmPointParser();
+
+        parser.TryParse("[14:34:50] You get 2000 realm points for participating in an Arena Match!", out var arena);
+        parser.TryParse("[14:34:50] You get an additional 2000 realm points due to your Win Streak!", out var streak);
+
+        arena.Should().NotBeNull();
+        arena!.Points.Should().Be(2000);
+        arena.Source.Should().Be(RealmPointSource.TimedMission);
+        arena.SubSource.Should().Be("Arena Match");
+
+        streak.Should().NotBeNull();
+        streak!.Points.Should().Be(2000);
+        streak.Source.Should().Be(RealmPointSource.TimedMission);
+        streak.SubSource.Should().Be("Win Streak");
+    }
+
+    [Fact]
+    public void TryParse_SkirmishSequence_AllThreeCounted()
+    {
+        // From GitHub issue #1 — Skirmish chest event:
+        //   [15:12:58] You get 250 realm points for completing your mission!
+        //   [15:12:58] You get 250 realm points for reaching Tier 2 Participation!
+        //   [15:12:58] You get an additional 250 realm points due to your Win Streak!
+        var parser = new RealmPointParser();
+
+        parser.TryParse("[15:12:58] You get 250 realm points for completing your mission!", out var mission);
+        parser.TryParse("[15:12:58] You get 250 realm points for reaching Tier 2 Participation!", out var tier);
+        parser.TryParse("[15:12:58] You get an additional 250 realm points due to your Win Streak!", out var streak);
+
+        mission.Should().NotBeNull();
+        mission!.Points.Should().Be(250);
+        mission.SubSource.Should().Be("Mission Complete");
+
+        tier.Should().NotBeNull();
+        tier!.Points.Should().Be(250);
+        tier.SubSource.Should().Be("Tier 2 Participation");
+
+        streak.Should().NotBeNull();
+        streak!.Points.Should().Be(250);
+        streak.SubSource.Should().Be("Win Streak");
+    }
+
+    [Fact]
+    public void TryParse_FairFightSequence_ClassifiedAsPlayerKill()
+    {
+        // Fair fight context line precedes the RP line
+        var parser = new RealmPointParser();
+
+        var contextResult = parser.TryParse("[21:42:08] You recently lost a fair fight, 8v8", out var contextEntry);
+        contextResult.Should().BeFalse();
+        contextEntry.Should().BeNull();
+
+        var rpResult = parser.TryParse("[21:42:08] You get 800 realm points!", out var rpEntry);
+        rpResult.Should().BeTrue();
+        rpEntry.Should().NotBeNull();
+        rpEntry!.Points.Should().Be(800);
+        rpEntry.Source.Should().Be(RealmPointSource.CampaignQuest);
+        rpEntry.SubSource.Should().Be("Fair Fight");
+    }
+
+    [Fact]
+    public void TryParse_PlayerKillWithKillParticipation_ClassifiedAsPlayerKill()
+    {
+        // Kill participation line follows the RP line instead of XP line
+        var parser = new RealmPointParser();
+
+        parser.TryParse("[22:22:18] You get 2 realm points!", out _).Should().BeFalse();
+
+        var result = parser.TryParse("[22:22:18] Kill participation: 100%", out var entry);
+        result.Should().BeTrue();
+        entry.Should().NotBeNull();
+        entry!.Points.Should().Be(2);
+        entry.Source.Should().Be(RealmPointSource.PlayerKill);
+    }
+
+    [Fact]
+    public void TryParse_UnknownRpFollowedByAnotherRpLine_BothCounted()
+    {
+        // Defensive test: an unknown RP source goes pending, but the next line is
+        // itself an RP line. Both must be counted (the pending as Misc, the next normally).
+        var parser = new RealmPointParser();
+
+        parser.TryParse("[10:00:00] You get 500 realm points!", out var first);
+        first.Should().BeNull(); // pending
+
+        parser.TryParse("[10:00:01] You get 300 realm points for completing your mission!", out var second);
+        second.Should().NotBeNull();
+        second!.Points.Should().Be(500);
+        second.Source.Should().Be(RealmPointSource.Misc);
+
+        // The mission line was buffered — emitted on next call
+        parser.TryParse("[10:00:02] Some unrelated line", out var buffered);
+        buffered.Should().NotBeNull();
+        buffered!.Points.Should().Be(300);
+        buffered.Source.Should().Be(RealmPointSource.TimedMission);
+        buffered.SubSource.Should().Be("Mission Complete");
+    }
 }
 

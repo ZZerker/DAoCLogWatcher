@@ -21,3 +21,6 @@ public sealed record DamageLogLine(string Text, DamageEvent Event) : LogLine(Tex
 
 /// <summary>A line that yielded a heal event.</summary>
 public sealed record HealLogLine(string Text, HealEvent Event) : LogLine(Text);
+
+/// <summary>A line that yielded a miss/block/resist event (outgoing attack failed).</summary>
+public sealed record MissLogLine(string Text, MissEvent Event) : LogLine(Text);

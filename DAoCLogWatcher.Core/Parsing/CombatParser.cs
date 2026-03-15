@@ -5,12 +5,12 @@ using DAoCLogWatcher.Core.Models;
 namespace DAoCLogWatcher.Core.Parsing;
 
 /// <summary>
-/// Parses combat lines: damage dealt/taken and heals received.
+/// Parses combat lines: damage dealt/taken, heals, and misses/resists.
 /// Handles multi-line crit sequences:
 ///   Dealt crits have a timestamp and come on the very next line after the hit.
 ///   Taken crits have NO timestamp and are a direct continuation of the hit line.
 /// Correlates "You cast a X spell!" with the immediately following "You hit" to
-/// populate DamageEvent.SpellName (same or adjacent second required).
+/// populate DamageEvent.SpellName (within 4.5s window for spell travel time).
 /// </summary>
 public sealed partial class CombatParser
 {
@@ -18,16 +18,17 @@ public sealed partial class CombatParser
 	private PendingDamage? pendingTaken;
 	private string? pendingSpellName;
 	private TimeOnly pendingSpellTimestamp;
+	private string? confirmedDamageSpellName;
 
 	/// <summary>
 	/// Attempts to parse a line. Returns true when an event is ready.
-	/// A flushed pending event from a previous hit (no crit followed) takes priority:
-	/// it is emitted via <paramref name="damage"/> and the current line may start a new pending.
+	/// A flushed pending event from a previous hit (no crit followed) takes priority.
 	/// </summary>
-	public bool TryParse(string line, out DamageEvent? damage, out HealEvent? heal)
+	public bool TryParse(string line, out DamageEvent? damage, out HealEvent? heal, out MissEvent? miss)
 	{
 		damage = null;
 		heal = null;
+		miss = null;
 
 		if(string.IsNullOrWhiteSpace(line))
 			return false;
@@ -116,14 +117,60 @@ public sealed partial class CombatParser
 			return true;
 		}
 
-		// Try dealt hit
+		// Try dealt hit — weapon attack format: "You attack {target} with your {weapon} and hit for N damage!"
+		var weaponAttackMatch = WeaponAttackRegex().Match(line);
+		if(weaponAttackMatch.Success && ExtractTimestamp(weaponAttackMatch, out var weaponTs))
+		{
+			this.pendingSpellName = null;
+			var newPending = new PendingDamage(
+				weaponTs,
+				weaponAttackMatch.Groups["target"].Value,
+				int.Parse(weaponAttackMatch.Groups["dmg"].Value, CultureInfo.InvariantCulture),
+				ParseAbsorbed(weaponAttackMatch),
+				true,
+				weaponAttackMatch.Groups["weapon"].Value,
+				IsWeaponAttack: true);
+
+			if(this.pendingDealt != null)
+			{
+				damage = this.pendingDealt.Value.ToDamageEvent(0);
+				this.pendingDealt = newPending;
+				return true;
+			}
+
+			this.pendingDealt = newPending;
+			damage = flushedTaken;
+			return flushedTaken != null;
+		}
+
+		// Try dealt hit — spell/generic format: "You hit {target} for N damage!"
 		var dealtHitMatch = DealtHitRegex().Match(line);
 		if(dealtHitMatch.Success && ExtractTimestamp(dealtHitMatch, out var dealtTs))
 		{
-			// Associate the pending spell if it was cast within the same or adjacent second
-			var diffSeconds = Math.Abs((dealtTs.ToTimeSpan() - this.pendingSpellTimestamp.ToTimeSpan()).TotalSeconds);
-			var spellName = (this.pendingSpellName != null && diffSeconds <= 1) ? this.pendingSpellName : null;
-			this.pendingSpellName = null;
+			// Two-tier spell attribution:
+			// 1. Within 4.5s of last cast: attribute to that spell and confirm it deals damage.
+			//    Keeps pendingSpellName alive for AE (multiple simultaneous hits from one cast).
+			// 2. Outside window (or no pending cast): fall back to confirmedDamageSpellName.
+			//    Covers DoT/rain ticks that arrive long after the cast.
+			//    Buff casts never get confirmed (no hit within 4.5s), so they don't pollute.
+			string? spellName;
+			if(this.pendingSpellName != null)
+			{
+				var diffSeconds = Math.Abs((dealtTs.ToTimeSpan() - this.pendingSpellTimestamp.ToTimeSpan()).TotalSeconds);
+				if(diffSeconds <= 4.5)
+				{
+					spellName = this.pendingSpellName;
+					this.confirmedDamageSpellName = this.pendingSpellName;
+				}
+				else
+				{
+					spellName = this.confirmedDamageSpellName;
+				}
+			}
+			else
+			{
+				spellName = this.confirmedDamageSpellName;
+			}
 
 			var newPending = new PendingDamage(
 				dealtTs,
@@ -131,7 +178,8 @@ public sealed partial class CombatParser
 				int.Parse(dealtHitMatch.Groups["dmg"].Value, CultureInfo.InvariantCulture),
 				ParseAbsorbed(dealtHitMatch),
 				true,
-				spellName);
+				spellName,
+				IsWeaponAttack: false);
 
 			if(this.pendingDealt != null)
 			{
@@ -166,7 +214,8 @@ public sealed partial class CombatParser
 				int.Parse(takenHitMatch.Groups["dmg"].Value, CultureInfo.InvariantCulture),
 				ParseAbsorbed(takenHitMatch),
 				false,
-				null);
+				null,
+				IsWeaponAttack: false);
 
 			if(this.pendingDealt != null)
 			{
@@ -180,6 +229,33 @@ public sealed partial class CombatParser
 			this.pendingTaken = newPending;
 			damage = flushedTaken;
 			return flushedTaken != null;
+		}
+
+		// Try melee miss: "You miss! (Miss Chance: X%)"
+		var meleesMissMatch = MeleeMissRegex().Match(line);
+		if(meleesMissMatch.Success && ExtractTimestamp(meleesMissMatch, out var missTs))
+		{
+			miss = new MissEvent { Timestamp = missTs, IsSpell = false, Target = null };
+			damage = FlushForMiss(flushedTaken);
+			return true;
+		}
+
+		// Try melee block: "{target} blocks your attack! (Block Chance: X%)"
+		var blockMatch = BlockRegex().Match(line);
+		if(blockMatch.Success && ExtractTimestamp(blockMatch, out var blockTs))
+		{
+			miss = new MissEvent { Timestamp = blockTs, IsSpell = false, Target = blockMatch.Groups["target"].Value };
+			damage = FlushForMiss(flushedTaken);
+			return true;
+		}
+
+		// Try spell resist: "{target} resists the effect! (Resist Chance: X%)"
+		var resistMatch = SpellResistRegex().Match(line);
+		if(resistMatch.Success && ExtractTimestamp(resistMatch, out var resistTs))
+		{
+			miss = new MissEvent { Timestamp = resistTs, IsSpell = true, Target = resistMatch.Groups["target"].Value };
+			damage = FlushForMiss(flushedTaken);
+			return true;
 		}
 
 		// No combat match — flush stale pending-dealt
@@ -204,9 +280,7 @@ public sealed partial class CombatParser
 	{
 		if(this.pendingDealt != null)
 		{
-			var ev = this.pendingDealt.Value.ToDamageEvent(0);
-			this.pendingDealt = null;
-			return ev;
+			return FlushPendingDealt();
 		}
 		if(this.pendingTaken != null)
 		{
@@ -217,6 +291,16 @@ public sealed partial class CombatParser
 		return null;
 	}
 
+	private DamageEvent FlushPendingDealt()
+	{
+		var ev = this.pendingDealt!.Value.ToDamageEvent(0);
+		this.pendingDealt = null;
+		return ev;
+	}
+
+	private DamageEvent? FlushForMiss(DamageEvent? flushedTaken)
+		=> flushedTaken ?? (this.pendingDealt != null ? FlushPendingDealt() : null);
+
 	private static bool ExtractTimestamp(Match match, out TimeOnly timestamp)
 		=> TimeOnly.TryParseExact(match.Groups["ts"].Value, "HH:mm:ss",
 			CultureInfo.InvariantCulture, DateTimeStyles.None, out timestamp);
@@ -226,6 +310,11 @@ public sealed partial class CombatParser
 		var group = match.Groups["abs"];
 		return group.Success ? int.Parse(group.Value, CultureInfo.InvariantCulture) : 0;
 	}
+
+	// [HH:mm:ss] You attack {target} with your {weapon} and hit for {N} (-{abs}) damage! (Damage Modifier: X)
+	[GeneratedRegex(@"^\[(?<ts>\d{2}:\d{2}:\d{2})\] You attack (?<target>.+?) with your (?<weapon>.+?) and hit for (?<dmg>\d+)(?: \(-(?<abs>\d+)\))? damage!",
+		RegexOptions.Compiled | RegexOptions.CultureInvariant)]
+	private static partial Regex WeaponAttackRegex();
 
 	// [HH:mm:ss] You hit {target} for {N} (-{abs}) damage!
 	[GeneratedRegex(@"^\[(?<ts>\d{2}:\d{2}:\d{2})\] You hit (?<target>.+?) for (?<dmg>\d+)(?: \(-(?<abs>\d+)\))? damage!$",
@@ -263,7 +352,22 @@ public sealed partial class CombatParser
 		RegexOptions.Compiled | RegexOptions.CultureInvariant)]
 	private static partial Regex OutgoingHealRegex();
 
-	private readonly record struct PendingDamage(TimeOnly Timestamp, string Target, int BaseDamage, int Absorbed, bool IsDealt, string? SpellName)
+	// [HH:mm:ss] You miss! (Miss Chance: X%)
+	[GeneratedRegex(@"^\[(?<ts>\d{2}:\d{2}:\d{2})\] You miss! \(Miss Chance: [\d.]+%\)$",
+		RegexOptions.Compiled | RegexOptions.CultureInvariant)]
+	private static partial Regex MeleeMissRegex();
+
+	// [HH:mm:ss] {target} blocks your attack! (Block Chance: X%)
+	[GeneratedRegex(@"^\[(?<ts>\d{2}:\d{2}:\d{2})\] (?<target>.+?) blocks your attack! \(Block Chance: [\d.]+%\)$",
+		RegexOptions.Compiled | RegexOptions.CultureInvariant)]
+	private static partial Regex BlockRegex();
+
+	// [HH:mm:ss] {target} resists the effect! (Resist Chance: X%)
+	[GeneratedRegex(@"^\[(?<ts>\d{2}:\d{2}:\d{2})\] (?<target>.+?) resists the effect! \(Resist Chance: [\d.]+%\)$",
+		RegexOptions.Compiled | RegexOptions.CultureInvariant)]
+	private static partial Regex SpellResistRegex();
+
+	private readonly record struct PendingDamage(TimeOnly Timestamp, string Target, int BaseDamage, int Absorbed, bool IsDealt, string? SpellName, bool IsWeaponAttack)
 	{
 		public DamageEvent ToDamageEvent(int critDamage) => new()
 		{
@@ -274,6 +378,7 @@ public sealed partial class CombatParser
 			IsDealt = IsDealt,
 			CritDamage = critDamage,
 			SpellName = SpellName,
+			IsWeaponAttack = IsWeaponAttack,
 		};
 	}
 }

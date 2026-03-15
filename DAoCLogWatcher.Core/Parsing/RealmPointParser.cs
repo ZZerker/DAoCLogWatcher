@@ -10,10 +10,30 @@ public sealed partial class RealmPointParser
 	private static readonly Regex RealmPointRegex = GenerateRealmPointRegex();
 
 	private RealmPointEntry? pendingEntry;
+	private RealmPointEntry? bufferedEntry;
 	private bool waitingForParticipationCheck;
 	private bool waitingForRelicCapture;
+	private bool waitingForFairFight;
 
 	public bool TryParse(string line, out RealmPointEntry? entry)
+	{
+		// If a previous call produced two entries (e.g. pending flush + the line itself),
+		// emit the buffered one now and parse the current line for next time.
+		if(this.bufferedEntry != null)
+		{
+			entry = this.bufferedEntry;
+			this.bufferedEntry = null;
+			if(this.TryParseInternal(line, out var next))
+			{
+				this.bufferedEntry = next;
+			}
+			return true;
+		}
+
+		return this.TryParseInternal(line, out entry);
+	}
+
+	private bool TryParseInternal(string line, out RealmPointEntry? entry)
 	{
 		entry = null;
 
@@ -29,6 +49,12 @@ public sealed partial class RealmPointParser
 			return false;
 		}
 
+		if(line.Contains("a fair fight"))
+		{
+			this.waitingForFairFight = true;
+			return false;
+		}
+
 		if(this.waitingForParticipationCheck&&this.pendingEntry != null)
 		{
 			// XP Guild Bonus line may appear between the RP line and the XP confirmation line
@@ -38,7 +64,7 @@ public sealed partial class RealmPointParser
 			RealmPointSource pendingSource;
 			if(line.Contains("have captured"))
 				pendingSource = RealmPointSource.Siege;
-			else if(line.Contains("experience points"))
+			else if(line.Contains("experience points")||line.Contains("Kill participation"))
 				pendingSource = RealmPointSource.PlayerKill;
 			else
 				pendingSource = RealmPointSource.Misc;
@@ -53,6 +79,17 @@ public sealed partial class RealmPointParser
 
 			this.pendingEntry = null;
 			this.waitingForParticipationCheck = false;
+
+			// If the confirmation line is itself an RP line, re-parse it so its RP
+			// are not silently consumed. The result is buffered for the next TryParse call.
+			if(RealmPointRegex.IsMatch(line))
+			{
+				if(this.TryParseInternal(line, out var additional))
+				{
+					this.bufferedEntry = additional;
+				}
+			}
+
 			return true;
 		}
 
@@ -92,6 +129,20 @@ public sealed partial class RealmPointParser
 					};
 			this.waitingForRelicCapture = false;
 			Debug.WriteLine($"[Parser] Relic: {points} RP");
+			return true;
+		}
+
+		if(this.waitingForFairFight)
+		{
+			this.waitingForFairFight = false;
+			entry = new RealmPointEntry
+					{
+						Timestamp = timestamp,
+						Points = points,
+						Source = RealmPointSource.CampaignQuest,
+						SubSource = "Fair Fight",
+						RawLine = line
+					};
 			return true;
 		}
 
@@ -149,7 +200,8 @@ public sealed partial class RealmPointParser
 		if(reason.Contains("completing your mission")
 		   || reason.Contains("reaching Tier")
 		   || reason.Contains("Win Streak")
-		   || reason.Contains("War Supplies"))
+		   || reason.Contains("War Supplies")
+		   || reason.Contains("Arena Match"))
 		{
 			return RealmPointSource.TimedMission;
 		}
@@ -188,6 +240,9 @@ public sealed partial class RealmPointParser
 
 		if(reason.Contains("Win Streak"))
 			return "Win Streak";
+
+		if(reason.Contains("Arena Match"))
+			return "Arena Match";
 
 		if(reason.Contains("War Supplies"))
 			return "War Supplies";

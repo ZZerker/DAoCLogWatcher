@@ -68,6 +68,7 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 
 		var parser = new RealmPointParser();
 		var combatParser = new CombatParser();
+		KillEvent? lastKillEvent = null;
 
 		this.fileStream = new FileStream(this.logFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 0, true);
 
@@ -125,7 +126,13 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 
 					// Always feed both parsers to keep state machines consistent.
 					parser.TryParse(line, out var entry);
-					combatParser.TryParse(line, out var damageEvent, out var healEvent);
+					combatParser.TryParse(line, out var damageEvent, out var healEvent, out var missEvent);
+
+					// Detect kill events unconditionally — the kill line may be outside the time
+					// filter window while the correlated RP entry is inside it.
+					var killEvent = TryDetectKillEvent(line);
+					if(killEvent != null)
+						lastKillEvent = killEvent;
 
 					if(shouldYield&&!string.IsNullOrWhiteSpace(line))
 					{
@@ -139,9 +146,19 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 							damageEvent = null;
 						if(this.skipOldEntries&&healEvent != null&&!this.ShouldProcessTimestamp(healEvent.Timestamp))
 							healEvent = null;
+						if(this.skipOldEntries&&missEvent != null&&!this.ShouldProcessTimestamp(missEvent.Timestamp))
+							missEvent = null;
 
 						var characterNameForLine = detectedName != null ? this.CurrentCharacterName : null;
-						var killEvent = TryDetectKillEvent(line);
+
+						// Correlate PlayerKill RP entries with the most recent kill event (within 30s).
+						if(entry != null && entry.Source == RealmPointSource.PlayerKill && lastKillEvent != null)
+						{
+							var diffSeconds = Math.Abs((entry.Timestamp.ToTimeSpan() - lastKillEvent.Timestamp.ToTimeSpan()).TotalSeconds);
+							if(diffSeconds > 43200) diffSeconds = 86400 - diffSeconds; // midnight arc
+							if(diffSeconds <= 30)
+								entry = entry with { Victim = lastKillEvent.Victim };
+						}
 
 						LogLine logLine = entry != null
 							? new RealmPointLogLine(line, entry) { DetectedCharacterName = characterNameForLine }
@@ -149,11 +166,20 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 								? new DamageLogLine(line, damageEvent) { DetectedCharacterName = characterNameForLine }
 								: healEvent != null
 									? new HealLogLine(line, healEvent) { DetectedCharacterName = characterNameForLine }
-									: killEvent != null
-										? new KillLogLine(line, killEvent) { DetectedCharacterName = characterNameForLine }
-										: new UnknownLogLine(line) { DetectedCharacterName = characterNameForLine };
+									: missEvent != null
+										? new MissLogLine(line, missEvent) { DetectedCharacterName = characterNameForLine }
+										: killEvent != null
+											? new KillLogLine(line, killEvent) { DetectedCharacterName = characterNameForLine }
+											: new UnknownLogLine(line) { DetectedCharacterName = characterNameForLine };
 
 						yield return logLine;
+
+						// TryParse may flush a stale pending event AND return a new event on the same line.
+						// The chain above picks the flushed event first -- emit the secondary event now.
+						if(damageEvent != null && healEvent != null)
+							yield return new HealLogLine(line, healEvent) { DetectedCharacterName = characterNameForLine };
+						else if(damageEvent != null && missEvent != null)
+							yield return new MissLogLine(line, missEvent) { DetectedCharacterName = characterNameForLine };
 					}
 				}
 			}
