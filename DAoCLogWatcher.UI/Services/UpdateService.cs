@@ -11,8 +11,9 @@ public sealed class UpdateService
 	private UpdateInfo? pendingUpdate;
 
 	/// <summary>
-	/// Checks GitHub for a newer release, downloads it if found, and returns
-	/// the version label and whether an update is ready. Returns (null, false) on any failure.
+	/// Checks GitHub for a newer release and returns the version label immediately.
+	/// If an update is found, downloads it in the background so it is ready to apply.
+	/// Returns (null, false) on any failure or when not installed via Velopack.
 	/// </summary>
 	public async Task<(string? VersionText, bool Available)> CheckForUpdatesAsync()
 	{
@@ -26,9 +27,17 @@ public sealed class UpdateService
 			if (update == null)
 				return (null, false);
 
-			await mgr.DownloadUpdatesAsync(update);
+			// Download in the background — caller gets the banner immediately.
+			_ = Task.Run(async () =>
+			{
+				try
+				{
+					await mgr.DownloadUpdatesAsync(update);
+					this.pendingUpdate = update;
+				}
+				catch { }
+			});
 
-			this.pendingUpdate = update;
 			return ($"v{update.TargetFullRelease.Version} available", true);
 		}
 		catch (Exception ex)
