@@ -14,7 +14,7 @@ public sealed class CombatParserTests
     public void TryParse_DealtHitWithAbsorbed_ReturnsPendingThenFlushed()
     {
         // The hit is stored as pending; it resolves when the next unrelated line arrives
-        var result = parser.TryParse("[21:06:19] You hit Ziin for 39 (-7) damage!", out var damage, out var heal, out _);
+        var result = parser.TryParse("[21:06:19] You hit Vareth for 39 (-7) damage!", out var damage, out var heal, out _);
 
         result.Should().BeFalse("hit is pending until we know if a crit follows");
         damage.Should().BeNull();
@@ -24,7 +24,7 @@ public sealed class CombatParserTests
         var result2 = parser.TryParse("[21:06:25] Some other line", out var damage2, out var heal2, out _);
         result2.Should().BeTrue();
         damage2.Should().NotBeNull();
-        damage2!.Target.Should().Be("Ziin");
+        damage2!.Target.Should().Be("Vareth");
         damage2.BaseDamage.Should().Be(39);
         damage2.Absorbed.Should().Be(7);
         damage2.CritDamage.Should().Be(0);
@@ -35,7 +35,7 @@ public sealed class CombatParserTests
     [Fact]
     public void TryParse_DealtHitFollowedByCrit_EmitsMergedEvent()
     {
-        parser.TryParse("[21:06:20] You hit Ziin for 39 (-7) damage!", out _, out _, out _);
+        parser.TryParse("[21:06:20] You hit Vareth for 39 (-7) damage!", out _, out _, out _);
 
         var result = parser.TryParse("[21:06:20] You critically hit for an additional 16 damage! (Crit Chance: 10%)", out var damage, out _, out _);
 
@@ -62,12 +62,12 @@ public sealed class CombatParserTests
     [Fact]
     public void TryParse_ConsecutiveDealtHits_FlushesFirstOnSecond()
     {
-        parser.TryParse("[21:06:40] You hit Yournamehere for 250 (-193) damage!", out _, out _, out _);
+        parser.TryParse("[21:06:40] You hit Drakthos for 250 (-193) damage!", out _, out _, out _);
 
         // Second hit flushes first (no crit for first)
-        var result = parser.TryParse("[21:06:41] You hit Yournamehere for 250 (-193) damage!", out var damage, out _, out _);
+        var result = parser.TryParse("[21:06:41] You hit Drakthos for 250 (-193) damage!", out var damage, out _, out _);
         result.Should().BeTrue();
-        damage!.Target.Should().Be("Yournamehere");
+        damage!.Target.Should().Be("Drakthos");
         damage.BaseDamage.Should().Be(250);
         damage.CritDamage.Should().Be(0);
     }
@@ -77,14 +77,14 @@ public sealed class CombatParserTests
     [Fact]
     public void TryParse_TakenHit_ReturnsPendingThenFlushed()
     {
-        var result = parser.TryParse("[20:56:16] Barabomb hits you for 121 (-42) damage!", out var damage, out _, out _);
+        var result = parser.TryParse("[20:56:16] Grimskar hits you for 121 (-42) damage!", out var damage, out _, out _);
 
         result.Should().BeFalse("hit is pending — crit may follow");
         damage.Should().BeNull();
 
         var result2 = parser.TryParse("[20:56:17] unrelated", out var damage2, out _, out _);
         result2.Should().BeTrue();
-        damage2!.Target.Should().Be("Barabomb");
+        damage2!.Target.Should().Be("Grimskar");
         damage2.BaseDamage.Should().Be(121);
         damage2.Absorbed.Should().Be(42);
         damage2.IsDealt.Should().BeFalse();
@@ -93,13 +93,13 @@ public sealed class CombatParserTests
     [Fact]
     public void TryParse_TakenHitFollowedByNoTimestampCrit_EmitsMergedEvent()
     {
-        parser.TryParse("[20:56:16] Barabomb hits you for 121 (-42) damage!", out _, out _, out _);
+        parser.TryParse("[20:56:16] Grimskar hits you for 121 (-42) damage!", out _, out _, out _);
 
         // Taken crit has NO timestamp
-        var result = parser.TryParse("Barabomb critically hits you for an additional 46 damage! (Crit Chance: 41%)", out var damage, out _, out _);
+        var result = parser.TryParse("Grimskar critically hits you for an additional 46 damage! (Crit Chance: 41%)", out var damage, out _, out _);
 
         result.Should().BeTrue();
-        damage!.Target.Should().Be("Barabomb");
+        damage!.Target.Should().Be("Grimskar");
         damage.BaseDamage.Should().Be(121);
         damage.CritDamage.Should().Be(46);
         damage.TotalDamage.Should().Be(167);
@@ -110,7 +110,7 @@ public sealed class CombatParserTests
     public void TryParse_TakenCritWithNoMatchingPending_IsIgnored()
     {
         // Orphan crit line with no preceding hit — should not crash or emit
-        var result = parser.TryParse("Barabomb critically hits you for an additional 46 damage! (Crit Chance: 41%)", out var damage, out _, out _);
+        var result = parser.TryParse("Grimskar critically hits you for an additional 46 damage! (Crit Chance: 41%)", out var damage, out _, out _);
 
         result.Should().BeFalse();
         damage.Should().BeNull();
@@ -121,11 +121,11 @@ public sealed class CombatParserTests
     [Fact]
     public void TryParse_HealLine_EmitsHealEvent()
     {
-        var result = parser.TryParse("[20:56:44] You are healed by Asclepia for 582 hit points.", out _, out var heal, out _);
+        var result = parser.TryParse("[20:56:44] You are healed by Thendria for 582 hit points.", out _, out var heal, out _);
 
         result.Should().BeTrue();
         heal.Should().NotBeNull();
-        heal!.Healer.Should().Be("Asclepia");
+        heal!.Healer.Should().Be("Thendria");
         heal.HitPoints.Should().Be(582);
         heal.Timestamp.Should().Be(new TimeOnly(20, 56, 44));
     }
@@ -136,7 +136,7 @@ public sealed class CombatParserTests
         // A hit line followed by a heal (no crit) — pending hit should be flushed alongside the heal
         parser.TryParse("[21:00:00] You hit Enemy for 300 (-50) damage!", out _, out _, out _);
 
-        var result = parser.TryParse("[21:00:01] You are healed by Hexenblitz for 248 hit points.", out var damage, out var heal, out _);
+        var result = parser.TryParse("[21:00:01] You are healed by Ulfdan for 248 hit points.", out var damage, out var heal, out _);
 
         result.Should().BeTrue();
         heal.Should().NotBeNull();
@@ -150,7 +150,7 @@ public sealed class CombatParserTests
     [Fact]
     public void TryParse_UnrelatedLine_ReturnsFalse()
     {
-        var result = parser.TryParse("[20:51:32] Botuliane was just killed by Runenrichard in Hadrian's Wall.", out var damage, out var heal, out _);
+        var result = parser.TryParse("[20:51:32] Quelris was just killed by Torven in Hadrian's Wall.", out var damage, out var heal, out _);
 
         result.Should().BeFalse();
         damage.Should().BeNull();
@@ -173,7 +173,7 @@ public sealed class CombatParserTests
     public void TryParse_CastThenHitSameSecond_HitCarriesSpellName()
     {
         parser.TryParse("[21:06:19] You cast a Extinguish Lifeforce spell!", out _, out _, out _);
-        parser.TryParse("[21:06:19] You hit Ziin for 39 (-7) damage!", out _, out _, out _);
+        parser.TryParse("[21:06:19] You hit Vareth for 39 (-7) damage!", out _, out _, out _);
 
         // Flush to resolve the pending hit
         var ev = parser.FlushPending();
@@ -187,7 +187,7 @@ public sealed class CombatParserTests
         parser.TryParse("[21:06:21] You cast a Annihilate Strength spell!", out _, out _, out _);
         parser.TryParse("[21:06:21] You cast a Scatter Zeal spell!", out _, out _, out _);
         parser.TryParse("[21:06:21] You cast a Extinguish Lifeforce spell!", out _, out _, out _);
-        parser.TryParse("[21:06:21] You hit Ziin for 39 (-7) damage!", out _, out _, out _);
+        parser.TryParse("[21:06:21] You hit Vareth for 39 (-7) damage!", out _, out _, out _);
 
         var ev = parser.FlushPending();
         ev!.SpellName.Should().Be("Extinguish Lifeforce");
@@ -196,7 +196,7 @@ public sealed class CombatParserTests
     [Fact]
     public void TryParse_HitWithNoPrecedingCast_SpellNameIsNull()
     {
-        parser.TryParse("[21:06:19] You hit Ziin for 39 (-7) damage!", out _, out _, out _);
+        parser.TryParse("[21:06:19] You hit Vareth for 39 (-7) damage!", out _, out _, out _);
 
         var ev = parser.FlushPending();
         ev!.SpellName.Should().BeNull("no cast line preceded this hit");
@@ -206,8 +206,8 @@ public sealed class CombatParserTests
     public void TryParse_CastInterruptedThenHit_SpellNameIsNull()
     {
         parser.TryParse("[21:06:19] You cast a Extinguish Lifeforce spell!", out _, out _, out _);
-        parser.TryParse("[21:06:19] Ziin attacks you and your spell is interrupted!", out _, out _, out _);
-        parser.TryParse("[21:06:20] You hit Ziin for 39 (-7) damage!", out _, out _, out _);
+        parser.TryParse("[21:06:19] Vareth attacks you and your spell is interrupted!", out _, out _, out _);
+        parser.TryParse("[21:06:20] You hit Vareth for 39 (-7) damage!", out _, out _, out _);
 
         var ev = parser.FlushPending();
         ev!.SpellName.Should().BeNull("cast was interrupted before the hit");
@@ -218,14 +218,14 @@ public sealed class CombatParserTests
     {
         // AE spell: one cast, multiple simultaneous hits — all should get the spell name
         parser.TryParse("[21:16:01] You cast a Resonant Concussion spell!", out _, out _, out _);
-        parser.TryParse("[21:16:01] You hit Huscarl for 93 (-17) damage!", out _, out _, out _);
+        parser.TryParse("[21:16:01] You hit Draekon for 93 (-17) damage!", out _, out _, out _);
 
         // Flush first hit, start second
-        parser.TryParse("[21:16:01] You hit Huscarl for 93 (-17) damage!", out var first, out _, out _);
+        parser.TryParse("[21:16:01] You hit Draekon for 93 (-17) damage!", out var first, out _, out _);
         first!.SpellName.Should().Be("Resonant Concussion", "first AE hit should carry spell name");
 
         // Flush second, start third
-        parser.TryParse("[21:16:01] You hit Huscarl for 93 (-17) damage!", out var second, out _, out _);
+        parser.TryParse("[21:16:01] You hit Draekon for 93 (-17) damage!", out var second, out _, out _);
         second!.SpellName.Should().Be("Resonant Concussion", "second AE hit should also carry spell name");
 
         var third = parser.FlushPending();
@@ -237,7 +237,7 @@ public sealed class CombatParserTests
     {
         parser.TryParse("[21:06:19] You cast a Extinguish Lifeforce spell!", out _, out _, out _);
         // 5 seconds later — no earlier hit confirmed this as a damage spell (could be a buff)
-        parser.TryParse("[21:06:24] You hit Ziin for 39 (-7) damage!", out _, out _, out _);
+        parser.TryParse("[21:06:24] You hit Vareth for 39 (-7) damage!", out _, out _, out _);
 
         var ev = parser.FlushPending();
         ev!.SpellName.Should().BeNull("no hit within 4.5s window confirmed this as a damage spell");
@@ -248,9 +248,9 @@ public sealed class CombatParserTests
     {
         // First tick within window — confirms the spell
         parser.TryParse("[21:06:19] You cast a Extinguish Lifeforce spell!", out _, out _, out _);
-        parser.TryParse("[21:06:21] You hit Ziin for 39 (-7) damage!", out _, out _, out _);
+        parser.TryParse("[21:06:21] You hit Vareth for 39 (-7) damage!", out _, out _, out _);
         // Second tick 5s after cast — outside window, but spell is confirmed
-        var result = parser.TryParse("[21:06:24] You hit Ziin for 39 (-7) damage!", out var flushed, out _, out _);
+        var result = parser.TryParse("[21:06:24] You hit Vareth for 39 (-7) damage!", out var flushed, out _, out _);
         result.Should().BeTrue("first pending should be flushed");
         flushed!.SpellName.Should().Be("Extinguish Lifeforce", "first tick confirmed the spell");
 
@@ -262,7 +262,7 @@ public sealed class CombatParserTests
     public void TryParse_SpellCastFlushesStaleDealtPending()
     {
         // Hit is pending
-        parser.TryParse("[21:06:19] You hit Ziin for 39 (-7) damage!", out _, out _, out _);
+        parser.TryParse("[21:06:19] You hit Vareth for 39 (-7) damage!", out _, out _, out _);
 
         // A new spell cast should flush the pending hit (no crit arrived)
         var result = parser.TryParse("[21:06:20] You cast a Extinguish Lifeforce spell!", out var flushed, out _, out _);
@@ -276,7 +276,7 @@ public sealed class CombatParserTests
     [Fact]
     public void FlushPending_WithDealtPending_ReturnsEventAndClearsPending()
     {
-        parser.TryParse("[21:06:19] You hit Ziin for 39 (-7) damage!", out _, out _, out _);
+        parser.TryParse("[21:06:19] You hit Vareth for 39 (-7) damage!", out _, out _, out _);
 
         var ev = parser.FlushPending();
         ev.Should().NotBeNull();
@@ -308,11 +308,11 @@ public sealed class CombatParserTests
     [Fact]
     public void TryParse_HealOther_ReturnsOutgoingHealWithTargetName()
     {
-        parser.TryParse("[21:55:49] You heal Harko for 1060 hit points!", out _, out var heal, out _);
+        parser.TryParse("[21:55:49] You heal Pelgath for 1060 hit points!", out _, out var heal, out _);
 
         heal.Should().NotBeNull();
         heal!.IsOutgoing.Should().BeTrue();
-        heal.Target.Should().Be("Harko");
+        heal.Target.Should().Be("Pelgath");
         heal.HitPoints.Should().Be(1060);
     }
 
@@ -320,10 +320,10 @@ public sealed class CombatParserTests
     public void TryParse_OutgoingHeal_WithPendingTaken_ReturnsBothDamageAndHeal()
     {
         // Enemy hits player — pendingTaken is set
-        parser.TryParse("[21:55:48] Harko hits you for 200 damage!", out _, out _, out _);
+        parser.TryParse("[21:55:48] Pelgath hits you for 200 damage!", out _, out _, out _);
 
         // Player heals a group member — pendingTaken is flushed as damage AND heal is returned
-        var result = parser.TryParse("[21:55:49] You heal Kobil for 500 hit points!", out var damage, out var heal, out _);
+        var result = parser.TryParse("[21:55:49] You heal Rendis for 500 hit points!", out var damage, out var heal, out _);
 
         result.Should().BeTrue();
         damage.Should().NotBeNull("flushed taken hit must be returned");
@@ -331,25 +331,25 @@ public sealed class CombatParserTests
         damage.BaseDamage.Should().Be(200);
         heal.Should().NotBeNull("outgoing heal must not be dropped when there is a pending taken hit");
         heal!.IsOutgoing.Should().BeTrue();
-        heal.Target.Should().Be("Kobil");
+        heal.Target.Should().Be("Rendis");
         heal.HitPoints.Should().Be(500);
     }
 
     [Fact]
     public void TryParse_IncomingHeal_IsNotOutgoing()
     {
-        parser.TryParse("[21:55:49] You are healed by Harko for 800 hit points.", out _, out var heal, out _);
+        parser.TryParse("[21:55:49] You are healed by Pelgath for 800 hit points.", out _, out var heal, out _);
 
         heal.Should().NotBeNull();
         heal!.IsOutgoing.Should().BeFalse();
-        heal.Healer.Should().Be("Harko");
+        heal.Healer.Should().Be("Pelgath");
         heal.HitPoints.Should().Be(800);
     }
 
     [Fact]
     public void TryParse_IsFullyHealedLine_NoHealEvent()
     {
-        var result = parser.TryParse("[21:55:49] Iwillskoll is fully healed.", out _, out var heal, out _);
+        var result = parser.TryParse("[21:55:49] Sylvorn is fully healed.", out _, out var heal, out _);
 
         heal.Should().BeNull();
     }

@@ -241,7 +241,7 @@ public sealed class RealmPointParserTests
         rpEntry.Should().BeNull();
 
         // Act - Capture announcement follows
-        var captureResult = parser.TryParse("[11:49:29] The forces of Midgard led by Boomalaka have captured Hlidskialf Faste!", out var captureEntry);
+        var captureResult = parser.TryParse("[11:49:29] The forces of Midgard led by Wraelok have captured Hlidskialf Faste!", out var captureEntry);
 
         // Assert
         captureResult.Should().BeTrue();

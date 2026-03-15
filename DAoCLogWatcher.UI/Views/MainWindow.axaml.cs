@@ -91,6 +91,12 @@ public partial class MainWindow : Window
 
         this.ApplyDarkTitleBar();
 
+        // Move to a secondary screen if one is available — DAoC typically runs full-screen
+        // on the primary monitor, so prefer any non-primary screen for the log watcher.
+        var secondary = this.Screens.All.FirstOrDefault(s => !s.IsPrimary);
+        if (secondary != null)
+            this.Position = secondary.WorkingArea.TopLeft;
+
         var screen = this.Screens.ScreenFromWindow(this);
         if (screen == null) return;
 
