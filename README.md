@@ -1,8 +1,8 @@
 # DAoC Log Watcher
 
-> **Beta** — core features work, some RP categories may be misidentified. Please report issues on the [Issues](https://github.com/ZZerker/DAoCLogWatcher/issues) page.
+> **Beta** — core RP tracking works well; combat, heal, and damage features are early beta and still being improved. Please report issues on the [Issues](https://github.com/ZZerker/DAoCLogWatcher/issues) page.
 
-A real-time Realm Point tracker for **Dark Age of Camelot (Eden)**. Load your `chat.log` and instantly see how many RPs you're earning, where they're coming from, how fast they're rolling in, and your kill/death stats, all updated live as you play.
+A real-time tracker for **Dark Age of Camelot (Eden)**. Load your `chat.log` and instantly see how many RPs you're earning, where they're coming from, how fast they're rolling in, your kill/death stats, and live combat metrics — all updated as you play.
 
 ![DAoC Log Watcher screenshot](DAoCLogWatcher.Core/TestFiles/DAoC_Log_Watcher.png)
 
@@ -12,7 +12,7 @@ A real-time Realm Point tracker for **Dark Age of Camelot (Eden)**. Load your `c
 
 - **Live log tracking** — reads your chat log as the game writes it, no manual refreshing needed
 - **RP breakdown** by source:
-  - Player Kills, Campaign Quests, Battle Ticks
+  - Player Kills (with victim name when available), Campaign Quests, Battle Ticks
   - Siege (Tower & Keep Captures), Assault Orders
   - Support Activity, Relic Captures, Timed Missions
 - **RP/h meter** — rolling realm points per hour, updated every 5 seconds
@@ -23,8 +23,11 @@ A real-time Realm Point tracker for **Dark Age of Camelot (Eden)**. Load your `c
 - **Auto-update** — the app checks for new releases on startup and prompts you to install them
 - **Dark & Light theme** — toggle any time
 - **Windows & Linux** supported (Linux via Wine / Lutris / Flatpak)
+- **Secondary monitor support** — the app automatically opens on a secondary monitor if one is present, since DAoC typically runs full-screen on the primary
 
-### 🧪 Beta Features
+### 🧪 Beta Features — Combat & Heal Tracking
+
+> **These features are in early beta and still need work.** Numbers may be incomplete or misattributed depending on your class, playstyle, and log line formats the parser hasn't seen yet. If something looks wrong, please share the relevant lines from your `chat.log` on the [Issues](https://github.com/ZZerker/DAoCLogWatcher/issues) page — log examples are always welcome and directly help improve coverage.
 
 - **Combat tracking** — a dedicated Combat tab shows stats parsed live from your combat log:
   - **Damage dealt** — total, hit count, average per hit, and crit count / crit rate
@@ -154,8 +157,9 @@ If **Open DAoC Log** can't find the file automatically, use **Open Log File** to
 | RP source categorization | Some log line formats are not yet parsed — sources may be misidentified or fall into "Other" |
 | Percentage breakdown | Derived from categorized RPs, so any misidentification above carries through |
 | Kill / death count | Requires at least one `/stats` in the log — events before the first `/stats` are retroactively counted once the name is detected |
+| Combat & heal tracking | Early beta — spell attribution, damage categorization, and heal tracking may be incomplete or incorrect for some classes and abilities |
 
-Please report unexpected behaviour on the [Issues](https://github.com/ZZerker/DAoCLogWatcher/issues) page.
+Please report unexpected behaviour on the [Issues](https://github.com/ZZerker/DAoCLogWatcher/issues) page. **Log examples are especially helpful** — if a number looks wrong, paste the relevant lines from your `chat.log` in the issue and it will be fixed.
 
 ---
 
