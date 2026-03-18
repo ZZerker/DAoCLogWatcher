@@ -7,6 +7,7 @@ namespace DAoCLogWatcher.UI.Models;
 public class AppSettings
 {
 	public bool HighlightMultiKills { get; set; } = true;
+	public bool HighlightMultiHits { get; set; } = true;
 	public string? CustomChatLogPath { get; set; }
 
 	// Tab visibility (all default on)

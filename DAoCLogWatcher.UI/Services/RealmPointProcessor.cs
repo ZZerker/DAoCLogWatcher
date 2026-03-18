@@ -13,6 +13,7 @@ public sealed class RealmPointProcessor(RealmPointSummary summary, RpsChartData 
 	private int killWindowRps;
 	private TimeOnly killWindowStart;
 	private RealmPointLogEntry? killWindowFirstEntry;
+	private int statsDeaths;
 
 	public event EventHandler<RealmPointLogEntry>? MultiKillDetected;
 
@@ -66,6 +67,12 @@ public sealed class RealmPointProcessor(RealmPointSummary summary, RpsChartData 
 			this.killEventBuffer.Add(killEvent);
 			if (this.DetectedCharacterName != null)
 				this.RecomputeKillStats(ref killStatsChanged);
+		}
+
+		if (logLine is StatsDeathsLogLine { Deaths: var deathsFromStats } && deathsFromStats > this.statsDeaths)
+		{
+			this.statsDeaths = deathsFromStats;
+			this.RecomputeKillStats(ref killStatsChanged);
 		}
 
 		if (logLine is not RealmPointLogLine { Entry: var entry })
@@ -170,6 +177,7 @@ public sealed class RealmPointProcessor(RealmPointSummary summary, RpsChartData 
 		this.killWindowRps = 0;
 		this.killWindowFirstEntry = null;
 		this.killEventBuffer.Clear();
+		this.statsDeaths = 0;
 		this.DetectedCharacterName = null;
 		this.Kills = 0;
 		this.Deaths = 0;
@@ -177,7 +185,7 @@ public sealed class RealmPointProcessor(RealmPointSummary summary, RpsChartData 
 
 	private void FinalizeKillWindow()
 	{
-		if (this.killWindowRpCount >= 3)
+		if (this.killWindowRpCount >= 5)
 		{
 			if (this.killWindowFirstEntry != null)
 				this.killWindowFirstEntry.IsMultiKill = true;
@@ -217,6 +225,7 @@ public sealed class RealmPointProcessor(RealmPointSummary summary, RpsChartData 
 			if (ev.Killer == name) kills++;
 			if (ev.Victim == name) deaths++;
 		}
+		deaths = Math.Max(deaths, this.statsDeaths);
 
 		if (kills != this.Kills || deaths != this.Deaths)
 		{

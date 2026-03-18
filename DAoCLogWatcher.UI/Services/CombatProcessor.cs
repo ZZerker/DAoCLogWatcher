@@ -9,6 +9,17 @@ public sealed class CombatProcessor(CombatSummary summary)
 {
 	public event EventHandler<CombatLogEntry>? DamageLogged;
 	public event EventHandler<HealLogEntry>? HealLogged;
+	public event EventHandler<CombatLogEntry>? MultiHitDetected;
+
+	private string? multiHitSpell;
+	private TimeOnly multiHitWindowStart;
+	private readonly HashSet<string> multiHitTargets = new();
+	private int multiHitTotalDamage;
+	// Log timestamps have 1-second precision; same-second hits always have diffSec=0.
+	// Using >= 1.0 closes the window the moment a new second begins, preventing
+	// DoT ticks in subsequent seconds from inflating the target count.
+	private const double MULTI_HIT_WINDOW_SECONDS = 1.0;
+	private const int MULTI_HIT_THRESHOLD = 5;
 
 	public void Process(LogLine logLine)
 	{
@@ -20,7 +31,13 @@ public sealed class CombatProcessor(CombatSummary summary)
 			this.ProcessMiss(miss);
 	}
 
-	public void Reset() => summary.Reset();
+	public void Reset()
+	{
+		summary.Reset();
+		this.multiHitSpell = null;
+		this.multiHitTargets.Clear();
+		this.multiHitTotalDamage = 0;
+	}
 
 	private void ProcessDamage(DamageEvent damage)
 	{
@@ -59,6 +76,9 @@ public sealed class CombatProcessor(CombatSummary summary)
 			SpellName     = damage.SpellName,
 			IsWeaponAttack = damage.IsWeaponAttack,
 		});
+
+		if(damage.IsDealt && damage.SpellName != null)
+			this.TrackMultiHit(damage);
 	}
 
 	private void ProcessHeal(HealEvent heal)
@@ -81,6 +101,51 @@ public sealed class CombatProcessor(CombatSummary summary)
 			IsOutgoing = heal.IsOutgoing,
 			Who        = heal.IsOutgoing ? heal.Target : heal.Healer,
 		});
+	}
+
+	private void TrackMultiHit(DamageEvent damage)
+	{
+		var spell = damage.SpellName!;
+
+		if(this.multiHitSpell != null)
+		{
+			var diffSec = (damage.Timestamp.ToTimeSpan() - this.multiHitWindowStart.ToTimeSpan()).TotalSeconds;
+			if(diffSec < 0) diffSec += 86400;
+			if(this.multiHitSpell != spell || diffSec >= MULTI_HIT_WINDOW_SECONDS)
+				this.FinalizeHitWindow();
+		}
+
+		if(this.multiHitSpell == null)
+		{
+			this.multiHitSpell = spell;
+			this.multiHitWindowStart = damage.Timestamp;
+		}
+
+		this.multiHitTargets.Add(damage.Target);
+		this.multiHitTotalDamage += damage.TotalDamage;
+	}
+
+	private void FinalizeHitWindow()
+	{
+		if(this.multiHitTargets.Count >= MULTI_HIT_THRESHOLD && this.multiHitSpell != null)
+		{
+			this.MultiHitDetected?.Invoke(this, new CombatLogEntry
+			{
+				Timestamp      = this.multiHitWindowStart.ToString("HH:mm:ss"),
+				Target         = $"{this.multiHitTargets.Count} targets",
+				TotalDamage    = this.multiHitTotalDamage,
+				IsDealt        = true,
+				IsCrit         = false,
+				SpellName      = this.multiHitSpell,
+				IsWeaponAttack = false,
+				IsMultiHit     = true,
+				HitCount       = this.multiHitTargets.Count,
+			});
+		}
+
+		this.multiHitSpell = null;
+		this.multiHitTargets.Clear();
+		this.multiHitTotalDamage = 0;
 	}
 
 	private void ProcessMiss(MissEvent miss)

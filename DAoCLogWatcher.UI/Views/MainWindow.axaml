@@ -11,7 +11,8 @@
         Title="DAoC Log Watcher"
         Width="1535" Height="1268"
         Background="{DynamicResource AppWindowBackground}"
-        Classes.highlight-multikills="{Binding HighlightMultiKills}">
+        Classes.highlight-multikills="{Binding HighlightMultiKills}"
+        Classes.highlight-multihits="{Binding HighlightMultiHits}">
 
     <Design.DataContext>
         <vm:MainWindowViewModel/>
@@ -26,6 +27,11 @@
         <Style Selector="Window.highlight-multikills Border.multikill TextBlock.source-label">
             <Setter Property="Foreground" Value="#FFFFAA00" />
             <Setter Property="FontWeight" Value="Bold" />
+        </Style>
+        <Style Selector="Window.highlight-multihits Border.multihit">
+            <Setter Property="Background" Value="#44CC44FF" />
+            <Setter Property="BorderBrush" Value="#CC44FF" />
+            <Setter Property="BorderThickness" Value="3,2,0,2" />
         </Style>
     </Window.Styles>
 
@@ -602,7 +608,8 @@
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
                                                 <Border BorderBrush="{DynamicResource AppRowBorder}" BorderThickness="0,0,0,1" Padding="10,8"
-                                                        Background="Transparent">
+                                                        Background="Transparent"
+                                                        Classes.multihit="{Binding IsMultiHit}">
                                                     <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,*">
                                                         <TextBlock Grid.Column="0" Text="{Binding Timestamp}"
                                                                    Foreground="{DynamicResource AppTextMuted}"
@@ -611,8 +618,11 @@
                                                                    Margin="0,0,20,0"
                                                                    MinWidth="80" />
                                                         <Grid Grid.Column="1" MinWidth="55" Margin="0,0,20,0">
+                                                            <TextBlock Text="AoE" FontSize="13" FontWeight="Bold"
+                                                                       IsVisible="{Binding IsMultiHit}"
+                                                                       Foreground="#FFCC44FF" />
                                                             <TextBlock Text="Dealt" FontSize="13" FontWeight="Bold"
-                                                                       IsVisible="{Binding IsDealt}"
+                                                                       IsVisible="{Binding ShowDealtLabel}"
                                                                        Foreground="#FF00D968" />
                                                             <TextBlock Text="Taken" FontSize="13" FontWeight="Bold"
                                                                        IsVisible="{Binding !IsDealt}"
@@ -764,6 +774,19 @@
                 </StackPanel>
                 <ToggleSwitch Grid.Column="1"
                               IsChecked="{Binding HighlightMultiKills}"
+                              OffContent="" OnContent=""
+                              VerticalAlignment="Center" />
+            </Grid>
+            <Rectangle Fill="{DynamicResource AppBorderBrush}" Height="1" />
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel VerticalAlignment="Center" Spacing="2">
+                    <TextBlock Text="Highlight AoE Multi-Hits"
+                               Foreground="{DynamicResource AppTextPrimary}" FontSize="12" />
+                    <TextBlock Text="Purple border on AoE aggregate combat log entries"
+                               Foreground="{DynamicResource AppTextMuted}" FontSize="10" />
+                </StackPanel>
+                <ToggleSwitch Grid.Column="1"
+                              IsChecked="{Binding HighlightMultiHits}"
                               OffContent="" OnContent=""
                               VerticalAlignment="Center" />
             </Grid>

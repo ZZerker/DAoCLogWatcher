@@ -17,6 +17,7 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 	private static readonly Regex ChatLogClosedRegex = GenerateChatLogClosedRegex();
 	private static readonly Regex StatsCharacterRegex = GenerateStatsCharacterRegex();
 	private static readonly Regex KillLineRegex = GenerateKillLineRegex();
+	private static readonly Regex StatsDeathsRegex = GenerateStatsDeathsRegex();
 
 	private readonly string logFilePath;
 	private readonly double maxHistoryHours;
@@ -134,6 +135,8 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 					if(killEvent != null)
 						lastKillEvent = killEvent;
 
+					var statsDeaths = TryDetectStatsDeaths(line);
+
 					if(shouldYield&&!string.IsNullOrWhiteSpace(line))
 					{
 						// Multi-line sequences (e.g. RP line → XP Guild Bonus → XP line) may
@@ -170,7 +173,9 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 										? new MissLogLine(line, missEvent) { DetectedCharacterName = characterNameForLine }
 										: killEvent != null
 											? new KillLogLine(line, killEvent) { DetectedCharacterName = characterNameForLine }
-											: new UnknownLogLine(line) { DetectedCharacterName = characterNameForLine };
+											: statsDeaths.HasValue
+												? new StatsDeathsLogLine(line, statsDeaths.Value) { DetectedCharacterName = characterNameForLine }
+												: new UnknownLogLine(line) { DetectedCharacterName = characterNameForLine };
 
 						yield return logLine;
 
@@ -352,4 +357,18 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 
 	[GeneratedRegex(@"^\[(?<timestamp>\d{2}:\d{2}:\d{2})\] (?<victim>\w+) was just killed by (?<killer>\w+) in (?<zone>.+)\.$", RegexOptions.Compiled|RegexOptions.CultureInvariant)]
 	private static partial Regex GenerateKillLineRegex();
+
+	private static int? TryDetectStatsDeaths(string line)
+	{
+		var match = StatsDeathsRegex.Match(line);
+		if(!match.Success)
+			return null;
+		return int.TryParse(match.Groups["deaths"].Value, out var deaths) ? deaths : null;
+	}
+
+	// Matches both timestamped and timestampless forms, e.g.:
+	//   [21:21:48] Deaths:        5
+	//   Deaths:        5
+	[GeneratedRegex(@"Deaths:\s+(?<deaths>\d+)", RegexOptions.Compiled|RegexOptions.CultureInvariant)]
+	private static partial Regex GenerateStatsDeathsRegex();
 }

@@ -42,6 +42,13 @@ public partial class MainWindowViewModel : ViewModelBase
 		SettingsService.Save(this.settings);
 	}
 
+	[ObservableProperty] private bool highlightMultiHits;
+	partial void OnHighlightMultiHitsChanged(bool value)
+	{
+		this.settings.HighlightMultiHits = value;
+		SettingsService.Save(this.settings);
+	}
+
 	[ObservableProperty] private string? customChatLogPath;
 	partial void OnCustomChatLogPathChanged(string? value)
 	{
@@ -209,6 +216,7 @@ public partial class MainWindowViewModel : ViewModelBase
 	public MainWindowViewModel()
 	{
 		this.highlightMultiKills    = this.settings.HighlightMultiKills;
+		this.highlightMultiHits     = this.settings.HighlightMultiHits;
 		this.customChatLogPath      = this.settings.CustomChatLogPath;
 		this.isRealmPointsTabVisible = this.settings.ShowRealmPointsTab;
 		this.isCombatTabVisible      = this.settings.ShowCombatTab;
@@ -217,8 +225,9 @@ public partial class MainWindowViewModel : ViewModelBase
 		this.processor = new RealmPointProcessor(this.Summary, this.ChartData);
 		this.processor.MultiKillDetected += this.OnMultiKillDetected;
 		this.combatProcessor = new CombatProcessor(this.CombatSummary);
-		this.combatProcessor.DamageLogged += this.OnDamageLogged;
-		this.combatProcessor.HealLogged   += this.OnHealLogged;
+		this.combatProcessor.DamageLogged     += this.OnDamageLogged;
+		this.combatProcessor.HealLogged       += this.OnHealLogged;
+		this.combatProcessor.MultiHitDetected += this.OnMultiHitDetected;
 		_ = this.CheckForUpdatesAsync();
 	}
 
@@ -342,6 +351,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
 	private void OnDamageLogged(object? sender, CombatLogEntry e) => AddCapped(this.CombatLogEntries, e);
 	private void OnHealLogged(object? sender, HealLogEntry e) => AddCapped(this.HealLogEntries, e);
+	private void OnMultiHitDetected(object? sender, CombatLogEntry e) => AddCapped(this.CombatLogEntries, e);
 	private void AddLogEntry(RealmPointLogEntry entry) => AddCapped(this.LogEntries, entry);
 
 	private static void AddCapped<T>(ObservableCollection<T> collection, T item)

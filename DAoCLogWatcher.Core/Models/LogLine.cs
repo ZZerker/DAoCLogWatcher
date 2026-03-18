@@ -24,3 +24,6 @@ public sealed record HealLogLine(string Text, HealEvent Event) : LogLine(Text);
 
 /// <summary>A line that yielded a miss/block/resist event (outgoing attack failed).</summary>
 public sealed record MissLogLine(string Text, MissEvent Event) : LogLine(Text);
+
+/// <summary>A /stats Deaths line — carries the session death count reported by the game.</summary>
+public sealed record StatsDeathsLogLine(string Text, int Deaths) : LogLine(Text);
