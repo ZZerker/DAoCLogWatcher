@@ -13,12 +13,15 @@ public sealed class CombatProcessor(CombatSummary summary)
 
 	private string? multiHitSpell;
 	private TimeOnly multiHitWindowStart;
+	private TimeOnly multiHitWindowLastHit;
 	private readonly HashSet<string> multiHitTargets = new();
 	private int multiHitTotalDamage;
-	// Log timestamps have 1-second precision; same-second hits always have diffSec=0.
-	// Using >= 1.0 closes the window the moment a new second begins, preventing
-	// DoT ticks in subsequent seconds from inflating the target count.
-	private const double MULTI_HIT_WINDOW_SECONDS = 1.0;
+	// Sliding window: closes when no new hit of the same spell arrives within 4 seconds
+	// of the previous hit. Using the last hit (not the window start) avoids premature
+	// closure when an older cast's straggler arrives shortly before the current cast's hits,
+	// and handles out-of-order timestamps (game writes player hits before mob hits for the
+	// same cast, producing timestamps 1–2s apart in reverse order).
+	private const double MULTI_HIT_WINDOW_SECONDS = 4.0;
 	private const int MULTI_HIT_THRESHOLD = 5;
 
 	public void Process(LogLine logLine)
@@ -66,6 +69,11 @@ public sealed class CombatProcessor(CombatSummary summary)
 			summary.DamageTakenByAttacker.Accumulate(damage.Target, damage.TotalDamage);
 		}
 
+		// Finalize any previous AoE window before logging the new hit, so the aggregate
+		// entry appears immediately after the last AoE hit rather than after this one.
+		if(damage.IsDealt && damage.SpellName != null)
+			this.TrackMultiHit(damage);
+
 		this.DamageLogged?.Invoke(this, new CombatLogEntry
 		{
 			Timestamp     = damage.Timestamp.ToString("HH:mm:ss"),
@@ -76,9 +84,6 @@ public sealed class CombatProcessor(CombatSummary summary)
 			SpellName     = damage.SpellName,
 			IsWeaponAttack = damage.IsWeaponAttack,
 		});
-
-		if(damage.IsDealt && damage.SpellName != null)
-			this.TrackMultiHit(damage);
 	}
 
 	private void ProcessHeal(HealEvent heal)
@@ -109,8 +114,8 @@ public sealed class CombatProcessor(CombatSummary summary)
 
 		if(this.multiHitSpell != null)
 		{
-			var diffSec = (damage.Timestamp.ToTimeSpan() - this.multiHitWindowStart.ToTimeSpan()).TotalSeconds;
-			if(diffSec < 0) diffSec += 86400;
+			var diffSec = Math.Abs((damage.Timestamp.ToTimeSpan() - this.multiHitWindowLastHit.ToTimeSpan()).TotalSeconds);
+			if(diffSec > 43200) diffSec = 86400 - diffSec;
 			if(this.multiHitSpell != spell || diffSec >= MULTI_HIT_WINDOW_SECONDS)
 				this.FinalizeHitWindow();
 		}
@@ -121,6 +126,7 @@ public sealed class CombatProcessor(CombatSummary summary)
 			this.multiHitWindowStart = damage.Timestamp;
 		}
 
+		this.multiHitWindowLastHit = damage.Timestamp;
 		this.multiHitTargets.Add(damage.Target);
 		this.multiHitTotalDamage += damage.TotalDamage;
 	}

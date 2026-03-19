@@ -225,7 +225,10 @@ public sealed class RealmPointProcessor(RealmPointSummary summary, RpsChartData 
 			if (ev.Killer == name) kills++;
 			if (ev.Victim == name) deaths++;
 		}
-		deaths = Math.Max(deaths, this.statsDeaths);
+		// /stats Deaths is authoritative (includes all deaths the game has recorded).
+		// Kill-line parsing is a fallback for when no /stats has been seen yet.
+		if (this.statsDeaths > 0)
+			deaths = this.statsDeaths;
 
 		if (kills != this.Kills || deaths != this.Deaths)
 		{

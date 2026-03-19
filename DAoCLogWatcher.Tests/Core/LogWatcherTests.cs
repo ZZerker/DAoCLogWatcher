@@ -588,6 +588,143 @@ public sealed class LogWatcherTests : IDisposable
     }
 
     [Fact]
+    public async Task WatchAsync_StatsDeathsLine_EmitsStatsDeathsLogLine()
+    {
+        // Arrange
+        var content =
+            "*** Chat Log Opened: Mon Feb 16 20:00:00 2026\n" +
+            "[20:54:35] Deaths:        7\n" +
+            "[20:55:00] You get 100 realm points for Battle Tick!\n";
+
+        await File.WriteAllTextAsync(this.testLogFilePath, content);
+        var watcher = new LogWatcher(this.testLogFilePath, enableTimeFiltering: false);
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+
+        StatsDeathsLogLine? deathsLine = null;
+
+        await foreach (var line in watcher.WatchAsync(cts.Token))
+        {
+            if (line is StatsDeathsLogLine sdl)
+                deathsLine = sdl;
+            if (line.Text.Contains("Battle Tick"))
+            {
+                cts.Cancel();
+                break;
+            }
+        }
+
+        deathsLine.Should().NotBeNull();
+        deathsLine!.Deaths.Should().Be(7);
+    }
+
+    [Fact]
+    public async Task WatchAsync_StatsDeathsLine_WithLeadingSpaces_EmitsStatsDeathsLogLine()
+    {
+        // Arrange — some game client versions indent the Deaths line
+        var content =
+            "*** Chat Log Opened: Mon Feb 16 20:00:00 2026\n" +
+            "[20:54:35]   Deaths:        7\n" +
+            "[20:55:00] You get 100 realm points for Battle Tick!\n";
+
+        await File.WriteAllTextAsync(this.testLogFilePath, content);
+        var watcher = new LogWatcher(this.testLogFilePath, enableTimeFiltering: false);
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+
+        StatsDeathsLogLine? deathsLine = null;
+
+        await foreach (var line in watcher.WatchAsync(cts.Token))
+        {
+            if (line is StatsDeathsLogLine sdl)
+                deathsLine = sdl;
+            if (line.Text.Contains("Battle Tick"))
+            {
+                cts.Cancel();
+                break;
+            }
+        }
+
+        deathsLine.Should().NotBeNull();
+        deathsLine!.Deaths.Should().Be(7);
+    }
+
+    [Fact]
+    public async Task WatchAsync_StatsOutput_WithoutTimestamps_EmitsStatsDeathsLogLine()
+    {
+        // Arrange — actual game format: /stats detail lines have no timestamp prefix
+        var content =
+            "*** Chat Log Opened: Mon Feb 16 20:00:00 2026\n" +
+            "[12:38:55] Options: /stats [ rp | kills | deathblows | solo | irs | heal | rez | player <name|target>  ]\n" +
+            "Statistics for Caranthir this Session:\n" +
+            "Total RP: 44367\n" +
+            "Deathblows: 11\n" +
+            "Solo kills: 0\n" +
+            "Deaths: 7\n" +
+            "HP healed: 6672\n" +
+            "Resurrections performed: 0\n" +
+            "Kills per death: 25\n" +
+            "\"I Remain Standing...\": 2055\n" +
+            "[12:38:55] You sit down.  Type '/stand' or move to stand up.\n";
+
+        await File.WriteAllTextAsync(this.testLogFilePath, content);
+        var watcher = new LogWatcher(this.testLogFilePath, enableTimeFiltering: false);
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+
+        StatsDeathsLogLine? deathsLine = null;
+
+        await foreach (var line in watcher.WatchAsync(cts.Token))
+        {
+            if (line is StatsDeathsLogLine sdl)
+                deathsLine = sdl;
+            if (line.Text.Contains("You sit down"))
+            {
+                cts.Cancel();
+                break;
+            }
+        }
+
+        deathsLine.Should().NotBeNull();
+        deathsLine!.Deaths.Should().Be(7);
+        watcher.CurrentCharacterName.Should().Be("Caranthir");
+    }
+
+    [Theory]
+    [InlineData("[20:54:35]   Deathblows:      14")]
+    [InlineData("[20:54:35]   Kills per Death: 4")]
+    [InlineData("[20:54:35] Alb Deaths: 5")]
+    [InlineData("[20:54:35] Group Deaths: 3")]
+    [InlineData("Deathblows: 11")]
+    [InlineData("Kills per death: 25")]
+    [InlineData("Alb Deaths: 5")]
+    [InlineData("Group Deaths: 3")]
+    public async Task WatchAsync_NonDeathsStatLines_DoNotEmitStatsDeathsLogLine(string fakeLine)
+    {
+        // Arrange — lines that superficially resemble "Deaths: N" but should not match
+        var content =
+            "*** Chat Log Opened: Mon Feb 16 20:00:00 2026\n" +
+            $"{fakeLine}\n" +
+            "[20:55:00] You get 100 realm points for Battle Tick!\n";
+
+        await File.WriteAllTextAsync(this.testLogFilePath, content);
+        var watcher = new LogWatcher(this.testLogFilePath, enableTimeFiltering: false);
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+
+        var deathsLines = new List<StatsDeathsLogLine>();
+
+        await foreach (var line in watcher.WatchAsync(cts.Token))
+        {
+            if (line is StatsDeathsLogLine sdl)
+                deathsLines.Add(sdl);
+            if (line.Text.Contains("Battle Tick"))
+            {
+                cts.Cancel();
+                break;
+            }
+        }
+
+        deathsLines.Should().BeEmpty($"'{fakeLine}' must not be parsed as a Deaths stat line");
+    }
+
+    [Fact]
     public void Constructor_NullOrEmptyPath_ThrowsArgumentException()
     {
         // Act & Assert

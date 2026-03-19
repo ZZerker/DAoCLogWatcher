@@ -366,9 +366,11 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 		return int.TryParse(match.Groups["deaths"].Value, out var deaths) ? deaths : null;
 	}
 
-	// Matches both timestamped and timestampless forms, e.g.:
-	//   [21:21:48] Deaths:        5
-	//   Deaths:        5
-	[GeneratedRegex(@"Deaths:\s+(?<deaths>\d+)", RegexOptions.Compiled|RegexOptions.CultureInvariant)]
+	// Matches only the /stats Deaths line. The timestamp is optional because /stats
+	// detail lines are written without a [HH:MM:SS] prefix in the log:
+	//   Deaths: 7                       (common — no timestamp)
+	//   [21:21:48] Deaths:        5     (some clients add one)
+	// Anchored with ^ so "Alb Deaths:", "Group Deaths:", and "Deathblows:" never match.
+	[GeneratedRegex(@"^(?:\[\d{2}:\d{2}:\d{2}\])?\s*Deaths:\s+(?<deaths>\d+)", RegexOptions.Compiled|RegexOptions.CultureInvariant)]
 	private static partial Regex GenerateStatsDeathsRegex();
 }
