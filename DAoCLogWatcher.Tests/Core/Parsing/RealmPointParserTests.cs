@@ -13,7 +13,7 @@ public sealed class RealmPointParserTests
 	[InlineData("[14:22:33] You get 2500 realm points for Battle Tick!", 2500, RealmPointSource.Tick, "Battle Tick")]
 	[InlineData("[08:15:42] You get 100 realm points for Assault Order!", 100, RealmPointSource.AssaultOrder, "Assault Order")]
 	[InlineData("[19:45:12] You get 50 realm points for support activity in battle!", 50, RealmPointSource.SupportActivity, "Support Activity")]
-	public void TryParse_ValidRealmPointLine_ParsesCorrectly(string line, int expectedPoints, RealmPointSource expectedSource, string expectedSubSource)
+	public void TryParse_ValidRealmPointLine_ParsesCorrectly(string line, int expectedPoints, RealmPointSource expectedSource, string? expectedSubSource)
 	{
 		// Arrange
 		var parser = new RealmPointParser();
