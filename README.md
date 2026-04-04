@@ -1,5 +1,9 @@
 # DAoC Log Watcher
 
+![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/ZZerker/DAoCLogWatcher/total)
+![GitHub Release](https://img.shields.io/github/v/release/ZZerker/DAoCLogWatcher)
+![CI](https://img.shields.io/github/actions/workflow/status/ZZerker/DAoCLogWatcher/ci.yml?branch=main)
+
 A real-time tracker for **Dark Age of Camelot (Eden)**. Load your `chat.log` and instantly see how many RPs you're earning, where they're coming from, how fast they're rolling in, your kill/death stats, and live combat metrics — all updated as you play.
 
 > **Beta** — core RP tracking works well; combat, heal, and damage features are early beta and still being improved. Please report issues on the [Issues](https://github.com/ZZerker/DAoCLogWatcher/issues) page.
