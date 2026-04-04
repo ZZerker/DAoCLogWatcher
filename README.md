@@ -1,8 +1,14 @@
 # DAoC Log Watcher
 
+A real-time tracker for **Dark Age of Camelot (Eden)**. Load your `chat.log` and instantly see how many RPs you're earning, where they're coming from, how fast they're rolling in, your kill/death stats, and live combat metrics — all updated as you play.
+
 > **Beta** — core RP tracking works well; combat, heal, and damage features are early beta and still being improved. Please report issues on the [Issues](https://github.com/ZZerker/DAoCLogWatcher/issues) page.
 
-A real-time tracker for **Dark Age of Camelot (Eden)**. Load your `chat.log` and instantly see how many RPs you're earning, where they're coming from, how fast they're rolling in, your kill/death stats, and live combat metrics — all updated as you play.
+## TL;DR — Getting Started
+
+1. In-game, run **`/chatlog`** to start writing your chat log to disk (only needed once per session)
+2. Run **`/stats`** in-game so the app can detect your character name
+3. Open DAoCLogWatcher — use the **Open DAoC Log** button or pick a session from the session browser
 
 ![DAoC Log Watcher screenshot](DAoCLogWatcher.Core/TestFiles/DAoC_Log_Watcher.png)
 
@@ -158,8 +164,7 @@ If **Open DAoC Log** can't find the file automatically, use **Open Log File** to
 | Feature | Status |
 |---|---|
 | RP source categorization | Some log line formats are not yet parsed — sources may be misidentified or fall into "Other" |
-| Percentage breakdown | Derived from categorized RPs, so any misidentification above carries through |
-| Kill / death count | Requires at least one `/stats` in the log — events before the first `/stats` are retroactively counted once the name is detected |
+| Kill / death count | Requires at least one `/stats` in the log — events before the first `/stats` are retroactively counted once the name is detected. Deaths logged before any `/stats` call may be missed entirely |
 | Combat & heal tracking | Early beta — spell attribution, damage categorization, and heal tracking may be incomplete or incorrect for some classes and abilities |
 
 Please report unexpected behaviour on the [Issues](https://github.com/ZZerker/DAoCLogWatcher/issues) page. **Log examples are especially helpful** — if a number looks wrong, paste the relevant lines from your `chat.log` in the issue and it will be fixed.
