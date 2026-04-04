@@ -2,7 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using Avalonia;
+using Avalonia.Animation;
+using Avalonia.Animation.Easings;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Styling;
@@ -296,7 +299,46 @@ public partial class MainWindow: Window
 		chart.Refresh();
 	}
 
-	private async void OnScreenshotClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e) => await ClipboardService.CaptureWindowToClipboardAsync(this);
+	private async void OnScreenshotClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+	{
+		await ClipboardService.CaptureWindowToClipboardAsync(this);
+		ShowScreenshotToast();
+	}
+
+	private async void ShowScreenshotToast()
+	{
+		this.ScreenshotToast.IsVisible = true;
+		this.ScreenshotToast.Opacity = 0;
+
+		var fadeIn = new Animation
+		{
+			Duration = TimeSpan.FromMilliseconds(200),
+			FillMode = FillMode.Forward,
+			Children =
+			{
+				new KeyFrame { Cue = new Cue(0), Setters = { new Setter(OpacityProperty, 0.0) } },
+				new KeyFrame { Cue = new Cue(1), Setters = { new Setter(OpacityProperty, 1.0) } }
+			}
+		};
+		await fadeIn.RunAsync(this.ScreenshotToast);
+
+		await Task.Delay(1500);
+
+		var fadeOut = new Animation
+		{
+			Duration = TimeSpan.FromMilliseconds(500),
+			FillMode = FillMode.Forward,
+			Easing = new CubicEaseIn(),
+			Children =
+			{
+				new KeyFrame { Cue = new Cue(0), Setters = { new Setter(OpacityProperty, 1.0) } },
+				new KeyFrame { Cue = new Cue(1), Setters = { new Setter(OpacityProperty, 0.0) } }
+			}
+		};
+		await fadeOut.RunAsync(this.ScreenshotToast);
+
+		this.ScreenshotToast.IsVisible = false;
+	}
 
 	private void InitializeHealsByHealerChart()
 	{
