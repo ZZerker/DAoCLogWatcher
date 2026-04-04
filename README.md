@@ -16,8 +16,10 @@ A real-time tracker for **Dark Age of Camelot (Eden)**. Load your `chat.log` and
   - Siege (Tower & Keep Captures), Assault Orders
   - Support Activity, Relic Captures, Timed Missions
 - **RP/h meter** — rolling realm points per hour, updated every 5 seconds
-- **Character detection** — type `/stats` in-game and the app identifies your character, then shows live kills, deaths, and K/D ratio
+- **Character detection** — type `/stats` in-game and the app identifies your character name and displays it in the sidebar alongside live kills, deaths, and K/D ratio
 - **Charts** — cumulative RP over time and rolling RP/h graph, both collapsible
+- **Session browser** — pick any past play session directly from your `chat.log` by date and time range, instead of guessing time filter windows; selecting the current session keeps the app tailing the file live as usual
+- **Log filters** — filter the Realm Points, Combat Log, and Heal Log tabs by player name, source, spell, or style; results update live as new entries arrive
 - **Time filters** — limit the log to a preset window (1h–1 week) or a custom hours/minutes value
 - **Screenshot to clipboard** — capture the full window to your clipboard with one click
 - **Auto-update** — the app checks for new releases on startup and prompts you to install them
@@ -35,11 +37,12 @@ A real-time tracker for **Dark Age of Camelot (Eden)**. Load your `chat.log` and
   - **Heals received** — total HP healed and breakdown by healer
   - **Outgoing heals** — total HP you healed and breakdown by target
   - **Miss & resist rates** — melee miss rate (misses + blocks) and spell resist rate, tracked separately
-  - **Attack type breakdown** — avg damage per weapon / spell, shown as a bar chart
-- **Combat log tab** — scrollable per-hit log showing timestamp, direction, damage, source (weapon or spell name), and target
+  - **Attack type breakdown** — avg damage per weapon / spell / melee style, shown as a bar chart
+- **Melee style attribution** — weapon hits are attributed to the style that triggered them; unexecuted styles produce plain unattributed swings; multi-hit classes carry the style across all hits in a swing sequence
+- **Combat log tab** — scrollable per-hit log showing timestamp, direction, damage, source (style, spell, or weapon name), and target
 - **Heal log tab** — scrollable per-heal log showing timestamp, HP, direction, and who was healed
 
-> Combat parsing covers weapon attacks (`You attack X with your Y`), spell hits, crits, heals, misses, blocks, and spell resists. Results depend on log line formats — edge cases may not yet be handled.
+> Combat parsing covers weapon attacks, melee styles, spells, crits, heals, misses, blocks, and resists. Results depend on log line formats — edge cases may not yet be handled.
 
 ---
 
