@@ -50,9 +50,11 @@ jobs:
       matrix:
         include:
           - rid: win-x64
+            framework: net10.0-windows10.0.17763
             artifact: DAoCLogWatcher-win-x64.zip
             package_cmd: zip -r ../../DAoCLogWatcher-win-x64.zip .
           - rid: linux-x64
+            framework: net10.0
             artifact: DAoCLogWatcher-linux-x64.tar.gz
             package_cmd: tar czf ../../DAoCLogWatcher-linux-x64.tar.gz .
 
@@ -74,6 +76,7 @@ jobs:
           VERSION="${GITHUB_REF_NAME#v}"
           dotnet publish DAoCLogWatcher.UI/DAoCLogWatcher.UI.csproj \
             -c Release \
+            -f ${{ matrix.framework }} \
             -r ${{ matrix.rid }} \
             --self-contained true \
             -p:PublishSingleFile=true \
@@ -125,6 +128,7 @@ jobs:
           VERSION="${GITHUB_REF_NAME#v}"
           dotnet publish DAoCLogWatcher.UI/DAoCLogWatcher.UI.csproj \
             -c Release \
+            -f net10.0 \
             -r linux-x64 \
             --self-contained true \
             -p:Version="$VERSION" \
@@ -182,7 +186,7 @@ jobs:
         run: |
           $version = "${{ github.ref_name }}".TrimStart('v')
           dotnet publish DAoCLogWatcher.UI/DAoCLogWatcher.UI.csproj `
-            -c Release -r win-x64 --self-contained true `
+            -c Release -f net10.0-windows10.0.17763 -r win-x64 --self-contained true `
             -p:Version="$version" `
             -o publish/win-x64
 
