@@ -1,8 +1,8 @@
 using System;
 using System.Collections.ObjectModel;
 using System.IO;
-using System.Threading;
 using System.Threading.Tasks;
+using Avalonia.Controls;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -11,31 +11,41 @@ using DAoCLogWatcher.Core;
 using DAoCLogWatcher.Core.Models;
 using DAoCLogWatcher.UI.Models;
 using DAoCLogWatcher.UI.Services;
+using DAoCLogWatcher.UI.Views;
 
 namespace DAoCLogWatcher.UI.ViewModels;
 
-public partial class MainWindowViewModel : ViewModelBase
+public partial class MainWindowViewModel: ViewModelBase, IDisposable
 {
-	private CancellationTokenSource? cancellationTokenSource;
-	private System.Timers.Timer? rpsRefreshTimer;
-	private System.Timers.Timer? parsingDebounceTimer;
-	private LogWatcher? logWatcher;
+	private const int PARSING_DEBOUNCE_INTERVAL_MS = 1000;
+	private const int SEND_NOTIFICATION_TIMEOUT_MS = 5000;
+	private const int SEND_NOTIFICATION_MAX_AGE_SECONDS = 60;
+	private const int LOG_ENTRIES_CAPACITY = 1000;
 
-	private readonly UpdateService updateService = new();
-	private readonly AppSettings settings = SettingsService.Load();
-	private readonly RealmPointProcessor processor;
-	private readonly CombatProcessor combatProcessor;
+	private System.Timers.Timer? parsingDebounceTimer;
+	private System.Timers.Timer? sendNotificationTimer;
+
+	// Generation counter — incremented on each new watch loop start.
+	// CleanupWatchState only runs if the generation matches, preventing stale
+	// cleanup from an old loop from clobbering a newly-started loop's state.
+	private int watchGeneration;
+
+	private readonly IWatchSession watchSession;
+	private readonly IUpdateService updateService;
+	private readonly INotificationService notificationService;
+	private readonly IDaocLogPathService daocLogPathService;
+	private readonly AppSettings settings;
+	private readonly IRealmPointProcessor processor;
+	private readonly ICombatProcessor combatProcessor;
 
 	[ObservableProperty] private string? currentFilePath;
 
-	// 0=All time  1=1 week  2=48h  3=24h  4=12h  5=6h  6=3h  7=2h  8=1h  9=Custom
-	[ObservableProperty] private int selectedTimeFilterIndex = 3;
-	private int previousFilterIndex = 3;
-	private double customTotalHours = 1;
-	[ObservableProperty] private bool isCustomPopupVisible;
+	public TimeFilterService TimeFilter { get; } = new();
+
 	[ObservableProperty] private bool isSettingsPopupVisible;
 
 	[ObservableProperty] private bool highlightMultiKills;
+
 	partial void OnHighlightMultiKillsChanged(bool value)
 	{
 		this.settings.HighlightMultiKills = value;
@@ -43,6 +53,7 @@ public partial class MainWindowViewModel : ViewModelBase
 	}
 
 	[ObservableProperty] private bool highlightMultiHits;
+
 	partial void OnHighlightMultiHitsChanged(bool value)
 	{
 		this.settings.HighlightMultiHits = value;
@@ -50,29 +61,38 @@ public partial class MainWindowViewModel : ViewModelBase
 	}
 
 	[ObservableProperty] private string? customChatLogPath;
+
 	partial void OnCustomChatLogPathChanged(string? value)
 	{
-		this.settings.CustomChatLogPath = string.IsNullOrWhiteSpace(value) ? null : value;
+		this.settings.CustomChatLogPath = string.IsNullOrWhiteSpace(value)?null:value;
 		SettingsService.Save(this.settings);
 	}
 
 	[RelayCommand]
 	private async Task BrowseChatLogPath(IStorageProvider? storageProvider)
 	{
-		if (storageProvider == null) return;
+		if(storageProvider == null) return;
 		var options = new FilePickerOpenOptions
-		{
-			Title = "Select DAoC Chat Log",
-			AllowMultiple = false,
-			FileTypeFilter =
-			[
-				new FilePickerFileType("Log Files") { Patterns = ["*.log"] },
-				new FilePickerFileType("All Files") { Patterns = ["*.*"] }
-			]
-		};
+		              {
+				              Title = "Select DAoC Chat Log",
+				              AllowMultiple = false,
+				              FileTypeFilter =
+				              [
+						              new FilePickerFileType("Log Files")
+						              {
+								              Patterns = ["*.log"]
+						              },
+						              new FilePickerFileType("All Files")
+						              {
+								              Patterns = ["*.*"]
+						              }
+				              ]
+		              };
 		var result = await storageProvider.OpenFilePickerAsync(options);
-		if (result.Count > 0)
+		if(result.Count > 0)
+		{
 			this.CustomChatLogPath = result[0].Path.LocalPath;
+		}
 	}
 
 	[RelayCommand]
@@ -83,90 +103,110 @@ public partial class MainWindowViewModel : ViewModelBase
 
 	[RelayCommand]
 	private void CloseSettingsPopup() => this.IsSettingsPopupVisible = false;
-	[ObservableProperty] private decimal? customInputHours = 1;
-	[ObservableProperty] private decimal? customInputMinutes = 0;
 
 	[ObservableProperty] private bool isWatching;
 
 	[ObservableProperty] private bool isDarkTheme = true;
-	public string ThemeIcon => this.IsDarkTheme ? "☀ Light" : "🌙 Dark";
+
+	public string ThemeIcon => this.IsDarkTheme?"☀ Light":"🌙 Dark";
+
 	partial void OnIsDarkThemeChanged(bool value) => this.OnPropertyChanged(nameof(this.ThemeIcon));
 
 	[RelayCommand]
 	private void ToggleTheme() => this.IsDarkTheme = !this.IsDarkTheme;
 
 	[ObservableProperty] private bool isSidebarVisible = true;
+
 	public string SidebarToggleIcon => "◀";
+
 	partial void OnIsSidebarVisibleChanged(bool value) => this.OnPropertyChanged(nameof(this.SidebarToggleIcon));
 
 	[RelayCommand]
 	private void ToggleSidebar() => this.IsSidebarVisible = !this.IsSidebarVisible;
 
-	[ObservableProperty] private bool isRpsChartVisible = true;
-	public string RpsChartToggleIcon => this.IsRpsChartVisible ? "▲" : "▼";
-	partial void OnIsRpsChartVisibleChanged(bool value) => this.OnPropertyChanged(nameof(this.RpsChartToggleIcon));
+	[ObservableProperty] private bool isRpsHourlyChartVisible = true;
+
+	public string RpsChartToggleIcon => this.IsRpsHourlyChartVisible?"▲":"▼";
+
+	partial void OnIsRpsHourlyChartVisibleChanged(bool value) => this.OnPropertyChanged(nameof(this.RpsChartToggleIcon));
 
 	[RelayCommand]
-	private void ToggleRpsChart() => this.IsRpsChartVisible = !this.IsRpsChartVisible;
+	private void ToggleRpsChart() => this.IsRpsHourlyChartVisible = !this.IsRpsHourlyChartVisible;
 
-	[ObservableProperty] private bool isRpChartVisible = true;
-	public string RpChartToggleIcon => this.IsRpChartVisible ? "▲" : "▼";
-	partial void OnIsRpChartVisibleChanged(bool value) => this.OnPropertyChanged(nameof(this.RpChartToggleIcon));
+	[ObservableProperty] private bool isCumulativeRpChartVisible = true;
+
+	public string RpChartToggleIcon => this.IsCumulativeRpChartVisible?"▲":"▼";
+
+	partial void OnIsCumulativeRpChartVisibleChanged(bool value) => this.OnPropertyChanged(nameof(this.RpChartToggleIcon));
 
 	[RelayCommand]
-	private void ToggleRpChart() => this.IsRpChartVisible = !this.IsRpChartVisible;
+	private void ToggleRpChart() => this.IsCumulativeRpChartVisible = !this.IsCumulativeRpChartVisible;
 
 	[ObservableProperty] private bool isAbsoluteNumbersVisible = true;
-	public string AbsoluteNumbersToggleIcon => this.IsAbsoluteNumbersVisible ? "▲" : "▼";
+
+	public string AbsoluteNumbersToggleIcon => this.IsAbsoluteNumbersVisible?"▲":"▼";
+
 	partial void OnIsAbsoluteNumbersVisibleChanged(bool value) => this.OnPropertyChanged(nameof(this.AbsoluteNumbersToggleIcon));
 
 	[RelayCommand]
 	private void ToggleAbsoluteNumbers() => this.IsAbsoluteNumbersVisible = !this.IsAbsoluteNumbersVisible;
 
 	[ObservableProperty] private bool isAbsoluteRpsVisible = true;
-	public string AbsoluteRpsToggleIcon => this.IsAbsoluteRpsVisible ? "▲" : "▼";
+
+	public string AbsoluteRpsToggleIcon => this.IsAbsoluteRpsVisible?"▲":"▼";
+
 	partial void OnIsAbsoluteRpsVisibleChanged(bool value) => this.OnPropertyChanged(nameof(this.AbsoluteRpsToggleIcon));
 
 	[RelayCommand]
 	private void ToggleAbsoluteRps() => this.IsAbsoluteRpsVisible = !this.IsAbsoluteRpsVisible;
 
 	[ObservableProperty] private bool isPercentagesVisible = true;
-	public string PercentagesToggleIcon => this.IsPercentagesVisible ? "▲" : "▼";
+
+	public string PercentagesToggleIcon => this.IsPercentagesVisible?"▲":"▼";
+
 	partial void OnIsPercentagesVisibleChanged(bool value) => this.OnPropertyChanged(nameof(this.PercentagesToggleIcon));
 
 	[RelayCommand]
 	private void TogglePercentages() => this.IsPercentagesVisible = !this.IsPercentagesVisible;
 
 	[ObservableProperty] private bool isAvgDmgChartVisible = true;
-	public string AvgDmgChartToggleIcon => this.IsAvgDmgChartVisible ? "▲" : "▼";
+
+	public string AvgDmgChartToggleIcon => this.IsAvgDmgChartVisible?"▲":"▼";
+
 	partial void OnIsAvgDmgChartVisibleChanged(bool value) => this.OnPropertyChanged(nameof(this.AvgDmgChartToggleIcon));
 
 	[RelayCommand]
 	private void ToggleAvgDmgChart() => this.IsAvgDmgChartVisible = !this.IsAvgDmgChartVisible;
 
 	[ObservableProperty] private bool isDmgByAttackerChartVisible = true;
-	public string DmgByAttackerChartToggleIcon => this.IsDmgByAttackerChartVisible ? "▲" : "▼";
+
+	public string DmgByAttackerChartToggleIcon => this.IsDmgByAttackerChartVisible?"▲":"▼";
+
 	partial void OnIsDmgByAttackerChartVisibleChanged(bool value) => this.OnPropertyChanged(nameof(this.DmgByAttackerChartToggleIcon));
 
 	[RelayCommand]
 	private void ToggleDmgByAttackerChart() => this.IsDmgByAttackerChartVisible = !this.IsDmgByAttackerChartVisible;
 
 	[ObservableProperty] private bool isHealsByHealerChartVisible = true;
-	public string HealsByHealerChartToggleIcon => this.IsHealsByHealerChartVisible ? "▲" : "▼";
+
+	public string HealsByHealerChartToggleIcon => this.IsHealsByHealerChartVisible?"▲":"▼";
+
 	partial void OnIsHealsByHealerChartVisibleChanged(bool value) => this.OnPropertyChanged(nameof(this.HealsByHealerChartToggleIcon));
 
 	[RelayCommand]
 	private void ToggleHealsByHealerChart() => this.IsHealsByHealerChartVisible = !this.IsHealsByHealerChartVisible;
 
 	[ObservableProperty] private bool isHealsByTargetChartVisible = true;
-	public string HealsByTargetChartToggleIcon => this.IsHealsByTargetChartVisible ? "▲" : "▼";
+
+	public string HealsByTargetChartToggleIcon => this.IsHealsByTargetChartVisible?"▲":"▼";
+
 	partial void OnIsHealsByTargetChartVisibleChanged(bool value) => this.OnPropertyChanged(nameof(this.HealsByTargetChartToggleIcon));
 
 	[RelayCommand]
 	private void ToggleHealsByTargetChart() => this.IsHealsByTargetChartVisible = !this.IsHealsByTargetChartVisible;
 
-	// ── Tab visibility ────────────────────────────────────────────────────────
 	[ObservableProperty] private bool isRealmPointsTabVisible;
+
 	partial void OnIsRealmPointsTabVisibleChanged(bool value)
 	{
 		this.settings.ShowRealmPointsTab = value;
@@ -174,6 +214,7 @@ public partial class MainWindowViewModel : ViewModelBase
 	}
 
 	[ObservableProperty] private bool isCombatTabVisible;
+
 	partial void OnIsCombatTabVisibleChanged(bool value)
 	{
 		this.settings.ShowCombatTab = value;
@@ -181,6 +222,7 @@ public partial class MainWindowViewModel : ViewModelBase
 	}
 
 	[ObservableProperty] private bool isHealLogTabVisible;
+
 	partial void OnIsHealLogTabVisibleChanged(bool value)
 	{
 		this.settings.ShowHealLogTab = value;
@@ -188,11 +230,24 @@ public partial class MainWindowViewModel : ViewModelBase
 	}
 
 	[ObservableProperty] private bool isCombatLogTabVisible;
+
 	partial void OnIsCombatLogTabVisibleChanged(bool value)
 	{
 		this.settings.ShowCombatLogTab = value;
 		SettingsService.Save(this.settings);
 	}
+
+	[ObservableProperty] private bool showSendNotifications;
+
+	partial void OnShowSendNotificationsChanged(bool value)
+	{
+		this.settings.ShowSendNotifications = value;
+		SettingsService.Save(this.settings);
+	}
+
+	[ObservableProperty] private bool isSendNotificationVisible;
+	[ObservableProperty] private string? sendNotificationSender;
+	[ObservableProperty] private string? sendNotificationMessage;
 
 	[ObservableProperty] private bool isParsing;
 
@@ -202,89 +257,109 @@ public partial class MainWindowViewModel : ViewModelBase
 	[ObservableProperty] private string? detectedCharacterName;
 	[ObservableProperty] private int kills;
 	[ObservableProperty] private int deaths;
-	public double KdRatio => this.Deaths > 0 ? (double)this.Kills / this.Deaths : this.Kills;
-	partial void OnKillsChanged(int value)  => this.OnPropertyChanged(nameof(this.KdRatio));
+	[ObservableProperty] private int bestMultiKill;
+
+	public double KdRatio => this.Deaths > 0?(double)this.Kills / this.Deaths:this.Kills;
+
+	public bool HasBestMultiKill => this.BestMultiKill > 0;
+
+	partial void OnKillsChanged(int value) => this.OnPropertyChanged(nameof(this.KdRatio));
+
 	partial void OnDeathsChanged(int value) => this.OnPropertyChanged(nameof(this.KdRatio));
 
-	public ObservableCollection<RealmPointLogEntry> LogEntries { get; } = [];
-	public ObservableCollection<HealLogEntry> HealLogEntries { get; } = [];
-	public ObservableCollection<CombatLogEntry> CombatLogEntries { get; } = [];
-	public RealmPointSummary Summary { get; } = new();
-	public RpsChartData ChartData { get; } = new();
-	public CombatSummary CombatSummary { get; } = new();
+	partial void OnBestMultiKillChanged(int value) => this.OnPropertyChanged(nameof(this.HasBestMultiKill));
 
-	public MainWindowViewModel()
+	partial void OnRpFilterTextChanged(string value) => this.RefreshRpFilter();
+	partial void OnHealFilterTextChanged(string value) => this.RefreshHealFilter();
+	partial void OnCombatFilterTextChanged(string value) => this.RefreshCombatFilter();
+
+	[ObservableProperty] private string rpFilterText = string.Empty;
+	[ObservableProperty] private string healFilterText = string.Empty;
+	[ObservableProperty] private string combatFilterText = string.Empty;
+
+	public ObservableCollection<RealmPointLogEntry> LogEntries { get; } = [];
+	public ObservableCollection<RealmPointLogEntry> FilteredLogEntries { get; } = [];
+
+	public ObservableCollection<HealLogEntry> HealLogEntries { get; } = [];
+	public ObservableCollection<HealLogEntry> FilteredHealLogEntries { get; } = [];
+
+	public ObservableCollection<CombatLogEntry> CombatLogEntries { get; } = [];
+	public ObservableCollection<CombatLogEntry> FilteredCombatLogEntries { get; } = [];
+
+	public RealmPointSummary Summary { get; }
+
+	public RpsChartData ChartData { get; }
+
+	public CombatSummary CombatSummary { get; }
+
+	public MainWindowViewModel(IWatchSession watchSession,
+	                           IRealmPointProcessor processor,
+	                           ICombatProcessor combatProcessor,
+	                           IUpdateService updateService,
+	                           INotificationService notificationService,
+	                           IDaocLogPathService daocLogPathService,
+	                           AppSettings settings,
+	                           RealmPointSummary summary,
+	                           RpsChartData chartData,
+	                           CombatSummary combatSummary)
 	{
-		this.highlightMultiKills    = this.settings.HighlightMultiKills;
-		this.highlightMultiHits     = this.settings.HighlightMultiHits;
-		this.customChatLogPath      = this.settings.CustomChatLogPath;
+		this.watchSession = watchSession;
+		this.notificationService = notificationService;
+		this.daocLogPathService = daocLogPathService;
+		this.processor = processor;
+		this.combatProcessor = combatProcessor;
+		this.updateService = updateService;
+		this.settings = settings;
+		this.Summary = summary;
+		this.ChartData = chartData;
+		this.CombatSummary = combatSummary;
+		this.highlightMultiKills = this.settings.HighlightMultiKills;
+		this.highlightMultiHits = this.settings.HighlightMultiHits;
+		this.customChatLogPath = this.settings.CustomChatLogPath;
+		this.showSendNotifications = this.settings.ShowSendNotifications;
 		this.isRealmPointsTabVisible = this.settings.ShowRealmPointsTab;
-		this.isCombatTabVisible      = this.settings.ShowCombatTab;
-		this.isHealLogTabVisible     = this.settings.ShowHealLogTab;
-		this.isCombatLogTabVisible   = this.settings.ShowCombatLogTab;
-		this.processor = new RealmPointProcessor(this.Summary, this.ChartData);
+		this.isCombatTabVisible = this.settings.ShowCombatTab;
+		this.isHealLogTabVisible = this.settings.ShowHealLogTab;
+		this.isCombatLogTabVisible = this.settings.ShowCombatLogTab;
+		this.processor.EntryProcessed += this.OnEntryProcessed;
 		this.processor.MultiKillDetected += this.OnMultiKillDetected;
-		this.combatProcessor = new CombatProcessor(this.CombatSummary);
-		this.combatProcessor.DamageLogged     += this.OnDamageLogged;
-		this.combatProcessor.HealLogged       += this.OnHealLogged;
+		this.combatProcessor.DamageLogged += this.OnDamageLogged;
+		this.combatProcessor.HealLogged += this.OnHealLogged;
 		this.combatProcessor.MultiHitDetected += this.OnMultiHitDetected;
+		this.TimeFilter.FilterChanged += this.OnTimeFilterChanged;
 		_ = this.CheckForUpdatesAsync();
 	}
 
-	private bool suppressFilterChange;
-
-	partial void OnSelectedTimeFilterIndexChanged(int value)
+	private void OnTimeFilterChanged(object? sender, EventArgs e)
 	{
-		if (this.suppressFilterChange) return;
-		if (value == 9)
+		if(this.IsWatching)
 		{
-			this.IsCustomPopupVisible = true;
-			return; // wait for Apply before restarting
+			_ = this.RestartAsync();
 		}
-		this.previousFilterIndex = value;
-		this.IsCustomPopupVisible = false;
-		if (this.IsWatching)
-			_ = this.RestartAsync();
-	}
-
-	[RelayCommand]
-	private void ApplyCustomFilter()
-	{
-		this.customTotalHours = (double)(this.CustomInputHours ?? 0) + (double)(this.CustomInputMinutes ?? 0) / 60.0;
-		if (this.customTotalHours <= 0) this.customTotalHours = 1.0 / 60; // minimum 1 min
-		this.previousFilterIndex = 9;
-		this.IsCustomPopupVisible = false;
-		if (this.IsWatching)
-			_ = this.RestartAsync();
-	}
-
-	[RelayCommand]
-	private void CancelCustomFilter()
-	{
-		this.IsCustomPopupVisible = false;
-		this.suppressFilterChange = true;
-		this.SelectedTimeFilterIndex = this.previousFilterIndex;
-		this.suppressFilterChange = false;
 	}
 
 	private async Task RestartAsync()
 	{
-		this.cancellationTokenSource?.Cancel();
-		while (this.IsWatching)
-			await Task.Delay(50);
-		await this.StartWatching();
+		await this.watchSession.StopAndWaitAsync();
+		if(string.IsNullOrWhiteSpace(this.CurrentFilePath)) return;
+		var (filterEnabled, filterHours) = this.TimeFilter.GetFilterParameters();
+		await this.RunWatchLoop(new LogWatcher(this.CurrentFilePath, 0, filterEnabled, filterHours));
 	}
 
 	[RelayCommand]
 	private async Task OpenDaocLog()
 	{
 		string? path = null;
-		if (!string.IsNullOrWhiteSpace(this.CustomChatLogPath) && File.Exists(this.CustomChatLogPath))
+		if(!string.IsNullOrWhiteSpace(this.CustomChatLogPath)&&File.Exists(this.CustomChatLogPath))
+		{
 			path = this.CustomChatLogPath;
+		}
 		else
-			path = DaocLogPathService.FindDaocLogPath();
+		{
+			path = this.daocLogPathService.FindDaocLogPath();
+		}
 
-		if (path != null && File.Exists(path))
+		if(path != null&&File.Exists(path))
 		{
 			this.CurrentFilePath = path;
 			await this.StartWatching();
@@ -294,147 +369,341 @@ public partial class MainWindowViewModel : ViewModelBase
 	[RelayCommand]
 	private async Task OpenFile(IStorageProvider? storageProvider)
 	{
-		if (storageProvider == null) return;
+		if(storageProvider == null) return;
 
 		var options = new FilePickerOpenOptions
-		{
-			Title = "Select DAoC Log File",
-			AllowMultiple = false,
-			FileTypeFilter =
-			[
-				new FilePickerFileType("Log Files") { Patterns = ["*.log"] },
-				new FilePickerFileType("All Files") { Patterns = ["*.*"] }
-			]
-		};
+		              {
+				              Title = "Select DAoC Log File",
+				              AllowMultiple = false,
+				              FileTypeFilter =
+				              [
+						              new FilePickerFileType("Log Files")
+						              {
+								              Patterns = ["*.log"]
+						              },
+						              new FilePickerFileType("All Files")
+						              {
+								              Patterns = ["*.*"]
+						              }
+				              ]
+		              };
 
 		var result = await storageProvider.OpenFilePickerAsync(options);
-		if (result.Count > 0)
+		if(result.Count > 0)
 		{
 			this.CurrentFilePath = result[0].Path.LocalPath;
 			await this.StartWatching();
 		}
 	}
 
+	[RelayCommand]
+	private async Task OpenSessionPicker(Window? ownerWindow)
+	{
+		if(ownerWindow == null) return;
+
+		string? path = null;
+		if(!string.IsNullOrWhiteSpace(this.CustomChatLogPath)&&File.Exists(this.CustomChatLogPath))
+		{
+			path = this.CustomChatLogPath;
+		}
+		else
+		{
+			path = this.daocLogPathService.FindDaocLogPath();
+		}
+
+		if(path == null||!File.Exists(path)) return;
+
+		var sessions = await Task.Run(() => LogSessionScanner.Scan(path));
+		if(sessions.Count == 0) return;
+
+		var dialog = new LogSessionDialog(sessions);
+		var selected = await dialog.ShowDialog<LogSession?>(ownerWindow);
+		if(selected == null) return;
+
+		this.CurrentFilePath = path;
+		await this.StartWatchingFromSession(selected);
+	}
+
+	private async Task StartWatchingFromSession(LogSession session)
+	{
+		if(string.IsNullOrWhiteSpace(this.CurrentFilePath)) return;
+
+		if(this.IsWatching)
+		{
+			await this.watchSession.StopAndWaitAsync();
+		}
+
+		var endPos = session.EndTime.HasValue?session.EndFilePosition:-1;
+		var watcher = new LogWatcher(this.CurrentFilePath, session.FilePosition, enableTimeFiltering: false, endPosition: endPos);
+		await this.RunWatchLoop(watcher);
+	}
+
 	private void ProcessLogLine(LogLine logLine)
 	{
 		this.ResetParsingDebounce();
 
-		var entry = this.processor.Process(
-			logLine,
-			this.logWatcher?.CurrentSessionStart,
-			out var characterChanged,
-			out var killStatsChanged);
+		this.processor.Process(logLine, this.watchSession.CurrentSessionStart, out var characterChanged, out var killStatsChanged);
 
 		this.combatProcessor.Process(logLine);
 
-		if (characterChanged)  this.DetectedCharacterName = this.processor.DetectedCharacterName;
-		if (killStatsChanged)  { this.Kills = this.processor.Kills; this.Deaths = this.processor.Deaths; }
+		if(characterChanged)
+		{
+			this.DetectedCharacterName = this.processor.DetectedCharacterName;
+		}
 
-		if (entry is not null)
-			this.AddLogEntry(entry);
+		if(killStatsChanged)
+		{
+			this.Kills = this.processor.Kills;
+			this.Deaths = this.processor.Deaths;
+		}
+
+		if(logLine is SendLogLine { Event: var send }&&this.ShowSendNotifications)
+		{
+			var now = TimeOnly.FromDateTime(DateTime.Now);
+			var diff = TimeHelper.ShortestArcSeconds(now, send.Timestamp);
+			if(diff <= SEND_NOTIFICATION_MAX_AGE_SECONDS)
+			{
+				this.ShowSendToast(send.Sender, send.Message);
+			}
+		}
 	}
+
+	private void ShowSendToast(string sender, string message)
+	{
+		this.SendNotificationSender = sender;
+		this.SendNotificationMessage = message;
+		this.IsSendNotificationVisible = true;
+
+		if(this.sendNotificationTimer == null)
+		{
+			this.sendNotificationTimer = new System.Timers.Timer(SEND_NOTIFICATION_TIMEOUT_MS)
+			                             {
+					                             AutoReset = false
+			                             };
+			this.sendNotificationTimer.Elapsed += (s, e) => Dispatcher.UIThread.InvokeAsync(() => this.IsSendNotificationVisible = false);
+		}
+
+		this.sendNotificationTimer.Stop();
+		this.sendNotificationTimer.Start();
+
+		this.notificationService.ShowToast(sender, message);
+		this.notificationService.PlayNotificationSound();
+	}
+
+	[RelayCommand]
+	private void DismissSendNotification() => this.IsSendNotificationVisible = false;
 
 	private void ResetParsingDebounce()
 	{
-		if (!this.IsParsing) this.IsParsing = true;
-		if (this.parsingDebounceTimer == null)
+		if(!this.IsParsing)
 		{
-			this.parsingDebounceTimer = new System.Timers.Timer(1000) { AutoReset = false };
-			this.parsingDebounceTimer.Elapsed += (s, e) =>
-				Dispatcher.UIThread.InvokeAsync(() => this.IsParsing = false);
+			this.IsParsing = true;
 		}
+
+		if(this.parsingDebounceTimer == null)
+		{
+			this.parsingDebounceTimer = new System.Timers.Timer(PARSING_DEBOUNCE_INTERVAL_MS)
+			                            {
+					                            AutoReset = false
+			                            };
+			this.parsingDebounceTimer.Elapsed += (s, e) => Dispatcher.UIThread.InvokeAsync(() => this.IsParsing = false);
+		}
+
 		this.parsingDebounceTimer.Stop();
 		this.parsingDebounceTimer.Start();
 	}
 
-	private void OnMultiKillDetected(object? sender, RealmPointLogEntry e) => this.AddLogEntry(e);
+	private void OnEntryProcessed(object? sender, RealmPointLogEntry e) => this.AddLogEntry(e);
 
-	private void OnDamageLogged(object? sender, CombatLogEntry e) => AddCapped(this.CombatLogEntries, e);
-	private void OnHealLogged(object? sender, HealLogEntry e) => AddCapped(this.HealLogEntries, e);
-	private void OnMultiHitDetected(object? sender, CombatLogEntry e) => AddCapped(this.CombatLogEntries, e);
-	private void AddLogEntry(RealmPointLogEntry entry) => AddCapped(this.LogEntries, entry);
+	private void OnMultiKillDetected(object? sender, RealmPointLogEntry e)
+	{
+		this.BestMultiKill = Math.Max(this.BestMultiKill, e.KillCount);
+		this.AddLogEntry(e);
+	}
+
+	private void OnDamageLogged(object? sender, CombatLogEntry e) => this.AddCombatLogEntry(e);
+
+	private void OnHealLogged(object? sender, HealLogEntry e) => this.AddHealLogEntry(e);
+
+	private void OnMultiHitDetected(object? sender, CombatLogEntry e) => this.AddCombatLogEntry(e);
+
+	private void AddLogEntry(RealmPointLogEntry entry)
+	{
+		AddCapped(this.LogEntries, entry);
+		if(this.MatchesRpFilter(entry))
+		{
+			AddCapped(this.FilteredLogEntries, entry);
+		}
+	}
+
+	private bool MatchesRpFilter(RealmPointLogEntry e) =>
+		string.IsNullOrWhiteSpace(this.RpFilterText) ||
+		e.Details.Contains(this.RpFilterText, StringComparison.OrdinalIgnoreCase) ||
+		e.Source.Contains(this.RpFilterText, StringComparison.OrdinalIgnoreCase);
+
+	private void RefreshRpFilter()
+	{
+		this.FilteredLogEntries.Clear();
+		foreach(var e in this.LogEntries)
+		{
+			if(this.MatchesRpFilter(e))
+			{
+				this.FilteredLogEntries.Add(e);
+				if(this.FilteredLogEntries.Count >= LOG_ENTRIES_CAPACITY)
+				{
+					break;
+				}
+			}
+		}
+	}
+
+	[RelayCommand]
+	private void ClearRpFilter() => this.RpFilterText = string.Empty;
+
+	private void AddHealLogEntry(HealLogEntry entry)
+	{
+		AddCapped(this.HealLogEntries, entry);
+		if(this.MatchesHealFilter(entry))
+		{
+			AddCapped(this.FilteredHealLogEntries, entry);
+		}
+	}
+
+	private bool MatchesHealFilter(HealLogEntry e) =>
+		string.IsNullOrWhiteSpace(this.HealFilterText) ||
+		(e.Who ?? string.Empty).Contains(this.HealFilterText, StringComparison.OrdinalIgnoreCase) ||
+		e.DirectionLabel.Contains(this.HealFilterText, StringComparison.OrdinalIgnoreCase);
+
+	private void RefreshHealFilter()
+	{
+		this.FilteredHealLogEntries.Clear();
+		foreach(var e in this.HealLogEntries)
+		{
+			if(this.MatchesHealFilter(e))
+			{
+				this.FilteredHealLogEntries.Add(e);
+				if(this.FilteredHealLogEntries.Count >= LOG_ENTRIES_CAPACITY)
+				{
+					break;
+				}
+			}
+		}
+	}
+
+	[RelayCommand]
+	private void ClearHealFilter() => this.HealFilterText = string.Empty;
+
+	private void AddCombatLogEntry(CombatLogEntry entry)
+	{
+		AddCapped(this.CombatLogEntries, entry);
+		if(this.MatchesCombatFilter(entry))
+		{
+			AddCapped(this.FilteredCombatLogEntries, entry);
+		}
+	}
+
+	private bool MatchesCombatFilter(CombatLogEntry e) =>
+		string.IsNullOrWhiteSpace(this.CombatFilterText) ||
+		e.Target.Contains(this.CombatFilterText, StringComparison.OrdinalIgnoreCase) ||
+		e.Source.Contains(this.CombatFilterText, StringComparison.OrdinalIgnoreCase);
+
+	private void RefreshCombatFilter()
+	{
+		this.FilteredCombatLogEntries.Clear();
+		foreach(var e in this.CombatLogEntries)
+		{
+			if(this.MatchesCombatFilter(e))
+			{
+				this.FilteredCombatLogEntries.Add(e);
+				if(this.FilteredCombatLogEntries.Count >= LOG_ENTRIES_CAPACITY)
+				{
+					break;
+				}
+			}
+		}
+	}
+
+	[RelayCommand]
+	private void ClearCombatFilter() => this.CombatFilterText = string.Empty;
 
 	private static void AddCapped<T>(ObservableCollection<T> collection, T item)
 	{
 		collection.Insert(0, item);
-		if (collection.Count > 1000)
+		if(collection.Count > LOG_ENTRIES_CAPACITY)
+		{
 			collection.RemoveAt(collection.Count - 1);
+		}
 	}
 
 	[RelayCommand]
 	private async Task StartWatching()
 	{
-		if (string.IsNullOrWhiteSpace(this.CurrentFilePath) || this.IsWatching) return;
+		if(string.IsNullOrWhiteSpace(this.CurrentFilePath)||this.IsWatching) return;
 
+		var (filterEnabled, filterHours) = this.TimeFilter.GetFilterParameters();
+		await this.RunWatchLoop(new LogWatcher(this.CurrentFilePath, 0, filterEnabled, filterHours));
+	}
+
+	private async Task RunWatchLoop(LogWatcher watcher)
+	{
+		var myGeneration = ++this.watchGeneration;
 		this.IsWatching = true;
-		this.Summary.Reset();
-		this.LogEntries.Clear();
-		this.HealLogEntries.Clear();
-		this.CombatLogEntries.Clear();
-		this.ChartData.Reset();
-		this.processor.Reset();
-		this.combatProcessor.Reset();
-		this.DetectedCharacterName = null;
-		this.Kills = 0;
-		this.Deaths = 0;
+		this.ResetAllState();
+		this.Summary.IsLive = true;
 
-		var cts = new CancellationTokenSource();
-		this.cancellationTokenSource = cts;
+		await this.watchSession.RunAsync(watcher,
+		                                 () => Dispatcher.UIThread.InvokeAsync(() => this.Summary.RefreshRpsPerHour()),
+		                                 async line =>
+		                                 {
+			                                 var capturedLine = line;
+			                                 await Dispatcher.UIThread.InvokeAsync(() => this.ProcessLogLine(capturedLine), DispatcherPriority.Normal);
+		                                 });
 
-		this.rpsRefreshTimer = new System.Timers.Timer(5000);
-		this.rpsRefreshTimer.Elapsed += (s, e) => Dispatcher.UIThread.InvokeAsync(() => this.Summary.RefreshRpsPerHour());
-		this.rpsRefreshTimer.AutoReset = true;
-		this.rpsRefreshTimer.Start();
-
-		var filterEnabled = this.SelectedTimeFilterIndex > 0;
-		var filterHours = this.SelectedTimeFilterIndex switch
+		if(myGeneration == this.watchGeneration)
 		{
-			1 => 168.0, // 1 week
-			2 => 48.0,
-			3 => 24.0,
-			4 => 12.0,
-			5 => 6.0,
-			6 => 3.0,
-			7 => 2.0,
-			8 => 1.0,
-			9 => this.customTotalHours,
-			_ => 24.0
-		};
-		this.logWatcher = new LogWatcher(this.CurrentFilePath, 0, filterEnabled, filterHours);
-
-		try
-		{
-			await foreach (var logLine in this.logWatcher.WatchAsync(cts.Token))
-			{
-				var capturedLine = logLine;
-				await Dispatcher.UIThread.InvokeAsync(
-					() => this.ProcessLogLine(capturedLine),
-					DispatcherPriority.Normal);
-			}
+			this.CleanupWatchState();
 		}
-		catch (OperationCanceledException) { }
-		catch (Exception ex) { _ = ex; }
-		finally
-		{
-			this.rpsRefreshTimer?.Stop();
-			this.rpsRefreshTimer?.Dispose();
-			this.rpsRefreshTimer = null;
-			this.parsingDebounceTimer?.Stop();
-			this.parsingDebounceTimer?.Dispose();
-			this.parsingDebounceTimer = null;
-			this.IsParsing = false;
-			cts.Dispose();
-			if (ReferenceEquals(this.cancellationTokenSource, cts))
-				this.cancellationTokenSource = null;
-			this.IsWatching = false;
-		}
+	}
+
+	private void CleanupWatchState()
+	{
+		this.parsingDebounceTimer?.Stop();
+		this.parsingDebounceTimer?.Dispose();
+		this.parsingDebounceTimer = null;
+		this.sendNotificationTimer?.Stop();
+		this.sendNotificationTimer?.Dispose();
+		this.sendNotificationTimer = null;
+		this.IsParsing = false;
+		this.IsWatching = false;
+		this.Summary.IsLive = false;
+		this.Summary.RefreshRpsPerHour();
 	}
 
 	[RelayCommand]
 	private void StopWatching()
 	{
-		this.cancellationTokenSource?.Cancel();
+		this.watchSession.RequestStop();
 		this.IsWatching = false;
+		this.ResetAllState();
+	}
+
+	private void ResetAllState()
+	{
+		this.Summary.Reset();
+		this.LogEntries.Clear();
+		this.FilteredLogEntries.Clear();
+		this.HealLogEntries.Clear();
+		this.FilteredHealLogEntries.Clear();
+		this.CombatLogEntries.Clear();
+		this.FilteredCombatLogEntries.Clear();
+		this.ChartData.Reset();
+		this.CombatSummary.Reset();
+		this.processor.Reset();
+		this.combatProcessor.Reset();
+		this.DetectedCharacterName = null;
+		this.Kills = 0;
+		this.Deaths = 0;
+		this.BestMultiKill = 0;
 	}
 
 	private async Task CheckForUpdatesAsync()
@@ -449,4 +718,16 @@ public partial class MainWindowViewModel : ViewModelBase
 
 	[RelayCommand]
 	private void ApplyUpdateAndRestart() => this.updateService.ApplyAndRestart();
+
+	public void Dispose()
+	{
+		this.processor.EntryProcessed -= this.OnEntryProcessed;
+		this.processor.MultiKillDetected -= this.OnMultiKillDetected;
+		this.combatProcessor.DamageLogged -= this.OnDamageLogged;
+		this.combatProcessor.HealLogged -= this.OnHealLogged;
+		this.combatProcessor.MultiHitDetected -= this.OnMultiHitDetected;
+		this.TimeFilter.FilterChanged -= this.OnTimeFilterChanged;
+		this.watchSession.RequestStop();
+		GC.SuppressFinalize(this);
+	}
 }

@@ -1,13 +1,14 @@
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Velopack;
 using Velopack.Sources;
 
 namespace DAoCLogWatcher.UI.Services;
 
-public sealed class UpdateService
+public sealed class UpdateService: IUpdateService
 {
-	private const string GithubUrl = "https://github.com/ZZerker/DAoCLogWatcher";
+	private const string GITHUB_URL = "https://github.com/ZZerker/DAoCLogWatcher";
 	private UpdateInfo? pendingUpdate;
 
 	/// <summary>
@@ -19,30 +20,33 @@ public sealed class UpdateService
 	{
 		try
 		{
-			var mgr = new UpdateManager(new GithubSource(GithubUrl, null, false));
-			if (!mgr.IsInstalled)
+			var mgr = new UpdateManager(new GithubSource(GITHUB_URL, null, false));
+			if(!mgr.IsInstalled)
 				return (null, false);
 
 			var update = await mgr.CheckForUpdatesAsync();
-			if (update == null)
+			if(update == null)
 				return (null, false);
 
 			// Download in the background — caller gets the banner immediately.
 			_ = Task.Run(async () =>
-			{
-				try
-				{
-					await mgr.DownloadUpdatesAsync(update);
-					this.pendingUpdate = update;
-				}
-				catch { }
-			});
+			             {
+				             try
+				             {
+					             await mgr.DownloadUpdatesAsync(update);
+					             this.pendingUpdate = update;
+				             }
+				             catch(Exception ex)
+				             {
+					             Debug.WriteLine($"[UpdateService.DownloadUpdatesAsync] {ex.GetType().Name}: {ex.Message}");
+				             }
+			             });
 
 			return ($"v{update.TargetFullRelease.Version} available", true);
 		}
-		catch (Exception ex)
+		catch(Exception ex)
 		{
-			_ = ex;
+			Debug.WriteLine($"[UpdateService.CheckForUpdatesAsync] {ex.GetType().Name}: {ex.Message}");
 			return (null, false);
 		}
 	}
@@ -53,17 +57,17 @@ public sealed class UpdateService
 	/// </summary>
 	public void ApplyAndRestart()
 	{
-		if (this.pendingUpdate == null)
+		if(this.pendingUpdate == null)
 			return;
 
 		try
 		{
-			var mgr = new UpdateManager(new GithubSource(GithubUrl, null, false));
+			var mgr = new UpdateManager(new GithubSource(GITHUB_URL, null, false));
 			mgr.ApplyUpdatesAndRestart(this.pendingUpdate);
 		}
-		catch (Exception ex)
+		catch(Exception ex)
 		{
-			_ = ex;
+			Debug.WriteLine($"[UpdateService.ApplyAndRestart] {ex.GetType().Name}: {ex.Message}");
 		}
 	}
 }

@@ -1,0 +1,79 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="DAoCLogWatcher.UI.Views.LogSessionDialog"
+        x:CompileBindings="False"
+        Title="Select Log Session"
+        Width="620" Height="480"
+        WindowStartupLocation="CenterOwner"
+        CanResize="True"
+        Background="{DynamicResource AppWindowBackground}">
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto" Margin="16">
+
+        <!-- Header -->
+        <TextBlock Grid.Row="0"
+                   Text="Log Sessions"
+                   FontSize="18" FontWeight="SemiBold"
+                   Foreground="{DynamicResource AppTextPrimary}"
+                   Margin="0,0,0,8" />
+
+        <!-- Column headers -->
+        <Grid Grid.Row="1" ColumnDefinitions="180,140,*" Margin="8,0,8,4">
+            <TextBlock Grid.Column="0" Text="Start Time" FontWeight="SemiBold" FontSize="12"
+                       Foreground="{DynamicResource AppTextMuted}" />
+            <TextBlock Grid.Column="1" Text="Character" FontWeight="SemiBold" FontSize="12"
+                       Foreground="{DynamicResource AppTextMuted}" />
+            <TextBlock Grid.Column="2" Text="Duration" FontWeight="SemiBold" FontSize="12"
+                       Foreground="{DynamicResource AppTextMuted}" />
+        </Grid>
+
+        <!-- Session list -->
+        <ListBox Grid.Row="2"
+                 Name="SessionList"
+                 SelectionMode="Single"
+                 BorderThickness="1"
+                 BorderBrush="{DynamicResource AppBorderBrush}"
+                 CornerRadius="6"
+                 Background="{DynamicResource AppPanelBackground}">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <Grid ColumnDefinitions="180,140,*">
+                        <TextBlock Grid.Column="0" Text="{Binding StartTimeFormatted}"
+                                   Foreground="{DynamicResource AppTextPrimary}" FontSize="13"
+                                   VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="1" Text="{Binding CharacterName}"
+                                   Foreground="{DynamicResource AppTextPrimary}" FontSize="13"
+                                   VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="2" Text="{Binding DurationFormatted}"
+                                   Foreground="{DynamicResource AppTextPrimary}" FontSize="13"
+                                   VerticalAlignment="Center" />
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="3"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Spacing="10"
+                    Margin="0,12,0,0">
+            <Button Content="Open Session"
+                    Name="OpenButton"
+                    Click="OnOpenClick"
+                    Background="#FF007ACC"
+                    Foreground="White"
+                    Padding="16,8"
+                    CornerRadius="6"
+                    BorderThickness="0" />
+            <Button Content="Cancel"
+                    Name="CancelButton"
+                    Click="OnCancelClick"
+                    Background="#FF555566"
+                    Foreground="White"
+                    Padding="16,8"
+                    CornerRadius="6"
+                    BorderThickness="0" />
+        </StackPanel>
+    </Grid>
+</Window>

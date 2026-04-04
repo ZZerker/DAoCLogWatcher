@@ -4,58 +4,56 @@ using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace DAoCLogWatcher.UI.Models;
 
-public partial class CombatSummary : ObservableObject
+public partial class CombatSummary: ObservableObject
 {
-	[ObservableProperty]
-	private int totalDamageDealt;
+	[ObservableProperty] private int totalDamageDealt;
 
-	[ObservableProperty]
-	private int totalDamageTaken;
+	[ObservableProperty] private int totalDamageTaken;
 
-	[ObservableProperty]
-	private int totalHealsReceived;
+	[ObservableProperty] private int totalHealsReceived;
 
-	[ObservableProperty]
-	private int totalHealingDone;
+	[ObservableProperty] private int totalHealingDone;
 
-	[ObservableProperty]
-	private int hitCount;
+	[ObservableProperty] private int hitCount;
 
-	[ObservableProperty]
-	private int critCount;
+	[ObservableProperty] private int critCount;
 
-	[ObservableProperty]
-	private int totalAbsorbed;
+	[ObservableProperty] private int totalAbsorbed;
 
-	[ObservableProperty]
-	private int meleeHitCount;
+	[ObservableProperty] private int meleeHitCount;
 
-	[ObservableProperty]
-	private int spellHitCount;
+	[ObservableProperty] private int spellHitCount;
 
-	[ObservableProperty]
-	private int meleeMissCount;
+	[ObservableProperty] private int meleeMissCount;
 
-	[ObservableProperty]
-	private int spellResistCount;
+	[ObservableProperty] private int spellResistCount;
 
-	public double CritRate => HitCount == 0 ? 0.0 : (double)CritCount / HitCount * 100.0;
+	public double CritRate => HitCount == 0?0.0:(double)CritCount / HitCount * 100.0;
 
-	public int AvgDamagePerHit => HitCount == 0 ? 0 : TotalDamageDealt / HitCount;
+	public int AvgDamagePerHit => HitCount == 0?0:TotalDamageDealt / HitCount;
 
 	public double MeleeMissRate => ComputeRate(MeleeHitCount, MeleeMissCount);
 
 	public double SpellResistRate => ComputeRate(SpellHitCount, SpellResistCount);
 
-	private static double ComputeRate(int hits, int misses)
-		=> (hits + misses) == 0 ? 0.0 : (double)misses / (hits + misses) * 100.0;
+	private static double ComputeRate(int hits, int misses) => (hits + misses) == 0?0.0:(double)misses / (hits + misses) * 100.0;
 
-	partial void OnHitCountChanged(int value) { OnPropertyChanged(nameof(CritRate)); OnPropertyChanged(nameof(AvgDamagePerHit)); }
+	partial void OnHitCountChanged(int value)
+	{
+		OnPropertyChanged(nameof(CritRate));
+		OnPropertyChanged(nameof(AvgDamagePerHit));
+	}
+
 	partial void OnCritCountChanged(int value) => OnPropertyChanged(nameof(CritRate));
+
 	partial void OnTotalDamageDealtChanged(int value) => OnPropertyChanged(nameof(AvgDamagePerHit));
+
 	partial void OnMeleeHitCountChanged(int value) => OnPropertyChanged(nameof(MeleeMissRate));
+
 	partial void OnMeleeMissCountChanged(int value) => OnPropertyChanged(nameof(MeleeMissRate));
+
 	partial void OnSpellHitCountChanged(int value) => OnPropertyChanged(nameof(SpellResistRate));
+
 	partial void OnSpellResistCountChanged(int value) => OnPropertyChanged(nameof(SpellResistRate));
 
 	/// <summary>Total damage dealt per enemy (key = target name).</summary>

@@ -1,47 +1,63 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
-using Avalonia.Data.Core;
 using Avalonia.Data.Core.Plugins;
 using System.Linq;
 using Avalonia.Markup.Xaml;
+using DAoCLogWatcher.UI.Models;
+using DAoCLogWatcher.UI.Services;
 using DAoCLogWatcher.UI.ViewModels;
 using DAoCLogWatcher.UI.Views;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace DAoCLogWatcher.UI;
 
-public partial class App : Application
+public partial class App: Application
 {
-    public override void Initialize()
-    {
-        AvaloniaXamlLoader.Load(this);
-    }
+	public override void Initialize()
+	{
+		AvaloniaXamlLoader.Load(this);
+	}
 
-    public override void OnFrameworkInitializationCompleted()
-    {
-        if (this.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-        {
-            // Avoid duplicate validations from both Avalonia and the CommunityToolkit.
-            // More info: https://docs.avaloniaui.net/docs/guides/development-guides/data-validation#manage-validationplugins
-            this.DisableAvaloniaDataAnnotationValidation();
-            desktop.MainWindow = new MainWindow
-            {
-                DataContext = new MainWindowViewModel(),
-            };
-        }
+	public override void OnFrameworkInitializationCompleted()
+	{
+		if(this.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+		{
+			// Avoid duplicate validations from both Avalonia and the CommunityToolkit.
+			// More info: https://docs.avaloniaui.net/docs/guides/development-guides/data-validation#manage-validationplugins
+			this.DisableAvaloniaDataAnnotationValidation();
 
-        base.OnFrameworkInitializationCompleted();
-    }
+			var services = new ServiceCollection();
+			services.AddSingleton(_ => SettingsService.Load());
+			services.AddSingleton<RealmPointSummary>();
+			services.AddSingleton<RpsChartData>();
+			services.AddSingleton<CombatSummary>();
+			services.AddSingleton<IUpdateService, UpdateService>();
+			services.AddSingleton<INotificationService, NotificationService>();
+			services.AddSingleton<IDaocLogPathService, DaocLogPathService>();
+			services.AddSingleton<IWatchSession, WatchSession>();
+			services.AddSingleton<IRealmPointProcessor, RealmPointProcessor>();
+			services.AddSingleton<ICombatProcessor, CombatProcessor>();
+			services.AddSingleton<MainWindowViewModel>();
+			var provider = services.BuildServiceProvider();
 
-    private void DisableAvaloniaDataAnnotationValidation()
-    {
-        // Get an array of plugins to remove
-        var dataValidationPluginsToRemove =
-            BindingPlugins.DataValidators.OfType<DataAnnotationsValidationPlugin>().ToArray();
+			var vm = provider.GetRequiredService<MainWindowViewModel>();
+			desktop.MainWindow = new MainWindow
+			                     {
+					                     DataContext = vm
+			                     };
+			desktop.Exit += (_, _) => vm.Dispose();
+		}
 
-        // remove each entry found
-        foreach (var plugin in dataValidationPluginsToRemove)
-        {
-            BindingPlugins.DataValidators.Remove(plugin);
-        }
-    }
+		base.OnFrameworkInitializationCompleted();
+	}
+
+	private void DisableAvaloniaDataAnnotationValidation()
+	{
+		var dataValidationPluginsToRemove = BindingPlugins.DataValidators.OfType<DataAnnotationsValidationPlugin>().ToArray();
+
+		foreach(var plugin in dataValidationPluginsToRemove)
+		{
+			BindingPlugins.DataValidators.Remove(plugin);
+		}
+	}
 }

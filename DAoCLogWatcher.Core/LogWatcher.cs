@@ -9,15 +9,17 @@ namespace DAoCLogWatcher.Core;
 
 public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 {
-	private const int BufferSize = 4096;
-	private const int PollDelayMilliseconds = 500;
-	private const int LogReopenThresholdSeconds = 30;
+	private const int BUFFER_SIZE = 4096;
+	private const int POLL_DELAY_MILLISECONDS = 500;
+	private const int LOG_REOPEN_THRESHOLD_SECONDS = 30;
+	private const int KILL_RP_CORRELATION_WINDOW_SECONDS = 30;
+	private const string DATE_FORMAT = "ddd MMM d HH:mm:ss yyyy";
 
 	private static readonly Regex ChatLogOpenedRegex = GenerateChatLogOpenedRegex();
 	private static readonly Regex ChatLogClosedRegex = GenerateChatLogClosedRegex();
 	private static readonly Regex StatsCharacterRegex = GenerateStatsCharacterRegex();
 	private static readonly Regex KillLineRegex = GenerateKillLineRegex();
-	private static readonly Regex StatsDeathsRegex = GenerateStatsDeathsRegex();
+	private static readonly Regex SendLineRegex = GenerateSendLineRegex();
 
 	private readonly string logFilePath;
 	private readonly double maxHistoryHours;
@@ -28,17 +30,24 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 	private readonly bool skipOldEntries;
 	private readonly Dictionary<string, int> characterNameCounts = new();
 	private bool lastTimestampedLineWasInWindow = true;
+	private readonly long endPosition;
 
-	public LogWatcher(string logFilePath, long startPosition = 0, bool enableTimeFiltering = false, double filterHours = 24)
+	// Session-scoped state — initialised at the start of each WatchAsync call.
+	private RealmPointParser? sessionParser;
+	private CombatParser? sessionCombatParser;
+	private KillEvent? lastKillEvent;
+
+	public LogWatcher(string logFilePath, long startPosition = 0, bool enableTimeFiltering = false, double filterHours = 24, long endPosition = -1)
 	{
 		ArgumentException.ThrowIfNullOrWhiteSpace(logFilePath);
 
 		this.logFilePath = logFilePath;
 		this.LastPosition = startPosition;
-		this.readBuffer = new byte[BufferSize];
+		this.readBuffer = new byte[BUFFER_SIZE];
 		this.incompleteLineBuffer = new StringBuilder();
 		this.skipOldEntries = enableTimeFiltering&&startPosition == 0;
 		this.maxHistoryHours = filterHours;
+		this.endPosition = endPosition;
 	}
 
 	public long LastPosition { get; private set; }
@@ -67,9 +76,9 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 			throw new FileNotFoundException($"Log file not found: {this.logFilePath}");
 		}
 
-		var parser = new RealmPointParser();
-		var combatParser = new CombatParser();
-		KillEvent? lastKillEvent = null;
+		this.sessionParser = new RealmPointParser();
+		this.sessionCombatParser = new CombatParser();
+		this.lastKillEvent = null;
 
 		this.fileStream = new FileStream(this.logFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 0, true);
 
@@ -79,10 +88,17 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 		{
 			while(!cancellationToken.IsCancellationRequested)
 			{
+				if(this.endPosition >= 0&&this.fileStream.Position >= this.endPosition)
+				{
+					yield break;
+				}
+
 				int bytesRead;
 				try
 				{
-					bytesRead = await this.fileStream.ReadAsync(this.readBuffer, cancellationToken);
+					var maxRead = this.endPosition >= 0?(int)Math.Min(this.readBuffer.Length, this.endPosition - this.fileStream.Position):this.readBuffer.Length;
+					if(maxRead <= 0) yield break;
+					bytesRead = await this.fileStream.ReadAsync(this.readBuffer.AsMemory(0, maxRead), cancellationToken);
 				}
 				catch(Exception ex) when(ex is OperationCanceledException or ObjectDisposedException)
 				{
@@ -93,7 +109,7 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 				{
 					try
 					{
-						await Task.Delay(PollDelayMilliseconds, cancellationToken);
+						await Task.Delay(POLL_DELAY_MILLISECONDS, cancellationToken);
 					}
 					catch(Exception ex) when(ex is OperationCanceledException or ObjectDisposedException)
 					{
@@ -111,80 +127,39 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 
 				foreach(var line in completeLines)
 				{
-					this.ProcessLogClosedMarker(line);
-					this.ProcessLogOpenedMarker(line);
-
-					// Compute shouldYield once and reuse it to gate character detection on
-					// timestampless lines like "Statistics for X this Session:".
-					var shouldYield = !this.skipOldEntries||this.ShouldProcessLine(line);
-
-					if(this.skipOldEntries && line.StartsWith('['))
-						this.lastTimestampedLineWasInWindow = shouldYield;
-
-					var detectedName = (!this.skipOldEntries || this.lastTimestampedLineWasInWindow)
-						? this.TryDetectCharacterName(line)
-						: null;
-
-					// Always feed both parsers to keep state machines consistent.
-					parser.TryParse(line, out var entry);
-					combatParser.TryParse(line, out var damageEvent, out var healEvent, out var missEvent);
-
-					// Detect kill events unconditionally — the kill line may be outside the time
-					// filter window while the correlated RP entry is inside it.
-					var killEvent = TryDetectKillEvent(line);
-					if(killEvent != null)
-						lastKillEvent = killEvent;
-
-					var statsDeaths = TryDetectStatsDeaths(line);
-
-					if(shouldYield&&!string.IsNullOrWhiteSpace(line))
+					var parsed = this.ProcessOneLine(line);
+					if(!parsed.ShouldYield||string.IsNullOrWhiteSpace(line))
 					{
-						// Multi-line sequences (e.g. RP line → XP Guild Bonus → XP line) may
-						// resolve on a timestamp-less line that bypasses ShouldProcessLine.
-						// Re-check the resolved entry's own timestamp against the filter window.
-						if(this.skipOldEntries&&entry != null&&!this.ShouldProcessTimestamp(entry.Timestamp))
-							entry = null;
+						continue;
+					}
 
-						if(this.skipOldEntries&&damageEvent != null&&!this.ShouldProcessTimestamp(damageEvent.Timestamp))
-							damageEvent = null;
-						if(this.skipOldEntries&&healEvent != null&&!this.ShouldProcessTimestamp(healEvent.Timestamp))
-							healEvent = null;
-						if(this.skipOldEntries&&missEvent != null&&!this.ShouldProcessTimestamp(missEvent.Timestamp))
-							missEvent = null;
+					var entry = this.ApplyTimeFilter(parsed.Entry, e => e.Timestamp);
+					var damage = this.ApplyTimeFilter(parsed.DamageEvent, e => e.Timestamp);
+					var heal = this.ApplyTimeFilter(parsed.HealEvent, e => e.Timestamp);
+					var miss = this.ApplyTimeFilter(parsed.MissEvent, e => e.Timestamp);
 
-						var characterNameForLine = detectedName != null ? this.CurrentCharacterName : null;
+					var logLine = CreateLogLine(line, CorrelateKillWithRp(entry, this.lastKillEvent), damage, heal, miss, parsed.KillEvent, parsed.SendEvent);
+					logLine = logLine with
+					          {
+							          DetectedCharacterName = parsed.CharacterName
+					          };
+					yield return logLine;
 
-						// Correlate PlayerKill RP entries with the most recent kill event (within 30s).
-						if(entry != null && entry.Source == RealmPointSource.PlayerKill && lastKillEvent != null)
-						{
-							var diffSeconds = Math.Abs((entry.Timestamp.ToTimeSpan() - lastKillEvent.Timestamp.ToTimeSpan()).TotalSeconds);
-							if(diffSeconds > 43200) diffSeconds = 86400 - diffSeconds; // midnight arc
-							if(diffSeconds <= 30)
-								entry = entry with { Victim = lastKillEvent.Victim };
-						}
-
-						LogLine logLine = entry != null
-							? new RealmPointLogLine(line, entry) { DetectedCharacterName = characterNameForLine }
-							: damageEvent != null
-								? new DamageLogLine(line, damageEvent) { DetectedCharacterName = characterNameForLine }
-								: healEvent != null
-									? new HealLogLine(line, healEvent) { DetectedCharacterName = characterNameForLine }
-									: missEvent != null
-										? new MissLogLine(line, missEvent) { DetectedCharacterName = characterNameForLine }
-										: killEvent != null
-											? new KillLogLine(line, killEvent) { DetectedCharacterName = characterNameForLine }
-											: statsDeaths.HasValue
-												? new StatsDeathsLogLine(line, statsDeaths.Value) { DetectedCharacterName = characterNameForLine }
-												: new UnknownLogLine(line) { DetectedCharacterName = characterNameForLine };
-
-						yield return logLine;
-
-						// TryParse may flush a stale pending event AND return a new event on the same line.
-						// The chain above picks the flushed event first -- emit the secondary event now.
-						if(damageEvent != null && healEvent != null)
-							yield return new HealLogLine(line, healEvent) { DetectedCharacterName = characterNameForLine };
-						else if(damageEvent != null && missEvent != null)
-							yield return new MissLogLine(line, missEvent) { DetectedCharacterName = characterNameForLine };
+					// TryParse may flush a stale pending event AND return a new event on the same line.
+					// The chain above picks the flushed event first -- emit the secondary event now.
+					if(damage != null&&heal != null)
+					{
+						yield return new HealLogLine(line, heal)
+						             {
+								             DetectedCharacterName = parsed.CharacterName
+						             };
+					}
+					else if(damage != null&&miss != null)
+					{
+						yield return new MissLogLine(line, miss)
+						             {
+								             DetectedCharacterName = parsed.CharacterName
+						             };
 					}
 				}
 			}
@@ -198,6 +173,51 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 			}
 		}
 	}
+
+	// ── Extracted helpers ─────────────────────────────────────────────────
+
+	/// <summary>
+	/// Nulls out an event whose timestamp falls outside the time filter window.
+	/// Multi-line sequences (e.g. RP line → XP Guild Bonus → XP line) may resolve on
+	/// a timestamp-less line that bypasses ShouldProcessLine; this re-checks the
+	/// resolved entry's own timestamp.
+	/// </summary>
+	private T? ApplyTimeFilter<T>(T? evt, Func<T, TimeOnly> getTimestamp)
+			where T: class
+	{
+		if(!this.skipOldEntries||evt == null)
+			return evt;
+		return this.ShouldProcessTimestamp(getTimestamp(evt))?evt:null;
+	}
+
+	private static RealmPointEntry? CorrelateKillWithRp(RealmPointEntry? entry, KillEvent? lastKillEvent)
+	{
+		if(entry == null||entry.Source != RealmPointSource.PlayerKill||lastKillEvent == null)
+			return entry;
+		var diffSeconds = TimeHelper.ShortestArcSeconds(entry.Timestamp, lastKillEvent.Timestamp);
+		if(diffSeconds <= KILL_RP_CORRELATION_WINDOW_SECONDS)
+		{
+			return entry with
+			       {
+					       Victim = lastKillEvent.Victim
+			       };
+		}
+
+		return entry;
+	}
+
+	private static LogLine CreateLogLine(string line, RealmPointEntry? entry, DamageEvent? damageEvent, HealEvent? healEvent, MissEvent? missEvent, KillEvent? killEvent, SendEvent? sendEvent)
+	{
+		if(entry != null) return new RealmPointLogLine(line, entry);
+		if(damageEvent != null) return new DamageLogLine(line, damageEvent);
+		if(healEvent != null) return new HealLogLine(line, healEvent);
+		if(missEvent != null) return new MissLogLine(line, missEvent);
+		if(killEvent != null) return new KillLogLine(line, killEvent);
+		if(sendEvent != null) return new SendLogLine(line, sendEvent);
+		return new UnknownLogLine(line);
+	}
+
+	// ── Line buffer and I/O ──────────────────────────────────────────────
 
 	private void AppendToLineBuffer(string text)
 	{
@@ -216,7 +236,7 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 
 		if(completeLineCount <= 0)
 		{
-			return Array.Empty<string>();
+			return [];
 		}
 
 		var completeLines = new string[completeLineCount];
@@ -232,6 +252,59 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 		return completeLines;
 	}
 
+	// ── Per-line processing ──────────────────────────────────────────────
+
+	private readonly record struct ParsedLine(bool ShouldYield, RealmPointEntry? Entry, DamageEvent? DamageEvent, HealEvent? HealEvent, MissEvent? MissEvent, KillEvent? KillEvent, SendEvent? SendEvent, string? CharacterName);
+
+	/// <summary>
+	/// Feeds one line through all parsers and detection helpers.
+	/// Updates session state (lastKillEvent, lastTimestampedLineWasInWindow, CurrentCharacterName).
+	/// The caller decides whether to yield — only lines where <see cref="ParsedLine.ShouldYield"/>
+	/// is true and the line is non-empty should be emitted.
+	/// </summary>
+	private ParsedLine ProcessOneLine(string line)
+	{
+		this.ProcessLogClosedMarker(line);
+		this.ProcessLogOpenedMarker(line);
+
+		// Compute shouldYield once and reuse to gate character detection on
+		// timestampless lines like "Statistics for X this Session:".
+		var shouldYield = !this.skipOldEntries||this.ShouldProcessLine(line);
+		if(this.skipOldEntries&&line.StartsWith('['))
+		{
+			this.lastTimestampedLineWasInWindow = shouldYield;
+		}
+
+		string? detectedName;
+		if(!this.skipOldEntries||this.lastTimestampedLineWasInWindow)
+		{
+			detectedName = this.TryDetectCharacterName(line);
+		}
+		else
+		{
+			detectedName = null;
+		}
+
+		// Always feed both parsers to keep state machines consistent.
+		this.sessionParser!.TryParse(line, out var entry);
+		this.sessionCombatParser!.TryParse(line, out var damageEvent, out var healEvent, out var missEvent);
+
+		// Detect kill events unconditionally — the kill line may be outside the time
+		// filter window while the correlated RP entry is inside it.
+		var killEvent = TryDetectKillEvent(line);
+		if(killEvent != null)
+		{
+			this.lastKillEvent = killEvent;
+		}
+
+		var sendEvent = TryDetectSendEvent(line);
+
+		var characterName = detectedName != null?this.CurrentCharacterName:null;
+		return new ParsedLine(shouldYield, entry, damageEvent, healEvent, missEvent, killEvent, sendEvent, characterName);
+	}
+
+	// ── Session markers ──────────────────────────────────────────────────
+
 	[GeneratedRegex(@"^\*\*\* Chat Log Closed: (?<date>.+)$", RegexOptions.Compiled|RegexOptions.CultureInvariant)]
 	private static partial Regex GenerateChatLogClosedRegex();
 
@@ -243,7 +316,7 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 		var match = ChatLogClosedRegex.Match(line);
 		if(match.Success)
 		{
-			if(DateTime.TryParseExact(match.Groups["date"].Value, "ddd MMM d HH:mm:ss yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out var closedAt))
+			if(DateTime.TryParseExact(match.Groups["date"].Value, DATE_FORMAT, CultureInfo.InvariantCulture, DateTimeStyles.None, out var closedAt))
 			{
 				this.lastLogClosed = closedAt;
 			}
@@ -255,9 +328,9 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 		var match = ChatLogOpenedRegex.Match(line);
 		if(match.Success)
 		{
-			if(DateTime.TryParseExact(match.Groups["date"].Value, "ddd MMM d HH:mm:ss yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out var sessionDate))
+			if(DateTime.TryParseExact(match.Groups["date"].Value, DATE_FORMAT, CultureInfo.InvariantCulture, DateTimeStyles.None, out var sessionDate))
 			{
-				var isQuickReopen = this.lastLogClosed.HasValue&&(sessionDate - this.lastLogClosed.Value).TotalSeconds <= LogReopenThresholdSeconds;
+				var isQuickReopen = this.lastLogClosed.HasValue&&(sessionDate - this.lastLogClosed.Value).TotalSeconds <= LOG_REOPEN_THRESHOLD_SECONDS;
 
 				if(!isQuickReopen)
 				{
@@ -271,6 +344,8 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 		}
 	}
 
+	// ── Position and filtering ───────────────────────────────────────────
+
 	private void SeekToLastPosition(FileStream stream)
 	{
 		if(this.LastPosition > 0&&this.LastPosition < stream.Length)
@@ -283,7 +358,7 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 	{
 		if(!line.StartsWith('[')||line.Length < 11)
 		{
-			return true; // No timestamp, include by default
+			return true;
 		}
 
 		var endIndex = line.IndexOf(']');
@@ -306,21 +381,32 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 		var sessionDate = this.CurrentSessionStart?.Date ?? DateTime.Now.Date;
 		var lineDateTime = sessionDate.Add(time.ToTimeSpan());
 
-		// Handle day wraparound - if line time is in the future, it's from yesterday
+		// If the resolved time is in the future, the session opened just after midnight
+		// and this timestamp is actually from the previous day.
 		if(lineDateTime > DateTime.Now)
 		{
 			lineDateTime = lineDateTime.AddDays(-1);
+		}
+		// If the resolved time predates the session start by more than 1 hour, the log
+		// has crossed midnight — this timestamp belongs to the following day.
+		else if(this.CurrentSessionStart.HasValue&&lineDateTime < this.CurrentSessionStart.Value.AddHours(-1))
+		{
+			lineDateTime = lineDateTime.AddDays(1);
 		}
 
 		var cutoffTime = DateTime.Now.AddHours(-this.maxHistoryHours);
 		return lineDateTime >= cutoffTime;
 	}
 
+	// ── Detection helpers ────────────────────────────────────────────────
+
 	private string? TryDetectCharacterName(string line)
 	{
 		var match = StatsCharacterRegex.Match(line);
 		if(!match.Success)
+		{
 			return null;
+		}
 
 		var name = match.Groups["name"].Value;
 		this.characterNameCounts.TryGetValue(name, out var count);
@@ -341,36 +427,48 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 	{
 		var match = KillLineRegex.Match(line);
 		if(!match.Success)
+		{
 			return null;
+		}
 
 		if(!TimeOnly.TryParseExact(match.Groups["timestamp"].Value, "HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out var timestamp))
+		{
 			return null;
+		}
 
 		return new KillEvent
-			{
-				Timestamp = timestamp,
-				Victim = match.Groups["victim"].Value,
-				Killer = match.Groups["killer"].Value,
-				Zone = match.Groups["zone"].Value
-			};
+		       {
+				       Timestamp = timestamp,
+				       Victim = match.Groups["victim"].Value,
+				       Killer = match.Groups["killer"].Value,
+				       Zone = match.Groups["zone"].Value
+		       };
 	}
 
 	[GeneratedRegex(@"^\[(?<timestamp>\d{2}:\d{2}:\d{2})\] (?<victim>\w+) was just killed by (?<killer>\w+) in (?<zone>.+)\.$", RegexOptions.Compiled|RegexOptions.CultureInvariant)]
 	private static partial Regex GenerateKillLineRegex();
 
-	private static int? TryDetectStatsDeaths(string line)
+	private static SendEvent? TryDetectSendEvent(string line)
 	{
-		var match = StatsDeathsRegex.Match(line);
+		var match = SendLineRegex.Match(line);
 		if(!match.Success)
+		{
 			return null;
-		return int.TryParse(match.Groups["deaths"].Value, out var deaths) ? deaths : null;
+		}
+
+		if(!TimeOnly.TryParseExact(match.Groups["timestamp"].Value, "HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out var timestamp))
+		{
+			return null;
+		}
+
+		return new SendEvent
+		       {
+				       Timestamp = timestamp,
+				       Sender = match.Groups["sender"].Value,
+				       Message = match.Groups["message"].Value
+		       };
 	}
 
-	// Matches only the /stats Deaths line. The timestamp is optional because /stats
-	// detail lines are written without a [HH:MM:SS] prefix in the log:
-	//   Deaths: 7                       (common — no timestamp)
-	//   [21:21:48] Deaths:        5     (some clients add one)
-	// Anchored with ^ so "Alb Deaths:", "Group Deaths:", and "Deathblows:" never match.
-	[GeneratedRegex(@"^(?:\[\d{2}:\d{2}:\d{2}\])?\s*Deaths:\s+(?<deaths>\d+)", RegexOptions.Compiled|RegexOptions.CultureInvariant)]
-	private static partial Regex GenerateStatsDeathsRegex();
+	[GeneratedRegex(@"^\[(?<timestamp>\d{2}:\d{2}:\d{2})\] @@(?<sender>\w+) sends, ""(?<message>.+)""$", RegexOptions.Compiled|RegexOptions.CultureInvariant)]
+	private static partial Regex GenerateSendLineRegex();
 }

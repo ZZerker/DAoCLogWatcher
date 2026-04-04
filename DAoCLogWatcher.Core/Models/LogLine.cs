@@ -8,22 +8,22 @@ public abstract record LogLine(string Text)
 }
 
 /// <summary>A line that did not match any known event pattern.</summary>
-public sealed record UnknownLogLine(string Text) : LogLine(Text);
+public sealed record UnknownLogLine(string Text): LogLine(Text);
 
 /// <summary>A line that yielded a realm point entry.</summary>
-public sealed record RealmPointLogLine(string Text, RealmPointEntry Entry) : LogLine(Text);
+public sealed record RealmPointLogLine(string Text, RealmPointEntry Entry): LogLine(Text);
 
 /// <summary>A line (or multi-line sequence) that yielded a kill event (X was just killed by Y in Z).</summary>
-public sealed record KillLogLine(string Text, KillEvent Event) : LogLine(Text);
+public sealed record KillLogLine(string Text, KillEvent Event): LogLine(Text);
 
 /// <summary>A line (or multi-line sequence) that yielded a damage event.</summary>
-public sealed record DamageLogLine(string Text, DamageEvent Event) : LogLine(Text);
+public sealed record DamageLogLine(string Text, DamageEvent Event): LogLine(Text);
 
 /// <summary>A line that yielded a heal event.</summary>
-public sealed record HealLogLine(string Text, HealEvent Event) : LogLine(Text);
+public sealed record HealLogLine(string Text, HealEvent Event): LogLine(Text);
 
 /// <summary>A line that yielded a miss/block/resist event (outgoing attack failed).</summary>
-public sealed record MissLogLine(string Text, MissEvent Event) : LogLine(Text);
+public sealed record MissLogLine(string Text, MissEvent Event): LogLine(Text);
 
-/// <summary>A /stats Deaths line — carries the session death count reported by the game.</summary>
-public sealed record StatsDeathsLogLine(string Text, int Deaths) : LogLine(Text);
+/// <summary>A line that yielded a chat send event (e.g. "@@Name sends, \"msg\"").</summary>
+public sealed record SendLogLine(string Text, SendEvent Event): LogLine(Text);
