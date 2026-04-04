@@ -23,3 +23,7 @@ x64/
 /CLAUDE.md
 /.claude/settings.local.json
 .vscode/settings.json
+.claude/architecture-review-2026-03-22.md
+/.claude
+DAoCLogWatcher.Tests/DAoCLogWatcher.Tests.csproj
+.github/copilot-instructions.md
