@@ -170,16 +170,16 @@ public sealed class RealmPointSummaryTests
 		              {
 				              TotalRealmPoints = 5000,
 				              FirstEntryTime = now.AddHours(-1),
-			              LastEntryTime = now.AddMinutes(-5), // Recent entry
-IsLive = true // Live session — uses DateTime.Now as end
+				              LastEntryTime = now.AddMinutes(-5),
+				              IsLive = true
 		              };
 
 		// Act
 		var rpsPerHour = summary.RpsPerHour;
 
-		// Assert - 5000 RPs over ~1 hour (using DateTime.Now as end) ≈ 5000 RPs/hour
 		rpsPerHour.Should().BeApproximately(5000.0, 10.0);
 	}
+
 	[Fact]
 	public void RpsPerHour_WithOldSession_UsesLastEntryTime()
 	{
@@ -188,22 +188,18 @@ IsLive = true // Live session — uses DateTime.Now as end
 		              {
 				              TotalRealmPoints = 10000,
 				              FirstEntryTime = DateTime.Now.AddHours(-3),
-				              LastEntryTime = DateTime.Now.AddHours(-2) // > 1 hour ago (old session)
+				              LastEntryTime = DateTime.Now.AddHours(-2)
 		              };
 
 		// Act
 		var rpsPerHour = summary.RpsPerHour;
 
-		// Assert - 10000 RPs over 1 hour = 10000 RPs/hour
 		rpsPerHour.Should().BeApproximately(10000.0, 1.0);
 	}
 
 	[Fact]
 	public void RpsPerHour_WithIdenticalTimestamps_Recent_UsesNowAsEnd()
 	{
-		// When FirstEntryTime == LastEntryTime in a live session,
-		// uses DateTime.Now as end, giving valid RPs/hour
-
 		// Arrange
 		var now = DateTime.Now;
 		var summary = new RealmPointSummary
@@ -211,22 +207,18 @@ IsLive = true // Live session — uses DateTime.Now as end
 			              TotalRealmPoints = 1000,
 			              FirstEntryTime = now.AddMinutes(-1),
 			              LastEntryTime = now.AddMinutes(-1),
-			              IsLive = true // Live session — uses DateTime.Now as end
+			              IsLive = true
 		              };
 
 		// Act
 		var rpsPerHour = summary.RpsPerHour;
 
-		// Assert - Should calculate using DateTime.Now as end
 		rpsPerHour.Should().BeGreaterThan(0.0);
 	}
 
 	[Fact]
 	public void RpsPerHour_WithIdenticalTimestamps_Old_UsesLastAsEnd()
 	{
-		// When FirstEntryTime == LastEntryTime and old (> 1 hour),
-		// uses LastEntryTime as end, resulting in zero duration
-
 		// Arrange
 		var timestamp = DateTime.Now.AddHours(-5);
 		var summary = new RealmPointSummary
@@ -239,7 +231,6 @@ IsLive = true // Live session — uses DateTime.Now as end
 		// Act
 		var rpsPerHour = summary.RpsPerHour;
 
-		// Assert - Duration is zero, returns 0
 		rpsPerHour.Should().Be(0.0);
 	}
 
@@ -338,9 +329,6 @@ IsLive = true // Live session — uses DateTime.Now as end
 	[Fact]
 	public void BugDetection_IndividualRPsSumToTotal_ShouldBeEnforced()
 	{
-		// This test validates that the sum of individual RP values equals TotalRealmPoints
-		// If this fails, it indicates a bug in the accumulation logic in ProcessLogLine
-
 		// Arrange
 		var summary = new RealmPointSummary
 		              {
