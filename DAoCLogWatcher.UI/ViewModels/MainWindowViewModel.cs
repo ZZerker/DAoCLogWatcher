@@ -313,7 +313,7 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 	                           RealmPointSummary summary,
 	                           RpsChartData chartData,
 	                           CombatSummary combatSummary,
-	                           FrontierMapService frontierMapService)
+	                           IFrontierMapService frontierMapService)
 	{
 		this.watchSession = watchSession;
 		this.notificationService = notificationService;

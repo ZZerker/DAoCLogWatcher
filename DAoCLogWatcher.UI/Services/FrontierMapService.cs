@@ -5,7 +5,12 @@ using DAoCLogWatcher.UI.Models;
 
 namespace DAoCLogWatcher.UI.Services;
 
-public class FrontierMapService
+public interface IFrontierMapService
+{
+	FrontierMapData Load();
+}
+
+public class FrontierMapService : IFrontierMapService
 {
 	private static readonly JsonSerializerOptions Options = new()
 	                                                        {

@@ -24,11 +24,13 @@ public sealed class MainWindowViewModelTests: IDisposable
 	private readonly IDaocLogPathService mockPathService = Substitute.For<IDaocLogPathService>();
 	private readonly ISettingsService mockSettingsService = Substitute.For<ISettingsService>();
 	private readonly ILogWatcherFactory mockLogWatcherFactory = Substitute.For<ILogWatcherFactory>();
+	private readonly IFrontierMapService mockFrontierMapService = Substitute.For<IFrontierMapService>();
 
 	public MainWindowViewModelTests()
 	{
 		// Prevent null-task from CheckForUpdatesAsync fire-and-forget in constructor
 		this.mockUpdateService.CheckForUpdatesAsync().Returns(Task.FromResult<(string?, bool)>((null, false)));
+		this.mockFrontierMapService.Load().Returns(new FrontierMapData([], []));
 
 		// Default: RunAsync completes immediately so no Dispatcher is touched
 		this.mockSession.RunAsync(Arg.Any<LogWatcher>(), Arg.Any<Action>(), Arg.Any<Func<LogLine, Task>>()).Returns(Task.CompletedTask);
@@ -47,7 +49,8 @@ public sealed class MainWindowViewModelTests: IDisposable
 		                               settings ?? new AppSettings(),
 		                               new RealmPointSummary(),
 		                               new RpsChartData(),
-		                               new CombatSummary());
+		                               new CombatSummary(),
+		                               this.mockFrontierMapService);
 	}
 
 	public void Dispose()

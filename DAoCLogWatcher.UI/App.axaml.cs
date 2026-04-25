@@ -43,7 +43,7 @@ public partial class App: Application
 			services.AddSingleton<IWatchSession, WatchSession>();
 			services.AddSingleton<IRealmPointProcessor, RealmPointProcessor>();
 			services.AddSingleton<ICombatProcessor, CombatProcessor>();
-			services.AddSingleton<FrontierMapService>();
+			services.AddSingleton<IFrontierMapService, FrontierMapService>();
 			services.AddSingleton<ZoneMapService>();
 			services.AddSingleton<WarmapWebSocketService>();
 			services.AddSingleton<MainWindowViewModel>();
