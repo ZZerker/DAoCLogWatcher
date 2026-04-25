@@ -1,8 +1,10 @@
+using System;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Data.Core.Plugins;
 using System.Linq;
 using Avalonia.Markup.Xaml;
+using DAoCLogWatcher.Core;
 using DAoCLogWatcher.UI.Models;
 using DAoCLogWatcher.UI.Services;
 using DAoCLogWatcher.UI.ViewModels;
@@ -13,6 +15,8 @@ namespace DAoCLogWatcher.UI;
 
 public partial class App: Application
 {
+	public IServiceProvider Services { get; private set; } = null!;
+
 	public override void Initialize()
 	{
 		AvaloniaXamlLoader.Load(this);
@@ -27,7 +31,9 @@ public partial class App: Application
 			this.DisableAvaloniaDataAnnotationValidation();
 
 			var services = new ServiceCollection();
-			services.AddSingleton(_ => SettingsService.Load());
+			services.AddSingleton<ISettingsService, SettingsService>();
+			services.AddSingleton(sp => sp.GetRequiredService<ISettingsService>().Load());
+			services.AddSingleton<ILogWatcherFactory, LogWatcherFactory>();
 			services.AddSingleton<RealmPointSummary>();
 			services.AddSingleton<RpsChartData>();
 			services.AddSingleton<CombatSummary>();
@@ -37,8 +43,15 @@ public partial class App: Application
 			services.AddSingleton<IWatchSession, WatchSession>();
 			services.AddSingleton<IRealmPointProcessor, RealmPointProcessor>();
 			services.AddSingleton<ICombatProcessor, CombatProcessor>();
+			services.AddSingleton<FrontierMapService>();
+			services.AddSingleton<ZoneMapService>();
+			services.AddSingleton<WarmapWebSocketService>();
 			services.AddSingleton<MainWindowViewModel>();
 			var provider = services.BuildServiceProvider();
+			this.Services = provider;
+
+			var warmap = provider.GetRequiredService<WarmapWebSocketService>();
+			warmap.Start();
 
 			var vm = provider.GetRequiredService<MainWindowViewModel>();
 			desktop.MainWindow = new MainWindow

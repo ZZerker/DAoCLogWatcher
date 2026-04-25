@@ -66,15 +66,23 @@ public sealed partial class RealmPointParser
 		{
 			// XP Guild Bonus line may appear between the RP line and the XP confirmation line
 			if(line.Contains("XP Guild Bonus"))
+			{
 				return false;
+			}
 
 			RealmPointSource pendingSource;
 			if(line.Contains("have captured"))
+			{
 				pendingSource = RealmPointSource.Siege;
+			}
 			else if(line.Contains("experience points")||line.Contains("Kill participation"))
+			{
 				pendingSource = RealmPointSource.PlayerKill;
+			}
 			else
+			{
 				pendingSource = RealmPointSource.Misc;
+			}
 
 			entry = new RealmPointEntry
 			        {
@@ -235,38 +243,60 @@ public sealed partial class RealmPointParser
 	private static string? DetermineSubSource(string reason)
 	{
 		if(reason.Contains("completing your mission"))
+		{
 			return "Mission Complete";
+		}
 
 		var tierMatch = TierParticipationRegex().Match(reason);
 		if(tierMatch.Success)
+		{
 			return $"Tier {tierMatch.Groups["tier"].Value} Participation";
+		}
 
 		if(reason.Contains("Win Streak"))
+		{
 			return "Win Streak";
+		}
 
 		if(reason.Contains("Arena Match"))
+		{
 			return "Arena Match";
+		}
 
 		if(reason.Contains("War Supplies"))
+		{
 			return "War Supplies";
+		}
 
 		if(reason.Contains("Tower Capture"))
+		{
 			return "Tower Capture";
+		}
 
 		if(reason.Contains("Keep Capture"))
+		{
 			return "Keep Capture";
+		}
 
 		if(reason.Contains("Battle Tick"))
+		{
 			return "Battle Tick";
+		}
 
 		if(reason.Contains("Assault Order"))
+		{
 			return "Assault Order";
+		}
 
 		if(reason.Contains("support activity in battle"))
+		{
 			return "Support Activity";
+		}
 
 		if(reason.Contains("repair"))
+		{
 			return "Repair";
+		}
 
 		return null;
 	}

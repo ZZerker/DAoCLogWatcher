@@ -37,18 +37,24 @@ public sealed partial class CombatParser
 		miss = null;
 
 		if(string.IsNullOrWhiteSpace(line))
+		{
 			return false;
+		}
 
 		// Taken-crit has NO timestamp — must check before timestamp-bearing patterns
 		if(this.TryTakenCritContinuation(line, out damage))
+		{
 			return true;
+		}
 
 		// Flush any stale pending-taken if this line is not a crit continuation
 		var flushedTaken = this.FlushPendingTaken();
 
 		// Spell interrupted — clear pending spell name; fall through to no-match handling
 		if(line.Contains("your spell is interrupted!"))
+		{
 			this.pendingSpellName = null;
+		}
 
 		if(this.TryMatchSpellCast(line))
 		{
@@ -110,8 +116,16 @@ public sealed partial class CombatParser
 			return damage != null;
 		}
 
+		if(this.TryMatchDealtDotHit(line, out var dotPending))
+		{
+			damage = this.SwapPendingDealt(dotPending, flushedTaken);
+			return damage != null;
+		}
+
 		if(this.TryMatchDealtCrit(line, out damage))
+		{
 			return true;
+		}
 
 		if(this.TryMatchTakenHit(line, out var takenPending))
 		{
@@ -155,7 +169,10 @@ public sealed partial class CombatParser
 		damage = null;
 		var match = TakenCritRegex().Match(line);
 		if(!match.Success||this.pendingTaken == null)
+		{
 			return false;
+		}
+
 		var crit = int.Parse(match.Groups["crit"].Value, CultureInfo.InvariantCulture);
 		damage = this.pendingTaken.Value.ToDamageEvent(crit);
 		this.pendingTaken = null;
@@ -166,7 +183,10 @@ public sealed partial class CombatParser
 	{
 		var match = SpellCastRegex().Match(line);
 		if(!match.Success||!ExtractTimestamp(match, out var ts))
+		{
 			return false;
+		}
+
 		this.pendingSpellName = match.Groups["spell"].Value;
 		this.pendingSpellTimestamp = ts;
 		return true;
@@ -176,7 +196,10 @@ public sealed partial class CombatParser
 	{
 		var match = BowShotRegex().Match(line);
 		if(!match.Success||!ExtractTimestamp(match, out var ts))
+		{
 			return false;
+		}
+
 		this.pendingBowShotName = match.Groups["shot"].Value;
 		this.pendingBowShotTimestamp = ts;
 		return true;
@@ -186,7 +209,10 @@ public sealed partial class CombatParser
 	{
 		var match = StylePerformedRegex().Match(line);
 		if(!match.Success||!ExtractTimestamp(match, out var ts))
+		{
 			return false;
+		}
+
 		this.pendingStyleName = match.Groups["style"].Value;
 		this.pendingStyleTimestamp = ts;
 		return true;
@@ -196,7 +222,10 @@ public sealed partial class CombatParser
 	{
 		var match = StylePrepareRegex().Match(line);
 		if(!match.Success||!ExtractTimestamp(match, out var ts))
+		{
 			return false;
+		}
+
 		this.pendingStyleName = match.Groups["style"].Value;
 		this.pendingStyleTimestamp = ts;
 		return true;
@@ -206,7 +235,10 @@ public sealed partial class CombatParser
 	{
 		var match = StyleChainFallbackRegex().Match(line);
 		if(!match.Success||!ExtractTimestamp(match, out var ts))
+		{
 			return false;
+		}
+
 		this.pendingStyleName = match.Groups["style"].Value;
 		this.pendingStyleTimestamp = ts;
 		return true;
@@ -216,7 +248,10 @@ public sealed partial class CombatParser
 	{
 		var match = StyleFailedRegex().Match(line);
 		if(!match.Success)
+		{
 			return false;
+		}
+
 		this.pendingStyleName = null;
 		return true;
 	}
@@ -224,7 +259,10 @@ public sealed partial class CombatParser
 	private string? ResolveStyleName(TimeOnly hitTimestamp)
 	{
 		if(this.pendingStyleName == null)
+		{
 			return null;
+		}
+
 		var diff = TimeHelper.ShortestArcSeconds(hitTimestamp, this.pendingStyleTimestamp);
 		return diff <= 6.0?this.pendingStyleName:null;
 	}
@@ -234,7 +272,10 @@ public sealed partial class CombatParser
 		heal = null;
 		var match = HealRegex().Match(line);
 		if(!match.Success||!ExtractTimestamp(match, out var ts))
+		{
 			return false;
+		}
+
 		heal = new HealEvent
 		       {
 				       Timestamp = ts,
@@ -249,7 +290,10 @@ public sealed partial class CombatParser
 		heal = null;
 		var match = OutgoingHealRegex().Match(line);
 		if(!match.Success||!ExtractTimestamp(match, out var ts))
+		{
 			return false;
+		}
+
 		heal = new HealEvent
 		       {
 				       Timestamp = ts,
@@ -265,9 +309,12 @@ public sealed partial class CombatParser
 		pending = default;
 		var match = WeaponAttackRegex().Match(line);
 		if(!match.Success||!ExtractTimestamp(match, out var ts))
+		{
 			return false;
+		}
+
 		this.pendingSpellName = null;
-		pending = new PendingDamage(ts, match.Groups["target"].Value, int.Parse(match.Groups["dmg"].Value, CultureInfo.InvariantCulture), ParseAbsorbed(match), true, match.Groups["weapon"].Value, IsWeaponAttack: true, StyleName: this.ResolveStyleName(ts));
+		pending = new PendingDamage(ts, match.Groups["target"].Value, int.Parse(match.Groups["dmg"].Value, CultureInfo.InvariantCulture), ParseAbsorbed(match), true, match.Groups["weapon"].Value, true, this.ResolveStyleName(ts));
 		return true;
 	}
 
@@ -276,11 +323,27 @@ public sealed partial class CombatParser
 		pending = default;
 		var match = DealtHitRegex().Match(line);
 		if(!match.Success||!ExtractTimestamp(match, out var ts))
+		{
 			return false;
+		}
+
 		var spellName = this.ResolveSpellName(ts);
 		var isWeaponAttack = spellName == null;
 		var styleName = isWeaponAttack?this.ResolveStyleName(ts):null;
-		pending = new PendingDamage(ts, match.Groups["target"].Value, int.Parse(match.Groups["dmg"].Value, CultureInfo.InvariantCulture), ParseAbsorbed(match), true, spellName, IsWeaponAttack: isWeaponAttack, StyleName: styleName);
+		pending = new PendingDamage(ts, match.Groups["target"].Value, int.Parse(match.Groups["dmg"].Value, CultureInfo.InvariantCulture), ParseAbsorbed(match), true, spellName, isWeaponAttack, styleName);
+		return true;
+	}
+
+	private bool TryMatchDealtDotHit(string line, out PendingDamage pending)
+	{
+		pending = default;
+		var match = DealtDotHitRegex().Match(line);
+		if(!match.Success||!ExtractTimestamp(match, out var ts))
+		{
+			return false;
+		}
+
+		pending = new PendingDamage(ts, match.Groups["target"].Value, int.Parse(match.Groups["dmg"].Value, CultureInfo.InvariantCulture), ParseAbsorbed(match), true, match.Groups["spell"].Value, false);
 		return true;
 	}
 
@@ -288,12 +351,26 @@ public sealed partial class CombatParser
 	{
 		damage = null;
 		if(this.pendingDealt == null)
+		{
 			return false;
+		}
+
 		var match = DealtCritRegex().Match(line);
 		if(!match.Success)
+		{
 			match = DealtMeleeCritRegex().Match(line);
+		}
+
 		if(!match.Success)
+		{
+			match = DealtDotCritRegex().Match(line);
+		}
+
+		if(!match.Success)
+		{
 			return false;
+		}
+
 		var crit = int.Parse(match.Groups["crit"].Value, CultureInfo.InvariantCulture);
 		damage = this.pendingDealt.Value.ToDamageEvent(crit);
 		this.pendingDealt = null;
@@ -305,8 +382,11 @@ public sealed partial class CombatParser
 		pending = default;
 		var match = TakenHitRegex().Match(line);
 		if(!match.Success||!ExtractTimestamp(match, out var ts))
+		{
 			return false;
-		pending = new PendingDamage(ts, match.Groups["attacker"].Value, int.Parse(match.Groups["dmg"].Value, CultureInfo.InvariantCulture), ParseAbsorbed(match), false, null, IsWeaponAttack: false);
+		}
+
+		pending = new PendingDamage(ts, match.Groups["attacker"].Value, int.Parse(match.Groups["dmg"].Value, CultureInfo.InvariantCulture), ParseAbsorbed(match), false, null, false);
 		return true;
 	}
 
@@ -315,11 +395,14 @@ public sealed partial class CombatParser
 		miss = null;
 		var match = MeleeMissRegex().Match(line);
 		if(!match.Success||!ExtractTimestamp(match, out var ts))
+		{
 			return false;
+		}
+
 		miss = new MissEvent
 		       {
 				       Timestamp = ts,
-			       IsSpell = false
+				       IsSpell = false
 		       };
 		return true;
 	}
@@ -329,12 +412,15 @@ public sealed partial class CombatParser
 		miss = null;
 		var match = BlockRegex().Match(line);
 		if(!match.Success||!ExtractTimestamp(match, out var ts))
+		{
 			return false;
+		}
+
 		miss = new MissEvent
 		       {
 				       Timestamp = ts,
-			       IsSpell = false,
-			       Target = match.Groups["target"].Value
+				       IsSpell = false,
+				       Target = match.Groups["target"].Value
 		       };
 		return true;
 	}
@@ -344,12 +430,15 @@ public sealed partial class CombatParser
 		miss = null;
 		var match = SpellResistRegex().Match(line);
 		if(!match.Success||!ExtractTimestamp(match, out var ts))
+		{
 			return false;
+		}
+
 		miss = new MissEvent
 		       {
 				       Timestamp = ts,
-			       IsSpell = true,
-			       Target = match.Groups["target"].Value
+				       IsSpell = true,
+				       Target = match.Groups["target"].Value
 		       };
 		return true;
 	}
@@ -393,7 +482,10 @@ public sealed partial class CombatParser
 	private DamageEvent? FlushPendingTaken()
 	{
 		if(this.pendingTaken == null)
+		{
 			return null;
+		}
+
 		var ev = this.pendingTaken.Value.ToDamageEvent(0);
 		this.pendingTaken = null;
 		return ev;
@@ -409,7 +501,10 @@ public sealed partial class CombatParser
 	private DamageEvent? FlushPendingDealtOrFallback(DamageEvent? fallback)
 	{
 		if(this.pendingDealt != null)
+		{
 			return this.FlushPendingDealt();
+		}
+
 		return fallback;
 	}
 
@@ -446,11 +541,17 @@ public sealed partial class CombatParser
 		return flushed ?? fallback;
 	}
 
-	private DamageEvent? FlushForMiss(DamageEvent? flushedTaken) => flushedTaken ?? (this.pendingDealt != null?FlushPendingDealt():null);
+	private DamageEvent? FlushForMiss(DamageEvent? flushedTaken)
+	{
+		return flushedTaken ?? (this.pendingDealt != null?FlushPendingDealt():null);
+	}
 
 	// ── Parsing utilities ────────────────────────────────────────────────
 
-	private static bool ExtractTimestamp(Match match, out TimeOnly timestamp) => TimeOnly.TryParseExact(match.Groups["ts"].Value, "HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out timestamp);
+	private static bool ExtractTimestamp(Match match, out TimeOnly timestamp)
+	{
+		return TimeOnly.TryParseExact(match.Groups["ts"].Value, "HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out timestamp);
+	}
 
 	private static int ParseAbsorbed(Match match)
 	{
@@ -475,6 +576,14 @@ public sealed partial class CombatParser
 	// You critically hit {target} for an additional {N} damage! (Crit Chance: X%)  — melee/weapon crit (NO timestamp)
 	[GeneratedRegex(@"^You critically hit .+? for an additional (?<crit>\d+) damage! \(Crit Chance: [\d.]+%\)$", RegexOptions.Compiled|RegexOptions.CultureInvariant)]
 	private static partial Regex DealtMeleeCritRegex();
+
+	// [HH:mm:ss] Your {spell} hits {target} for {N} damage!  — DoT/named-spell tick
+	[GeneratedRegex(@"^\[(?<ts>\d{2}:\d{2}:\d{2})\] Your (?<spell>.+?) hits (?<target>.+?) for (?<dmg>\d+)(?: \(-(?<abs>\d+)\))? damage!$", RegexOptions.Compiled|RegexOptions.CultureInvariant)]
+	private static partial Regex DealtDotHitRegex();
+
+	// [HH:mm:ss] Your {spell} critically hits {target} for an additional {N} damage!  — DoT/named-spell crit (no Crit Chance suffix)
+	[GeneratedRegex(@"^\[(?<ts>\d{2}:\d{2}:\d{2})\] Your (?<spell>.+?) critically hits (?<target>.+?) for an additional (?<crit>\d+) damage!$", RegexOptions.Compiled|RegexOptions.CultureInvariant)]
+	private static partial Regex DealtDotCritRegex();
 
 	// [HH:mm:ss] {attacker} hits you for {N} (-{abs}) damage!
 	[GeneratedRegex(@"^\[(?<ts>\d{2}:\d{2}:\d{2})\] (?<attacker>.+?) hits you for (?<dmg>\d+)(?: \(-(?<abs>\d+)\))? damage!$", RegexOptions.Compiled|RegexOptions.CultureInvariant)]
@@ -529,20 +638,22 @@ public sealed partial class CombatParser
 	[GeneratedRegex(@"^\[\d{2}:\d{2}:\d{2}\] You fail to execute your .+? perfectly!", RegexOptions.Compiled|RegexOptions.CultureInvariant)]
 	private static partial Regex StyleFailedRegex();
 
-	private readonly record struct PendingDamage(TimeOnly Timestamp, string Target, int BaseDamage, int Absorbed, bool IsDealt, string? SpellName, bool IsWeaponAttack, string? StyleName = null)
+	private readonly record struct PendingDamage(TimeOnly Timestamp, string Opponent, int BaseDamage, int Absorbed, bool IsDealt, string? SpellName, bool IsWeaponAttack, string? StyleName = null)
 	{
-		public DamageEvent ToDamageEvent(int critDamage) =>
-				new()
-				{
-						Timestamp = Timestamp,
-						Target = Target,
-						BaseDamage = BaseDamage,
-						Absorbed = Absorbed,
-						IsDealt = IsDealt,
-						CritDamage = critDamage,
-						SpellName = SpellName,
-						IsWeaponAttack = IsWeaponAttack,
-						StyleName = StyleName,
-				};
+		public DamageEvent ToDamageEvent(int critDamage)
+		{
+			return new DamageEvent
+			       {
+					       Timestamp = Timestamp,
+					       Opponent = Opponent,
+					       BaseDamage = BaseDamage,
+					       Absorbed = Absorbed,
+					       IsDealt = IsDealt,
+					       CritDamage = critDamage,
+					       SpellName = SpellName,
+					       IsWeaponAttack = IsWeaponAttack,
+					       StyleName = StyleName
+			       };
+		}
 	}
 }

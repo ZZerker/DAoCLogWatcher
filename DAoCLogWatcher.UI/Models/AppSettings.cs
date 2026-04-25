@@ -19,38 +19,13 @@ public class AppSettings
 
 	public bool ShowCombatTab { get; set; } = true;
 
+	public bool ShowZoneKillsTab { get; set; } = true;
+
+	public int ZoneKillWindowMinutes { get; set; } = 10;
+
 	public bool ShowHealLogTab { get; set; } = true;
 
 	public bool ShowCombatLogTab { get; set; } = true;
-}
 
-public static class SettingsService
-{
-	private static readonly string FilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DAoCLogWatcher", "settings.json");
-
-	public static AppSettings Load()
-	{
-		try
-		{
-			if(File.Exists(FilePath))
-				return JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(FilePath)) ?? new();
-		}
-		catch(Exception ex)
-		{
-			Debug.WriteLine($"[SettingsService.Load] {ex.GetType().Name}: {ex.Message}");
-		}
-
-		return new();
-	}
-
-	public static void Save(AppSettings settings)
-	{
-		Directory.CreateDirectory(Path.GetDirectoryName(FilePath)!);
-		File.WriteAllText(FilePath,
-		                  JsonSerializer.Serialize(settings,
-		                                           new JsonSerializerOptions
-		                                           {
-				                                           WriteIndented = true
-		                                           }));
-	}
+	public bool ShowKillHeatmapTab { get; set; } = true;
 }

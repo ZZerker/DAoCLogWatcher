@@ -1,0 +1,1731 @@
+{
+  "generatedAt": "2026-04-19T17:04:14.177Z",
+  "sources": [
+    {
+      "name": "dol-zones-xml",
+      "url": "D:/PrivatProjects/DOLSharp/GameServerScripts/dbupdater/insert/Zones.xml",
+      "fetchedAt": "2026-04-19T17:04:14.177Z"
+    },
+    {
+      "name": "eden-warmap-ws",
+      "url": "wss://ws.eden-daoc.net:60005",
+      "fetchedAt": "2026-04-19T00:00:00Z",
+      "note": "Live snapshot — currentRealm reflects server state at scrape time, not default ownership"
+    }
+  ],
+  "coordinateSystem": {
+    "gameUnitsPerZone": 65536,
+    "blockSize": 8192,
+    "referenceMap": {
+      "name": "new-frontiers-region-163",
+      "regionOriginGame": {
+        "x": 360448,
+        "y": 294912
+      },
+      "pixelsPerGameUnit": "1/256",
+      "pixelsPerBlock": 32,
+      "transformNotes": "pixel_x = (game_x - 360448) / 256 ; pixel_y = (game_y - 294912) / 256 . Region 163 origin = blocks (44, 36) × 8192. Estimated full map size: 1408×1536 px (44 blocks wide × 48 blocks tall)."
+    }
+  },
+  "zones": [
+    {
+      "zoneId": 163,
+      "name": "Ellan Vannin",
+      "realm": null,
+      "regionId": 163,
+      "gameBounds": {
+        "x": 491520,
+        "y": 425984,
+        "width": 65536,
+        "height": 65536
+      },
+      "pixelBounds": {
+        "x": 512,
+        "y": 512,
+        "width": 256,
+        "height": 256
+      },
+      "polygon": null
+    },
+    {
+      "zoneId": 167,
+      "name": "Odin's Gate",
+      "realm": "Midgard",
+      "regionId": 163,
+      "gameBounds": {
+        "x": 524288,
+        "y": 360448,
+        "width": 65536,
+        "height": 65536
+      },
+      "pixelBounds": {
+        "x": 640,
+        "y": 256,
+        "width": 256,
+        "height": 256
+      },
+      "polygon": null
+    },
+    {
+      "zoneId": 168,
+      "name": "Jamtland Mountains",
+      "realm": "Midgard",
+      "regionId": 163,
+      "gameBounds": {
+        "x": 589824,
+        "y": 360448,
+        "width": 65536,
+        "height": 65536
+      },
+      "pixelBounds": {
+        "x": 896,
+        "y": 256,
+        "width": 256,
+        "height": 256
+      },
+      "polygon": null
+    },
+    {
+      "zoneId": 169,
+      "name": "Yggdra Forest",
+      "realm": "Midgard",
+      "regionId": 163,
+      "gameBounds": {
+        "x": 655360,
+        "y": 360448,
+        "width": 65536,
+        "height": 65536
+      },
+      "pixelBounds": {
+        "x": 1152,
+        "y": 256,
+        "width": 256,
+        "height": 256
+      },
+      "polygon": null
+    },
+    {
+      "zoneId": 170,
+      "name": "Uppland",
+      "realm": "Midgard",
+      "regionId": 163,
+      "gameBounds": {
+        "x": 589824,
+        "y": 294912,
+        "width": 65536,
+        "height": 65536
+      },
+      "pixelBounds": {
+        "x": 896,
+        "y": 0,
+        "width": 256,
+        "height": 256
+      },
+      "polygon": null
+    },
+    {
+      "zoneId": 171,
+      "name": "Emain Macha",
+      "realm": "Hibernia",
+      "regionId": 163,
+      "gameBounds": {
+        "x": 425984,
+        "y": 491520,
+        "width": 65536,
+        "height": 65536
+      },
+      "pixelBounds": {
+        "x": 256,
+        "y": 768,
+        "width": 256,
+        "height": 256
+      },
+      "polygon": null
+    },
+    {
+      "zoneId": 172,
+      "name": "Breifine",
+      "realm": "Hibernia",
+      "regionId": 163,
+      "gameBounds": {
+        "x": 425984,
+        "y": 557056,
+        "width": 65536,
+        "height": 65536
+      },
+      "pixelBounds": {
+        "x": 256,
+        "y": 1024,
+        "width": 256,
+        "height": 256
+      },
+      "polygon": null
+    },
+    {
+      "zoneId": 173,
+      "name": "Cruachan Gorge",
+      "realm": "Hibernia",
+      "regionId": 163,
+      "gameBounds": {
+        "x": 360448,
+        "y": 557056,
+        "width": 65536,
+        "height": 65536
+      },
+      "pixelBounds": {
+        "x": 0,
+        "y": 1024,
+        "width": 256,
+        "height": 256
+      },
+      "polygon": null
+    },
+    {
+      "zoneId": 174,
+      "name": "Mount Collory",
+      "realm": "Hibernia",
+      "regionId": 163,
+      "gameBounds": {
+        "x": 425984,
+        "y": 622592,
+        "width": 65536,
+        "height": 65536
+      },
+      "pixelBounds": {
+        "x": 256,
+        "y": 1280,
+        "width": 256,
+        "height": 256
+      },
+      "polygon": null
+    },
+    {
+      "zoneId": 175,
+      "name": "Snowdonia",
+      "realm": "Albion",
+      "regionId": 163,
+      "gameBounds": {
+        "x": 557056,
+        "y": 622592,
+        "width": 65536,
+        "height": 65536
+      },
+      "pixelBounds": {
+        "x": 768,
+        "y": 1280,
+        "width": 256,
+        "height": 256
+      },
+      "polygon": null
+    },
+    {
+      "zoneId": 176,
+      "name": "Forest Sauvage",
+      "realm": "Albion",
+      "regionId": 163,
+      "gameBounds": {
+        "x": 622592,
+        "y": 557056,
+        "width": 65536,
+        "height": 65536
+      },
+      "pixelBounds": {
+        "x": 1024,
+        "y": 1024,
+        "width": 256,
+        "height": 256
+      },
+      "polygon": null
+    },
+    {
+      "zoneId": 177,
+      "name": "Pennine Mountains",
+      "realm": "Albion",
+      "regionId": 163,
+      "gameBounds": {
+        "x": 557056,
+        "y": 557056,
+        "width": 65536,
+        "height": 65536
+      },
+      "pixelBounds": {
+        "x": 768,
+        "y": 1024,
+        "width": 256,
+        "height": 256
+      },
+      "polygon": null
+    },
+    {
+      "zoneId": 178,
+      "name": "Hadrian's Wall",
+      "realm": "Albion",
+      "regionId": 163,
+      "gameBounds": {
+        "x": 557056,
+        "y": 491520,
+        "width": 65536,
+        "height": 65536
+      },
+      "pixelBounds": {
+        "x": 768,
+        "y": 768,
+        "width": 256,
+        "height": 256
+      },
+      "polygon": null
+    },
+    {
+      "zoneId": 244,
+      "name": "Passage of Conflict",
+      "realm": null,
+      "regionId": 244,
+      "gameBounds": null,
+      "pixelBounds": null,
+      "polygon": null
+    },
+    {
+      "zoneId": 249,
+      "name": "Darkness Falls",
+      "realm": null,
+      "regionId": 249,
+      "gameBounds": null,
+      "pixelBounds": null,
+      "polygon": null
+    }
+  ],
+  "keeps": [
+    {
+      "keepId": 62,
+      "name": "Caer Benowyc",
+      "type": "keep",
+      "parentKeepId": null,
+      "zoneId": 178,
+      "defaultRealm": "Albion",
+      "currentRealm": "Hibernia",
+      "game": {
+        "x": 576290,
+        "y": 502131
+      },
+      "pixel": {
+        "x": 843,
+        "y": 809
+      }
+    },
+    {
+      "keepId": 63,
+      "name": "Caer Berkstead",
+      "type": "keep",
+      "parentKeepId": null,
+      "zoneId": 178,
+      "defaultRealm": "Albion",
+      "currentRealm": "Albion",
+      "game": {
+        "x": 616597,
+        "y": 510903
+      },
+      "pixel": {
+        "x": 1001,
+        "y": 844
+      }
+    },
+    {
+      "keepId": 64,
+      "name": "Caer Erasleigh",
+      "type": "keep",
+      "parentKeepId": null,
+      "zoneId": 178,
+      "defaultRealm": "Albion",
+      "currentRealm": "Midgard",
+      "game": {
+        "x": 572040,
+        "y": 548393
+      },
+      "pixel": {
+        "x": 827,
+        "y": 990
+      }
+    },
+    {
+      "keepId": 65,
+      "name": "Caer Boldiam",
+      "type": "keep",
+      "parentKeepId": null,
+      "zoneId": 177,
+      "defaultRealm": "Albion",
+      "currentRealm": "Albion",
+      "game": {
+        "x": 606759,
+        "y": 576610
+      },
+      "pixel": {
+        "x": 962,
+        "y": 1100
+      }
+    },
+    {
+      "keepId": 66,
+      "name": "Caer Sursbrooke",
+      "type": "keep",
+      "parentKeepId": null,
+      "zoneId": 177,
+      "defaultRealm": "Albion",
+      "currentRealm": "Albion",
+      "game": {
+        "x": 581532,
+        "y": 600756
+      },
+      "pixel": {
+        "x": 864,
+        "y": 1195
+      }
+    },
+    {
+      "keepId": 67,
+      "name": "Caer Hurbury",
+      "type": "keep",
+      "parentKeepId": null,
+      "zoneId": 175,
+      "defaultRealm": "Albion",
+      "currentRealm": "Albion",
+      "game": {
+        "x": 599686,
+        "y": 650276
+      },
+      "pixel": {
+        "x": 935,
+        "y": 1388
+      }
+    },
+    {
+      "keepId": 68,
+      "name": "Caer Renaris",
+      "type": "keep",
+      "parentKeepId": null,
+      "zoneId": 176,
+      "defaultRealm": "Albion",
+      "currentRealm": "Albion",
+      "game": {
+        "x": 627175,
+        "y": 607498
+      },
+      "pixel": {
+        "x": 1042,
+        "y": 1221
+      }
+    },
+    {
+      "keepId": 82,
+      "name": "Bledmeer Faste",
+      "type": "keep",
+      "parentKeepId": null,
+      "zoneId": 167,
+      "defaultRealm": "Midgard",
+      "currentRealm": "Midgard",
+      "game": {
+        "x": 533624,
+        "y": 407418
+      },
+      "pixel": {
+        "x": 676,
+        "y": 439
+      }
+    },
+    {
+      "keepId": 83,
+      "name": "Nottmoor Faste",
+      "type": "keep",
+      "parentKeepId": null,
+      "zoneId": 167,
+      "defaultRealm": "Midgard",
+      "currentRealm": "Midgard",
+      "game": {
+        "x": 535060,
+        "y": 365500
+      },
+      "pixel": {
+        "x": 682,
+        "y": 276
+      }
+    },
+    {
+      "keepId": 84,
+      "name": "Hlidskialf Faste",
+      "type": "keep",
+      "parentKeepId": null,
+      "zoneId": 168,
+      "defaultRealm": "Midgard",
+      "currentRealm": "Midgard",
+      "game": {
+        "x": 640789,
+        "y": 411416
+      },
+      "pixel": {
+        "x": 1095,
+        "y": 455
+      }
+    },
+    {
+      "keepId": 85,
+      "name": "Blendrake Faste",
+      "type": "keep",
+      "parentKeepId": null,
+      "zoneId": 168,
+      "defaultRealm": "Midgard",
+      "currentRealm": "Midgard",
+      "game": {
+        "x": 601031,
+        "y": 408816
+      },
+      "pixel": {
+        "x": 940,
+        "y": 445
+      }
+    },
+    {
+      "keepId": 86,
+      "name": "Glenlock Faste",
+      "type": "keep",
+      "parentKeepId": null,
+      "zoneId": 168,
+      "defaultRealm": "Midgard",
+      "currentRealm": "Midgard",
+      "game": {
+        "x": 609472,
+        "y": 376000
+      },
+      "pixel": {
+        "x": 973,
+        "y": 317
+      }
+    },
+    {
+      "keepId": 87,
+      "name": "Fensalir Faste",
+      "type": "keep",
+      "parentKeepId": null,
+      "zoneId": 170,
+      "defaultRealm": "Midgard",
+      "currentRealm": "Midgard",
+      "game": {
+        "x": 639744,
+        "y": 345600
+      },
+      "pixel": {
+        "x": 1091,
+        "y": 198
+      }
+    },
+    {
+      "keepId": 88,
+      "name": "Arvakr Faste",
+      "type": "keep",
+      "parentKeepId": null,
+      "zoneId": 169,
+      "defaultRealm": "Midgard",
+      "currentRealm": "Midgard",
+      "game": {
+        "x": 685596,
+        "y": 389325
+      },
+      "pixel": {
+        "x": 1270,
+        "y": 369
+      }
+    },
+    {
+      "keepId": 107,
+      "name": "Dun Crauchon",
+      "type": "keep",
+      "parentKeepId": null,
+      "zoneId": 171,
+      "defaultRealm": "Hibernia",
+      "currentRealm": "Hibernia",
+      "game": {
+        "x": 472315,
+        "y": 501225
+      },
+      "pixel": {
+        "x": 437,
+        "y": 806
+      }
+    },
+    {
+      "keepId": 108,
+      "name": "Dun Crimthain",
+      "type": "keep",
+      "parentKeepId": null,
+      "zoneId": 171,
+      "defaultRealm": "Hibernia",
+      "currentRealm": "Hibernia",
+      "game": {
+        "x": 431788,
+        "y": 507310
+      },
+      "pixel": {
+        "x": 279,
+        "y": 830
+      }
+    },
+    {
+      "keepId": 109,
+      "name": "Dun Bolg",
+      "type": "keep",
+      "parentKeepId": null,
+      "zoneId": 171,
+      "defaultRealm": "Hibernia",
+      "currentRealm": "Hibernia",
+      "game": {
+        "x": 475725,
+        "y": 543454
+      },
+      "pixel": {
+        "x": 450,
+        "y": 971
+      }
+    },
+    {
+      "keepId": 110,
+      "name": "Dun nGed",
+      "type": "keep",
+      "parentKeepId": null,
+      "zoneId": 172,
+      "defaultRealm": "Hibernia",
+      "currentRealm": "Hibernia",
+      "game": {
+        "x": 442055,
+        "y": 576454
+      },
+      "pixel": {
+        "x": 319,
+        "y": 1100
+      }
+    },
+    {
+      "keepId": 111,
+      "name": "Dun da Behnn",
+      "type": "keep",
+      "parentKeepId": null,
+      "zoneId": 172,
+      "defaultRealm": "Hibernia",
+      "currentRealm": "Albion",
+      "game": {
+        "x": 477289,
+        "y": 596314
+      },
+      "pixel": {
+        "x": 456,
+        "y": 1177
+      }
+    },
+    {
+      "keepId": 112,
+      "name": "Dun Scathaig",
+      "type": "keep",
+      "parentKeepId": null,
+      "zoneId": 174,
+      "defaultRealm": "Hibernia",
+      "currentRealm": "Hibernia",
+      "game": {
+        "x": 448113,
+        "y": 666495
+      },
+      "pixel": {
+        "x": 342,
+        "y": 1451
+      }
+    },
+    {
+      "keepId": 113,
+      "name": "Dun Ailinne",
+      "type": "keep",
+      "parentKeepId": null,
+      "zoneId": 173,
+      "defaultRealm": "Hibernia",
+      "currentRealm": "Hibernia",
+      "game": {
+        "x": 411662,
+        "y": 607913
+      },
+      "pixel": {
+        "x": 200,
+        "y": 1223
+      }
+    },
+    {
+      "keepId": 151,
+      "name": "Tower of Graoch",
+      "type": "tower",
+      "parentKeepId": null,
+      "zoneId": 163,
+      "defaultRealm": null,
+      "currentRealm": "Albion",
+      "game": {
+        "x": 497010,
+        "y": 472755
+      },
+      "pixel": {
+        "x": 533,
+        "y": 695
+      }
+    },
+    {
+      "keepId": 152,
+      "name": "Tower of Korazh",
+      "type": "tower",
+      "parentKeepId": null,
+      "zoneId": 163,
+      "defaultRealm": null,
+      "currentRealm": "Albion",
+      "game": {
+        "x": 551373,
+        "y": 472553
+      },
+      "pixel": {
+        "x": 746,
+        "y": 694
+      }
+    },
+    {
+      "keepId": 153,
+      "name": "Tower of Deifrang",
+      "type": "tower",
+      "parentKeepId": null,
+      "zoneId": 163,
+      "defaultRealm": null,
+      "currentRealm": "Albion",
+      "game": {
+        "x": 522348,
+        "y": 441896
+      },
+      "pixel": {
+        "x": 632,
+        "y": 574
+      }
+    },
+    {
+      "keepId": 154,
+      "name": "Knoc Meayll",
+      "type": "keep",
+      "parentKeepId": null,
+      "zoneId": 163,
+      "defaultRealm": null,
+      "currentRealm": "Albion",
+      "game": {
+        "x": 524698,
+        "y": 457745
+      },
+      "pixel": {
+        "x": 642,
+        "y": 636
+      }
+    },
+    {
+      "keepId": 155,
+      "name": "East Ellan Dock",
+      "type": "dock",
+      "parentKeepId": null,
+      "zoneId": 163,
+      "defaultRealm": null,
+      "currentRealm": "Hibernia",
+      "game": {
+        "x": 553243,
+        "y": 453902
+      },
+      "pixel": {
+        "x": 753,
+        "y": 621
+      }
+    },
+    {
+      "keepId": 156,
+      "name": "West Ellan Dock",
+      "type": "dock",
+      "parentKeepId": null,
+      "zoneId": 163,
+      "defaultRealm": null,
+      "currentRealm": "Hibernia",
+      "game": {
+        "x": 495524,
+        "y": 450627
+      },
+      "pixel": {
+        "x": 528,
+        "y": 608
+      }
+    },
+    {
+      "keepId": 319,
+      "name": "Caer Berkstead Guardtower",
+      "type": "tower",
+      "parentKeepId": 63,
+      "zoneId": 178,
+      "defaultRealm": "Albion",
+      "currentRealm": "Albion",
+      "game": {
+        "x": 611588,
+        "y": 510448
+      },
+      "pixel": {
+        "x": 981,
+        "y": 842
+      }
+    },
+    {
+      "keepId": 320,
+      "name": "Caer Erasleigh Watchtower",
+      "type": "tower",
+      "parentKeepId": 64,
+      "zoneId": 178,
+      "defaultRealm": "Albion",
+      "currentRealm": "Midgard",
+      "game": {
+        "x": 590373,
+        "y": 544245
+      },
+      "pixel": {
+        "x": 898,
+        "y": 974
+      }
+    },
+    {
+      "keepId": 321,
+      "name": "Caer Boldiam Watchtower",
+      "type": "tower",
+      "parentKeepId": 65,
+      "zoneId": 176,
+      "defaultRealm": "Albion",
+      "currentRealm": "Albion",
+      "game": {
+        "x": 623970,
+        "y": 583502
+      },
+      "pixel": {
+        "x": 1029,
+        "y": 1127
+      }
+    },
+    {
+      "keepId": 322,
+      "name": "Caer Sursbrooke Watchtower",
+      "type": "tower",
+      "parentKeepId": 66,
+      "zoneId": 177,
+      "defaultRealm": "Albion",
+      "currentRealm": "Albion",
+      "game": {
+        "x": 590837,
+        "y": 583678
+      },
+      "pixel": {
+        "x": 900,
+        "y": 1128
+      }
+    },
+    {
+      "keepId": 323,
+      "name": "Caer Hurbury Guardtower",
+      "type": "tower",
+      "parentKeepId": 67,
+      "zoneId": 175,
+      "defaultRealm": "Albion",
+      "currentRealm": "Albion",
+      "game": {
+        "x": 594551,
+        "y": 649095
+      },
+      "pixel": {
+        "x": 914,
+        "y": 1384
+      }
+    },
+    {
+      "keepId": 324,
+      "name": "Caer Renaris Guardtower",
+      "type": "tower",
+      "parentKeepId": 68,
+      "zoneId": 176,
+      "defaultRealm": "Albion",
+      "currentRealm": "Albion",
+      "game": {
+        "x": 624825,
+        "y": 612374
+      },
+      "pixel": {
+        "x": 1033,
+        "y": 1240
+      }
+    },
+    {
+      "keepId": 338,
+      "name": "Bledmeer Faste Guardtower",
+      "type": "tower",
+      "parentKeepId": 82,
+      "zoneId": 167,
+      "defaultRealm": null,
+      "currentRealm": "Midgard",
+      "game": {
+        "x": 530480,
+        "y": 411346
+      },
+      "pixel": {
+        "x": 664,
+        "y": 455
+      }
+    },
+    {
+      "keepId": 339,
+      "name": "Nottmoor Faste Watchtower",
+      "type": "tower",
+      "parentKeepId": 83,
+      "zoneId": 167,
+      "defaultRealm": null,
+      "currentRealm": "Midgard",
+      "game": {
+        "x": 534775,
+        "y": 370875
+      },
+      "pixel": {
+        "x": 681,
+        "y": 297
+      }
+    },
+    {
+      "keepId": 340,
+      "name": "Hlidskialf Faste Guardtower",
+      "type": "tower",
+      "parentKeepId": 84,
+      "zoneId": 168,
+      "defaultRealm": null,
+      "currentRealm": "Midgard",
+      "game": {
+        "x": 644745,
+        "y": 415558
+      },
+      "pixel": {
+        "x": 1111,
+        "y": 471
+      }
+    },
+    {
+      "keepId": 341,
+      "name": "Blendrake Faste Watchtower",
+      "type": "tower",
+      "parentKeepId": 85,
+      "zoneId": 167,
+      "defaultRealm": null,
+      "currentRealm": "Albion",
+      "game": {
+        "x": 579860,
+        "y": 392185
+      },
+      "pixel": {
+        "x": 857,
+        "y": 380
+      }
+    },
+    {
+      "keepId": 342,
+      "name": "Glenlock Faste Guardtower",
+      "type": "tower",
+      "parentKeepId": 86,
+      "zoneId": 168,
+      "defaultRealm": null,
+      "currentRealm": "Midgard",
+      "game": {
+        "x": 608502,
+        "y": 370863
+      },
+      "pixel": {
+        "x": 969,
+        "y": 297
+      }
+    },
+    {
+      "keepId": 343,
+      "name": "Fensalir Faste Guardtower",
+      "type": "tower",
+      "parentKeepId": 87,
+      "zoneId": 170,
+      "defaultRealm": null,
+      "currentRealm": "Midgard",
+      "game": {
+        "x": 645038,
+        "y": 346283
+      },
+      "pixel": {
+        "x": 1112,
+        "y": 201
+      }
+    },
+    {
+      "keepId": 344,
+      "name": "Arvakr Faste Guardtower",
+      "type": "tower",
+      "parentKeepId": 88,
+      "zoneId": 169,
+      "defaultRealm": null,
+      "currentRealm": "Midgard",
+      "game": {
+        "x": 690679,
+        "y": 388857
+      },
+      "pixel": {
+        "x": 1290,
+        "y": 367
+      }
+    },
+    {
+      "keepId": 363,
+      "name": "Dun Crauchon Guardtower",
+      "type": "tower",
+      "parentKeepId": 107,
+      "zoneId": 171,
+      "defaultRealm": "Hibernia",
+      "currentRealm": "Hibernia",
+      "game": {
+        "x": 477079,
+        "y": 498885
+      },
+      "pixel": {
+        "x": 456,
+        "y": 797
+      }
+    },
+    {
+      "keepId": 364,
+      "name": "Dun Crimthain Watchtower",
+      "type": "tower",
+      "parentKeepId": 108,
+      "zoneId": 171,
+      "defaultRealm": "Hibernia",
+      "currentRealm": "Hibernia",
+      "game": {
+        "x": 437020,
+        "y": 505263
+      },
+      "pixel": {
+        "x": 299,
+        "y": 822
+      }
+    },
+    {
+      "keepId": 365,
+      "name": "Dun Bolg Watchtower",
+      "type": "tower",
+      "parentKeepId": 109,
+      "zoneId": 171,
+      "defaultRealm": "Hibernia",
+      "currentRealm": "Hibernia",
+      "game": {
+        "x": 458389,
+        "y": 544056
+      },
+      "pixel": {
+        "x": 383,
+        "y": 973
+      }
+    },
+    {
+      "keepId": 366,
+      "name": "Dun nGed Guardtower",
+      "type": "tower",
+      "parentKeepId": 110,
+      "zoneId": 172,
+      "defaultRealm": "Hibernia",
+      "currentRealm": "Hibernia",
+      "game": {
+        "x": 443082,
+        "y": 571745
+      },
+      "pixel": {
+        "x": 323,
+        "y": 1081
+      }
+    },
+    {
+      "keepId": 367,
+      "name": "Dun da Behnn Watchtower",
+      "type": "tower",
+      "parentKeepId": 111,
+      "zoneId": 172,
+      "defaultRealm": "Hibernia",
+      "currentRealm": "Hibernia",
+      "game": {
+        "x": 457928,
+        "y": 592410
+      },
+      "pixel": {
+        "x": 381,
+        "y": 1162
+      }
+    },
+    {
+      "keepId": 368,
+      "name": "Dun Scathaig Watchtower",
+      "type": "tower",
+      "parentKeepId": 112,
+      "zoneId": 174,
+      "defaultRealm": "Hibernia",
+      "currentRealm": "Hibernia",
+      "game": {
+        "x": 459773,
+        "y": 652423
+      },
+      "pixel": {
+        "x": 388,
+        "y": 1397
+      }
+    },
+    {
+      "keepId": 369,
+      "name": "Dun Ailinne Guardtower",
+      "type": "tower",
+      "parentKeepId": 113,
+      "zoneId": 173,
+      "defaultRealm": "Hibernia",
+      "currentRealm": "Hibernia",
+      "game": {
+        "x": 412817,
+        "y": 612370
+      },
+      "pixel": {
+        "x": 205,
+        "y": 1240
+      }
+    },
+    {
+      "keepId": 574,
+      "name": "Caer Benowyc Watchtower",
+      "type": "tower",
+      "parentKeepId": 62,
+      "zoneId": 178,
+      "defaultRealm": "Albion",
+      "currentRealm": "Hibernia",
+      "game": {
+        "x": 572659,
+        "y": 498885
+      },
+      "pixel": {
+        "x": 829,
+        "y": 797
+      }
+    },
+    {
+      "keepId": 575,
+      "name": "Caer Berkstead Watchtower",
+      "type": "tower",
+      "parentKeepId": 63,
+      "zoneId": 178,
+      "defaultRealm": "Albion",
+      "currentRealm": "Albion",
+      "game": {
+        "x": 592184,
+        "y": 517369
+      },
+      "pixel": {
+        "x": 905,
+        "y": 869
+      }
+    },
+    {
+      "keepId": 576,
+      "name": "Caer Erasleigh Guardtower",
+      "type": "tower",
+      "parentKeepId": 64,
+      "zoneId": 178,
+      "defaultRealm": "Albion",
+      "currentRealm": "Midgard",
+      "game": {
+        "x": 575407,
+        "y": 543279
+      },
+      "pixel": {
+        "x": 840,
+        "y": 970
+      }
+    },
+    {
+      "keepId": 577,
+      "name": "Caer Boldiam Guardtower",
+      "type": "tower",
+      "parentKeepId": 65,
+      "zoneId": 177,
+      "defaultRealm": "Albion",
+      "currentRealm": "Hibernia",
+      "game": {
+        "x": 608340,
+        "y": 581096
+      },
+      "pixel": {
+        "x": 968,
+        "y": 1118
+      }
+    },
+    {
+      "keepId": 578,
+      "name": "Caer Sursbrooke Guardtower",
+      "type": "tower",
+      "parentKeepId": 66,
+      "zoneId": 177,
+      "defaultRealm": "Albion",
+      "currentRealm": "Albion",
+      "game": {
+        "x": 577577,
+        "y": 598862
+      },
+      "pixel": {
+        "x": 848,
+        "y": 1187
+      }
+    },
+    {
+      "keepId": 579,
+      "name": "Caer Hurbury Watchtower",
+      "type": "tower",
+      "parentKeepId": 67,
+      "zoneId": 175,
+      "defaultRealm": "Albion",
+      "currentRealm": "Albion",
+      "game": {
+        "x": 597787,
+        "y": 628371
+      },
+      "pixel": {
+        "x": 927,
+        "y": 1303
+      }
+    },
+    {
+      "keepId": 580,
+      "name": "Caer Renaris Watchtower",
+      "type": "tower",
+      "parentKeepId": 68,
+      "zoneId": 177,
+      "defaultRealm": "Albion",
+      "currentRealm": "Midgard",
+      "game": {
+        "x": 610459,
+        "y": 608482
+      },
+      "pixel": {
+        "x": 977,
+        "y": 1225
+      }
+    },
+    {
+      "keepId": 595,
+      "name": "Nottmoor Faste Guardtower",
+      "type": "tower",
+      "parentKeepId": 83,
+      "zoneId": 167,
+      "defaultRealm": null,
+      "currentRealm": "Midgard",
+      "game": {
+        "x": 548414,
+        "y": 380015
+      },
+      "pixel": {
+        "x": 734,
+        "y": 332
+      }
+    },
+    {
+      "keepId": 596,
+      "name": "Hlidskialf Faste Watchtower",
+      "type": "tower",
+      "parentKeepId": 84,
+      "zoneId": 168,
+      "defaultRealm": null,
+      "currentRealm": "Hibernia",
+      "game": {
+        "x": 624120,
+        "y": 414642
+      },
+      "pixel": {
+        "x": 1030,
+        "y": 468
+      }
+    },
+    {
+      "keepId": 597,
+      "name": "Blendrake Faste Guardtower",
+      "type": "tower",
+      "parentKeepId": 85,
+      "zoneId": 168,
+      "defaultRealm": null,
+      "currentRealm": "Midgard",
+      "game": {
+        "x": 603381,
+        "y": 413201
+      },
+      "pixel": {
+        "x": 949,
+        "y": 462
+      }
+    },
+    {
+      "keepId": 598,
+      "name": "Glenlock Faste Watchtower",
+      "type": "tower",
+      "parentKeepId": 86,
+      "zoneId": 168,
+      "defaultRealm": null,
+      "currentRealm": "Midgard",
+      "game": {
+        "x": 615923,
+        "y": 388691
+      },
+      "pixel": {
+        "x": 998,
+        "y": 366
+      }
+    },
+    {
+      "keepId": 599,
+      "name": "Fensalir Faste Watchtower",
+      "type": "tower",
+      "parentKeepId": 87,
+      "zoneId": 170,
+      "defaultRealm": null,
+      "currentRealm": "Midgard",
+      "game": {
+        "x": 623405,
+        "y": 338816
+      },
+      "pixel": {
+        "x": 1027,
+        "y": 172
+      }
+    },
+    {
+      "keepId": 600,
+      "name": "Arvakr Faste Watchtower",
+      "type": "tower",
+      "parentKeepId": 88,
+      "zoneId": 169,
+      "defaultRealm": null,
+      "currentRealm": "Midgard",
+      "game": {
+        "x": 682140,
+        "y": 374443
+      },
+      "pixel": {
+        "x": 1257,
+        "y": 311
+      }
+    },
+    {
+      "keepId": 620,
+      "name": "Dun Crimthain Guardtower",
+      "type": "tower",
+      "parentKeepId": 108,
+      "zoneId": 171,
+      "defaultRealm": "Hibernia",
+      "currentRealm": "Hibernia",
+      "game": {
+        "x": 448764,
+        "y": 511094
+      },
+      "pixel": {
+        "x": 345,
+        "y": 844
+      }
+    },
+    {
+      "keepId": 621,
+      "name": "Dun Bolg Guardtower",
+      "type": "tower",
+      "parentKeepId": 109,
+      "zoneId": 171,
+      "defaultRealm": "Hibernia",
+      "currentRealm": "Hibernia",
+      "game": {
+        "x": 471851,
+        "y": 548339
+      },
+      "pixel": {
+        "x": 435,
+        "y": 990
+      }
+    },
+    {
+      "keepId": 622,
+      "name": "Dun nGed Watchtower",
+      "type": "tower",
+      "parentKeepId": 110,
+      "zoneId": 172,
+      "defaultRealm": "Hibernia",
+      "currentRealm": "Hibernia",
+      "game": {
+        "x": 432942,
+        "y": 559727
+      },
+      "pixel": {
+        "x": 283,
+        "y": 1034
+      }
+    },
+    {
+      "keepId": 623,
+      "name": "Dun da Behnn Guardtower",
+      "type": "tower",
+      "parentKeepId": 111,
+      "zoneId": 172,
+      "defaultRealm": "Hibernia",
+      "currentRealm": "Hibernia",
+      "game": {
+        "x": 481431,
+        "y": 592425
+      },
+      "pixel": {
+        "x": 473,
+        "y": 1162
+      }
+    },
+    {
+      "keepId": 624,
+      "name": "Dun Scathaig Guardtower",
+      "type": "tower",
+      "parentKeepId": 112,
+      "zoneId": 174,
+      "defaultRealm": "Hibernia",
+      "currentRealm": "Hibernia",
+      "game": {
+        "x": 446053,
+        "y": 661670
+      },
+      "pixel": {
+        "x": 334,
+        "y": 1433
+      }
+    },
+    {
+      "keepId": 625,
+      "name": "Dun Ailinne Watchtower",
+      "type": "tower",
+      "parentKeepId": 113,
+      "zoneId": 172,
+      "defaultRealm": "Hibernia",
+      "currentRealm": "Hibernia",
+      "game": {
+        "x": 427484,
+        "y": 614150
+      },
+      "pixel": {
+        "x": 262,
+        "y": 1247
+      }
+    },
+    {
+      "keepId": 831,
+      "name": "Caer Berkstead Outpost",
+      "type": "tower",
+      "parentKeepId": 63,
+      "zoneId": 178,
+      "defaultRealm": "Albion",
+      "currentRealm": "Albion",
+      "game": {
+        "x": 617113,
+        "y": 525051
+      },
+      "pixel": {
+        "x": 1003,
+        "y": 899
+      }
+    },
+    {
+      "keepId": 834,
+      "name": "Caer Sursbrooke Outpost",
+      "type": "tower",
+      "parentKeepId": 66,
+      "zoneId": 177,
+      "defaultRealm": "Albion",
+      "currentRealm": "Albion",
+      "game": {
+        "x": 563976,
+        "y": 603069
+      },
+      "pixel": {
+        "x": 795,
+        "y": 1204
+      }
+    },
+    {
+      "keepId": 851,
+      "name": "Nottmoor Faste Outpost",
+      "type": "tower",
+      "parentKeepId": 83,
+      "zoneId": 167,
+      "defaultRealm": null,
+      "currentRealm": "Midgard",
+      "game": {
+        "x": 559472,
+        "y": 366148
+      },
+      "pixel": {
+        "x": 777,
+        "y": 278
+      }
+    },
+    {
+      "keepId": 852,
+      "name": "Hlidskialf Faste Spire",
+      "type": "tower",
+      "parentKeepId": 84,
+      "zoneId": 169,
+      "defaultRealm": null,
+      "currentRealm": "Midgard",
+      "game": {
+        "x": 656907,
+        "y": 410789
+      },
+      "pixel": {
+        "x": 1158,
+        "y": 453
+      }
+    },
+    {
+      "keepId": 876,
+      "name": "Dun Crimthain Outpost",
+      "type": "tower",
+      "parentKeepId": 108,
+      "zoneId": 171,
+      "defaultRealm": "Hibernia",
+      "currentRealm": "Hibernia",
+      "game": {
+        "x": 435776,
+        "y": 527444
+      },
+      "pixel": {
+        "x": 294,
+        "y": 908
+      }
+    },
+    {
+      "keepId": 877,
+      "name": "Dun Bolg Outpost",
+      "type": "tower",
+      "parentKeepId": 109,
+      "zoneId": 172,
+      "defaultRealm": "Hibernia",
+      "currentRealm": "Hibernia",
+      "game": {
+        "x": 469849,
+        "y": 564920
+      },
+      "pixel": {
+        "x": 427,
+        "y": 1055
+      }
+    },
+    {
+      "keepId": 1086,
+      "name": "Caer Benowyc Spire",
+      "type": "tower",
+      "parentKeepId": 62,
+      "zoneId": 178,
+      "defaultRealm": "Albion",
+      "currentRealm": "Hibernia",
+      "game": {
+        "x": 593957,
+        "y": 499985
+      },
+      "pixel": {
+        "x": 912,
+        "y": 801
+      }
+    },
+    {
+      "keepId": 1088,
+      "name": "Caer Erasleigh Outpost",
+      "type": "tower",
+      "parentKeepId": 64,
+      "zoneId": 178,
+      "defaultRealm": "Albion",
+      "currentRealm": "Midgard",
+      "game": {
+        "x": 579169,
+        "y": 526827
+      },
+      "pixel": {
+        "x": 854,
+        "y": 906
+      }
+    },
+    {
+      "keepId": 1089,
+      "name": "Caer Boldiam Spire",
+      "type": "tower",
+      "parentKeepId": 65,
+      "zoneId": 177,
+      "defaultRealm": "Albion",
+      "currentRealm": "Hibernia",
+      "game": {
+        "x": 609805,
+        "y": 560117
+      },
+      "pixel": {
+        "x": 974,
+        "y": 1036
+      }
+    },
+    {
+      "keepId": 1106,
+      "name": "Bledmeer Faste Spire",
+      "type": "tower",
+      "parentKeepId": 82,
+      "zoneId": 167,
+      "defaultRealm": null,
+      "currentRealm": "Midgard",
+      "game": {
+        "x": 532643,
+        "y": 391557
+      },
+      "pixel": {
+        "x": 673,
+        "y": 378
+      }
+    },
+    {
+      "keepId": 1109,
+      "name": "Blendrake Faste Outpost",
+      "type": "tower",
+      "parentKeepId": 85,
+      "zoneId": 167,
+      "defaultRealm": null,
+      "currentRealm": "Albion",
+      "game": {
+        "x": 581302,
+        "y": 412151
+      },
+      "pixel": {
+        "x": 863,
+        "y": 458
+      }
+    },
+    {
+      "keepId": 1110,
+      "name": "Glenlock Faste Outpost",
+      "type": "tower",
+      "parentKeepId": 86,
+      "zoneId": 170,
+      "defaultRealm": null,
+      "currentRealm": "Midgard",
+      "game": {
+        "x": 621751,
+        "y": 359061
+      },
+      "pixel": {
+        "x": 1021,
+        "y": 251
+      }
+    },
+    {
+      "keepId": 1131,
+      "name": "Dun Crauchon Spire",
+      "type": "tower",
+      "parentKeepId": 107,
+      "zoneId": 171,
+      "defaultRealm": "Hibernia",
+      "currentRealm": "Hibernia",
+      "game": {
+        "x": 456472,
+        "y": 500394
+      },
+      "pixel": {
+        "x": 375,
+        "y": 803
+      }
+    },
+    {
+      "keepId": 1134,
+      "name": "Dun nGed Outpost",
+      "type": "tower",
+      "parentKeepId": 110,
+      "zoneId": 173,
+      "defaultRealm": "Hibernia",
+      "currentRealm": "Hibernia",
+      "game": {
+        "x": 425080,
+        "y": 587142
+      },
+      "pixel": {
+        "x": 252,
+        "y": 1142
+      }
+    },
+    {
+      "keepId": 1135,
+      "name": "Dun da Behnn Outpost",
+      "type": "tower",
+      "parentKeepId": 111,
+      "zoneId": 172,
+      "defaultRealm": "Hibernia",
+      "currentRealm": "Hibernia",
+      "game": {
+        "x": 473480,
+        "y": 610486
+      },
+      "pixel": {
+        "x": 442,
+        "y": 1233
+      }
+    },
+    {
+      "keepId": null,
+      "name": "Brough Ruins (Pennine Mountains)",
+      "type": "landmark",
+      "parentKeepId": null,
+      "zoneId": 177,
+      "defaultRealm": null,
+      "currentRealm": null,
+      "game": { "x": 587056, "y": 562056 },
+      "pixel": { "x": 885, "y": 1044 }
+    },
+    {
+      "keepId": null,
+      "name": "Folley Lake (Hadrian's Wall)",
+      "type": "landmark",
+      "parentKeepId": null,
+      "zoneId": 178,
+      "defaultRealm": null,
+      "currentRealm": null,
+      "game": { "x": 605056, "y": 531520 },
+      "pixel": { "x": 956, "y": 924 }
+    },
+    {
+      "keepId": null,
+      "name": "Lucan's Summit (Snowdonia)",
+      "type": "landmark",
+      "parentKeepId": null,
+      "zoneId": 175,
+      "defaultRealm": null,
+      "currentRealm": null,
+      "game": null,
+      "pixel": null
+    },
+    {
+      "keepId": null,
+      "name": "Moydruim Castle (Emain Macha)",
+      "type": "landmark",
+      "parentKeepId": null,
+      "zoneId": 171,
+      "defaultRealm": null,
+      "currentRealm": null,
+      "game": { "x": 468984, "y": 531520 },
+      "pixel": { "x": 424, "y": 924 }
+    },
+    {
+      "keepId": null,
+      "name": "The Trellebourg (Odin's Gate)",
+      "type": "landmark",
+      "parentKeepId": null,
+      "zoneId": 167,
+      "defaultRealm": null,
+      "currentRealm": null,
+      "game": { "x": 569288, "y": 400448 },
+      "pixel": { "x": 816, "y": 412 }
+    }
+  ]
+}

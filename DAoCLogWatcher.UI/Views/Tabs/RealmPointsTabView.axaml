@@ -1,0 +1,114 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:DAoCLogWatcher.UI.ViewModels"
+             xmlns:scott="using:ScottPlot.Avalonia"
+             x:Class="DAoCLogWatcher.UI.Views.Tabs.RealmPointsTabView"
+             x:DataType="vm:MainWindowViewModel">
+
+    <Grid RowDefinitions="*,Auto" Margin="10,10,10,0">
+        <DockPanel Grid.Row="0">
+            <StackPanel DockPanel.Dock="Top" Margin="0,0,0,15" Spacing="10">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Realm Point Log" FontSize="22" FontWeight="Bold"
+                               Margin="0,0,15,0" Foreground="{DynamicResource AppTextPrimary}" />
+                    <TextBlock
+                        Text="{Binding RpLog.Filtered.Count, StringFormat='({0} entries)'}"
+                        FontSize="14" VerticalAlignment="Center"
+                        Foreground="{DynamicResource AppTextMuted}" />
+                </StackPanel>
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBox Grid.Column="0"
+                             Text="{Binding RpLog.FilterText}"
+                             Watermark="Filter by player or source…"
+                             FontSize="13" />
+                    <Button Grid.Column="1"
+                            Content="✕"
+                            Command="{Binding RpLog.ClearFilterCommand}"
+                            IsVisible="{Binding RpLog.FilterText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                            Margin="6,0,0,0"
+                            Padding="8,4"
+                            FontSize="13" />
+                </Grid>
+            </StackPanel>
+
+            <ScrollViewer Background="{DynamicResource AppCardBackground}" CornerRadius="6"
+                          Padding="10"
+                          HorizontalScrollBarVisibility="Disabled">
+                <ItemsControl ItemsSource="{Binding RpLog.Filtered}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border BorderBrush="{DynamicResource AppRowBorder}"
+                                    BorderThickness="0,0,0,1" Padding="10,8"
+                                    Background="Transparent"
+                                    Classes.multikill="{Binding IsMultiKill}">
+                                <Grid ColumnDefinitions="Auto,Auto,Auto,*">
+                                    <TextBlock Grid.Column="0" Text="{Binding Timestamp}"
+                                               Foreground="{DynamicResource AppTextMuted}"
+                                               FontFamily="Consolas,Courier New,monospace"
+                                               FontSize="13"
+                                               Margin="0,0,20,0"
+                                               MinWidth="80" />
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding Points, StringFormat='+{0} RP'}"
+                                               Foreground="#FF00D968"
+                                               FontWeight="Bold"
+                                               FontSize="13"
+                                               Margin="0,0,20,0"
+                                               MinWidth="90" />
+                                    <TextBlock Grid.Column="2" Classes="source-label"
+                                               Text="{Binding Source}"
+                                               Foreground="#FF00D9FF"
+                                               FontSize="13"
+                                               Margin="0,0,20,0"
+                                               MinWidth="150" />
+                                    <TextBlock Grid.Column="3" Text="{Binding Details}"
+                                               Foreground="{DynamicResource AppTextSecondary}"
+                                               FontSize="13"
+                                               TextWrapping="Wrap" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </DockPanel>
+
+        <Border Grid.Row="1" Background="{DynamicResource AppCardBackground}" CornerRadius="6"
+                Padding="15" Margin="0,15,0,0">
+            <StackPanel Spacing="8">
+
+                <Grid>
+                    <TextBlock Text="RP/h – Rolling 1-Hour Window" FontSize="16"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource AppTextPrimary}"
+                               VerticalAlignment="Center" />
+                    <Button Content="{Binding RpsChart.Icon}"
+                            Command="{Binding RpsChart.ToggleCommand}"
+                            HorizontalAlignment="Right" Background="Transparent"
+                            Foreground="{DynamicResource AppTextMuted}" Padding="6,2"
+                            BorderThickness="0" FontSize="14" />
+                </Grid>
+                <scott:AvaPlot x:Name="RpsHourlyChart" Height="180"
+                               IsVisible="{Binding RpsChart.Value}" />
+
+                <Border Height="1" Background="{DynamicResource AppBorderBrush}"
+                        Margin="0,4,0,4" />
+
+                <Grid>
+                    <TextBlock Text="Realm Points Over Time" FontSize="16"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource AppTextPrimary}"
+                               VerticalAlignment="Center" />
+                    <Button Content="{Binding CumulativeRpChart.Icon}"
+                            Command="{Binding CumulativeRpChart.ToggleCommand}"
+                            HorizontalAlignment="Right" Background="Transparent"
+                            Foreground="{DynamicResource AppTextMuted}" Padding="6,2"
+                            BorderThickness="0" FontSize="14" />
+                </Grid>
+                <scott:AvaPlot x:Name="RpChart" Height="180"
+                               IsVisible="{Binding CumulativeRpChart.Value}" />
+
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

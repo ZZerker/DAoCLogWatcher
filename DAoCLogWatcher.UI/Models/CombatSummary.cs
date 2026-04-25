@@ -28,33 +28,54 @@ public partial class CombatSummary: ObservableObject
 
 	[ObservableProperty] private int spellResistCount;
 
-	public double CritRate => HitCount == 0?0.0:(double)CritCount / HitCount * 100.0;
+	public double CritRate => this.HitCount == 0?0.0:(double)this.CritCount / this.HitCount * 100.0;
 
-	public int AvgDamagePerHit => HitCount == 0?0:TotalDamageDealt / HitCount;
+	public int AvgDamagePerHit => this.HitCount == 0?0:this.TotalDamageDealt / this.HitCount;
 
-	public double MeleeMissRate => ComputeRate(MeleeHitCount, MeleeMissCount);
+	public double MeleeMissRate => ComputeRate(this.MeleeHitCount, this.MeleeMissCount);
 
-	public double SpellResistRate => ComputeRate(SpellHitCount, SpellResistCount);
+	public double SpellResistRate => ComputeRate(this.SpellHitCount, this.SpellResistCount);
 
-	private static double ComputeRate(int hits, int misses) => (hits + misses) == 0?0.0:(double)misses / (hits + misses) * 100.0;
+	private static double ComputeRate(int hits, int misses)
+	{
+		return hits + misses == 0?0.0:(double)misses / (hits + misses) * 100.0;
+	}
 
 	partial void OnHitCountChanged(int value)
 	{
-		OnPropertyChanged(nameof(CritRate));
-		OnPropertyChanged(nameof(AvgDamagePerHit));
+		this.OnPropertyChanged(nameof(this.CritRate));
+		this.OnPropertyChanged(nameof(this.AvgDamagePerHit));
 	}
 
-	partial void OnCritCountChanged(int value) => OnPropertyChanged(nameof(CritRate));
+	partial void OnCritCountChanged(int value)
+	{
+		this.OnPropertyChanged(nameof(this.CritRate));
+	}
 
-	partial void OnTotalDamageDealtChanged(int value) => OnPropertyChanged(nameof(AvgDamagePerHit));
+	partial void OnTotalDamageDealtChanged(int value)
+	{
+		this.OnPropertyChanged(nameof(this.AvgDamagePerHit));
+	}
 
-	partial void OnMeleeHitCountChanged(int value) => OnPropertyChanged(nameof(MeleeMissRate));
+	partial void OnMeleeHitCountChanged(int value)
+	{
+		this.OnPropertyChanged(nameof(this.MeleeMissRate));
+	}
 
-	partial void OnMeleeMissCountChanged(int value) => OnPropertyChanged(nameof(MeleeMissRate));
+	partial void OnMeleeMissCountChanged(int value)
+	{
+		this.OnPropertyChanged(nameof(this.MeleeMissRate));
+	}
 
-	partial void OnSpellHitCountChanged(int value) => OnPropertyChanged(nameof(SpellResistRate));
+	partial void OnSpellHitCountChanged(int value)
+	{
+		this.OnPropertyChanged(nameof(this.SpellResistRate));
+	}
 
-	partial void OnSpellResistCountChanged(int value) => OnPropertyChanged(nameof(SpellResistRate));
+	partial void OnSpellResistCountChanged(int value)
+	{
+		this.OnPropertyChanged(nameof(this.SpellResistRate));
+	}
 
 	/// <summary>Total damage dealt per enemy (key = target name).</summary>
 	public Dictionary<string, int> DamageByTarget { get; } = new();
@@ -77,22 +98,22 @@ public partial class CombatSummary: ObservableObject
 
 	public void Reset()
 	{
-		TotalDamageDealt = 0;
-		TotalDamageTaken = 0;
-		TotalHealsReceived = 0;
-		TotalHealingDone = 0;
-		HitCount = 0;
-		CritCount = 0;
-		TotalAbsorbed = 0;
-		MeleeHitCount = 0;
-		SpellHitCount = 0;
-		MeleeMissCount = 0;
-		SpellResistCount = 0;
-		DamageByTarget.Clear();
-		HealsByHealer.Clear();
-		HealsByTarget.Clear();
-		DamageBySpell.Clear();
-		DamageTakenByAttacker.Clear();
-		ResetRequested?.Invoke(this, EventArgs.Empty);
+		this.TotalDamageDealt = 0;
+		this.TotalDamageTaken = 0;
+		this.TotalHealsReceived = 0;
+		this.TotalHealingDone = 0;
+		this.HitCount = 0;
+		this.CritCount = 0;
+		this.TotalAbsorbed = 0;
+		this.MeleeHitCount = 0;
+		this.SpellHitCount = 0;
+		this.MeleeMissCount = 0;
+		this.SpellResistCount = 0;
+		this.DamageByTarget.Clear();
+		this.HealsByHealer.Clear();
+		this.HealsByTarget.Clear();
+		this.DamageBySpell.Clear();
+		this.DamageTakenByAttacker.Clear();
+		this.ResetRequested?.Invoke(this, EventArgs.Empty);
 	}
 }

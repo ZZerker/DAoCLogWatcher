@@ -22,18 +22,33 @@ public sealed class MainWindowViewModelTests: IDisposable
 	private readonly IUpdateService mockUpdateService = Substitute.For<IUpdateService>();
 	private readonly INotificationService mockNotify = Substitute.For<INotificationService>();
 	private readonly IDaocLogPathService mockPathService = Substitute.For<IDaocLogPathService>();
+	private readonly ISettingsService mockSettingsService = Substitute.For<ISettingsService>();
+	private readonly ILogWatcherFactory mockLogWatcherFactory = Substitute.For<ILogWatcherFactory>();
 
 	public MainWindowViewModelTests()
 	{
 		// Prevent null-task from CheckForUpdatesAsync fire-and-forget in constructor
-		mockUpdateService.CheckForUpdatesAsync().Returns(Task.FromResult<(string?, bool)>((null, false)));
+		this.mockUpdateService.CheckForUpdatesAsync().Returns(Task.FromResult<(string?, bool)>((null, false)));
 
 		// Default: RunAsync completes immediately so no Dispatcher is touched
-		mockSession.RunAsync(Arg.Any<LogWatcher>(), Arg.Any<Action>(), Arg.Any<Func<LogLine, Task>>()).Returns(Task.CompletedTask);
+		this.mockSession.RunAsync(Arg.Any<LogWatcher>(), Arg.Any<Action>(), Arg.Any<Func<LogLine, Task>>()).Returns(Task.CompletedTask);
 	}
 
-	private MainWindowViewModel Build(AppSettings? settings = null) =>
-			new(mockSession, mockProcessor, mockCombat, mockUpdateService, mockNotify, mockPathService, settings ?? new AppSettings(), new RealmPointSummary(), new RpsChartData(), new CombatSummary());
+	private MainWindowViewModel Build(AppSettings? settings = null)
+	{
+		return new MainWindowViewModel(this.mockSession,
+		                               this.mockProcessor,
+		                               this.mockCombat,
+		                               this.mockUpdateService,
+		                               this.mockNotify,
+		                               this.mockPathService,
+		                               this.mockSettingsService,
+		                               this.mockLogWatcherFactory,
+		                               settings ?? new AppSettings(),
+		                               new RealmPointSummary(),
+		                               new RpsChartData(),
+		                               new CombatSummary());
+	}
 
 	public void Dispose()
 	{
@@ -50,7 +65,7 @@ public sealed class MainWindowViewModelTests: IDisposable
 				               HighlightMultiHits = false
 		               };
 
-		var vm = Build(settings);
+		var vm = this.Build(settings);
 
 		vm.HighlightMultiKills.Should().BeFalse();
 		vm.HighlightMultiHits.Should().BeFalse();
@@ -64,15 +79,15 @@ public sealed class MainWindowViewModelTests: IDisposable
 				               ShowRealmPointsTab = false,
 				               ShowCombatTab = false,
 				               ShowHealLogTab = false,
-				               ShowCombatLogTab = false,
+				               ShowCombatLogTab = false
 		               };
 
-		var vm = Build(settings);
+		var vm = this.Build(settings);
 
-		vm.IsRealmPointsTabVisible.Should().BeFalse();
-		vm.IsCombatTabVisible.Should().BeFalse();
-		vm.IsHealLogTabVisible.Should().BeFalse();
-		vm.IsCombatLogTabVisible.Should().BeFalse();
+		vm.RealmPointsTab.Value.Should().BeFalse();
+		vm.CombatTab.Value.Should().BeFalse();
+		vm.HealLogTab.Value.Should().BeFalse();
+		vm.CombatLogTab.Value.Should().BeFalse();
 	}
 
 	[Fact]
@@ -83,7 +98,7 @@ public sealed class MainWindowViewModelTests: IDisposable
 				               CustomChatLogPath = @"C:\Logs\chat.log"
 		               };
 
-		var vm = Build(settings);
+		var vm = this.Build(settings);
 
 		vm.CustomChatLogPath.Should().Be(@"C:\Logs\chat.log");
 	}
@@ -93,34 +108,34 @@ public sealed class MainWindowViewModelTests: IDisposable
 	[Fact]
 	public async Task StartWatching_WithCurrentFilePath_CallsRunAsync()
 	{
-		var vm = Build();
+		var vm = this.Build();
 		vm.CurrentFilePath = "any_path";
 
 		await vm.StartWatchingCommand.ExecuteAsync(null);
 
-		await mockSession.Received(1).RunAsync(Arg.Any<LogWatcher>(), Arg.Any<Action>(), Arg.Any<Func<LogLine, Task>>());
+		await this.mockSession.Received(1).RunAsync(Arg.Any<LogWatcher>(), Arg.Any<Action>(), Arg.Any<Func<LogLine, Task>>());
 	}
 
 	[Fact]
 	public async Task StartWatching_WithNoFilePath_DoesNotCallRunAsync()
 	{
-		var vm = Build();
+		var vm = this.Build();
 
 		// CurrentFilePath is null by default
 
 		await vm.StartWatchingCommand.ExecuteAsync(null);
 
-		await mockSession.DidNotReceive().RunAsync(Arg.Any<LogWatcher>(), Arg.Any<Action>(), Arg.Any<Func<LogLine, Task>>());
+		await this.mockSession.DidNotReceive().RunAsync(Arg.Any<LogWatcher>(), Arg.Any<Action>(), Arg.Any<Func<LogLine, Task>>());
 	}
 
 	[Fact]
 	public async Task StartWatching_WhileAlreadyWatching_DoesNotCallRunAsyncAgain()
 	{
 		// First call completes only after we release it
-		var tcs = new System.Threading.Tasks.TaskCompletionSource();
-		mockSession.RunAsync(Arg.Any<LogWatcher>(), Arg.Any<Action>(), Arg.Any<Func<LogLine, Task>>()).Returns(tcs.Task);
+		var tcs = new TaskCompletionSource();
+		this.mockSession.RunAsync(Arg.Any<LogWatcher>(), Arg.Any<Action>(), Arg.Any<Func<LogLine, Task>>()).Returns(tcs.Task);
 
-		var vm = Build();
+		var vm = this.Build();
 		vm.CurrentFilePath = "path";
 
 		var first = vm.StartWatchingCommand.ExecuteAsync(null);
@@ -131,23 +146,23 @@ public sealed class MainWindowViewModelTests: IDisposable
 		tcs.SetResult();
 		await Task.WhenAll(first, secondTask);
 
-		await mockSession.Received(1).RunAsync(Arg.Any<LogWatcher>(), Arg.Any<Action>(), Arg.Any<Func<LogLine, Task>>());
+		await this.mockSession.Received(1).RunAsync(Arg.Any<LogWatcher>(), Arg.Any<Action>(), Arg.Any<Func<LogLine, Task>>());
 	}
 
 	[Fact]
 	public void StopWatching_CallsRequestStop()
 	{
-		var vm = Build();
+		var vm = this.Build();
 
 		vm.StopWatchingCommand.Execute(null);
 
-		mockSession.Received(1).RequestStop();
+		this.mockSession.Received(1).RequestStop();
 	}
 
 	[Fact]
 	public void StopWatching_SetsIsWatchingFalse()
 	{
-		var vm = Build();
+		var vm = this.Build();
 
 		vm.StopWatchingCommand.Execute(null);
 
@@ -157,20 +172,20 @@ public sealed class MainWindowViewModelTests: IDisposable
 	[Fact]
 	public void StopWatching_ResetsCollections()
 	{
-		var vm = Build();
+		var vm = this.Build();
 
 		// Add a fake entry to verify Reset clears it
-		vm.LogEntries.Add(new RealmPointLogEntry
-		                  {
-				                  Timestamp = "20:00:00",
-				                  Points = 100,
-				                  Source = "Player Kill",
-				                  Details = "test"
-		                  });
+		vm.RpLog.Items.Add(new RealmPointLogEntry
+		                   {
+				                   Timestamp = "20:00:00",
+				                   Points = 100,
+				                   Source = "Player Kill",
+				                   Details = "test"
+		                   });
 
 		vm.StopWatchingCommand.Execute(null);
 
-		vm.LogEntries.Should().BeEmpty();
+		vm.RpLog.Items.Should().BeEmpty();
 	}
 
 	// ── Path discovery ────────────────────────────────────────────────────────
@@ -178,28 +193,28 @@ public sealed class MainWindowViewModelTests: IDisposable
 	[Fact]
 	public async Task OpenDaocLog_WhenPathServiceReturnsNull_DoesNotStartWatching()
 	{
-		mockPathService.FindDaocLogPath().Returns((string?)null);
-		var vm = Build();
+		this.mockPathService.FindDaocLogPath().Returns((string?)null);
+		var vm = this.Build();
 
 		await vm.OpenDaocLogCommand.ExecuteAsync(null);
 
-		await mockSession.DidNotReceive().RunAsync(Arg.Any<LogWatcher>(), Arg.Any<Action>(), Arg.Any<Func<LogLine, Task>>());
+		await this.mockSession.DidNotReceive().RunAsync(Arg.Any<LogWatcher>(), Arg.Any<Action>(), Arg.Any<Func<LogLine, Task>>());
 	}
 
 	[Fact]
 	public async Task OpenDaocLog_WhenCustomPathSetButFileMissing_FallsBackToPathService()
 	{
 		// "missing_path" does not exist on disk — VM must consult the path service
-		mockPathService.FindDaocLogPath().Returns((string?)null);
+		this.mockPathService.FindDaocLogPath().Returns((string?)null);
 
-		var vm = Build(new AppSettings
-		               {
-				               CustomChatLogPath = "missing_path"
-		               });
+		var vm = this.Build(new AppSettings
+		                    {
+				                    CustomChatLogPath = "missing_path"
+		                    });
 
 		await vm.OpenDaocLogCommand.ExecuteAsync(null);
 
-		mockPathService.Received(1).FindDaocLogPath();
+		this.mockPathService.Received(1).FindDaocLogPath();
 	}
 
 	// ── KD ratio ─────────────────────────────────────────────────────────────
@@ -207,7 +222,7 @@ public sealed class MainWindowViewModelTests: IDisposable
 	[Fact]
 	public void KdRatio_WhenNoDeaths_EqualsKills()
 	{
-		var vm = Build();
+		var vm = this.Build();
 		vm.Kills = 5;
 
 		vm.KdRatio.Should().Be(5.0);
@@ -216,17 +231,17 @@ public sealed class MainWindowViewModelTests: IDisposable
 	[Fact]
 	public void KdRatio_WhenDeathsGtZero_IsKillsDividedByDeaths()
 	{
-		var vm = Build();
+		var vm = this.Build();
 		vm.Kills = 10;
 		vm.Deaths = 4;
 
-		vm.KdRatio.Should().BeApproximately(2.5, precision: 0.001);
+		vm.KdRatio.Should().BeApproximately(2.5, 0.001);
 	}
 
 	[Fact]
 	public void KdRatio_PropagatesWhenKillsChange()
 	{
-		var vm = Build();
+		var vm = this.Build();
 		vm.Deaths = 2;
 
 		using var monitor = vm.Monitor();
@@ -238,7 +253,7 @@ public sealed class MainWindowViewModelTests: IDisposable
 	[Fact]
 	public void KdRatio_PropagatesWhenDeathsChange()
 	{
-		var vm = Build();
+		var vm = this.Build();
 		vm.Kills = 6;
 
 		using var monitor = vm.Monitor();
@@ -252,10 +267,10 @@ public sealed class MainWindowViewModelTests: IDisposable
 	[Fact]
 	public async Task TimeFilterChanged_WhenWatching_CallsStopAndWaitAsync()
 	{
-		var tcs = new System.Threading.Tasks.TaskCompletionSource();
-		mockSession.RunAsync(Arg.Any<LogWatcher>(), Arg.Any<Action>(), Arg.Any<Func<LogLine, Task>>()).Returns(tcs.Task, Task.CompletedTask); // first call blocks, second completes
+		var tcs = new TaskCompletionSource();
+		this.mockSession.RunAsync(Arg.Any<LogWatcher>(), Arg.Any<Action>(), Arg.Any<Func<LogLine, Task>>()).Returns(tcs.Task, Task.CompletedTask); // first call blocks, second completes
 
-		var vm = Build();
+		var vm = this.Build();
 		vm.CurrentFilePath = "path";
 
 		var watchTask = vm.StartWatchingCommand.ExecuteAsync(null);
@@ -273,6 +288,6 @@ public sealed class MainWindowViewModelTests: IDisposable
 		// Allow the fire-and-forget RestartAsync to settle
 		await Task.Yield();
 
-		await mockSession.Received(1).StopAndWaitAsync();
+		await this.mockSession.Received(1).StopAndWaitAsync();
 	}
 }

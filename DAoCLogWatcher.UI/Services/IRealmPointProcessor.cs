@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using DAoCLogWatcher.Core.Models;
 using DAoCLogWatcher.UI.Models;
 
@@ -10,6 +11,10 @@ public interface IRealmPointProcessor
 
 	event EventHandler<RealmPointLogEntry>? MultiKillDetected;
 
+	event EventHandler? ZoneKillsUpdated;
+
+	IReadOnlyDictionary<string, int> CurrentZoneKills { get; }
+
 	string? DetectedCharacterName { get; }
 
 	int Kills { get; }
@@ -17,6 +22,12 @@ public interface IRealmPointProcessor
 	int Deaths { get; }
 
 	void Process(LogLine logLine, DateTime? sessionStartTime, out bool characterChanged, out bool killStatsChanged);
+
+	void SetZoneKillWindow(TimeSpan window);
+
+	void RefreshZoneKills();
+
+	IReadOnlyList<KillActivityPoint> KillActivityPoints { get; }
 
 	void Reset();
 }

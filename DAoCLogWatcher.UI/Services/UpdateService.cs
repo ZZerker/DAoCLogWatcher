@@ -22,11 +22,15 @@ public sealed class UpdateService: IUpdateService
 		{
 			var mgr = new UpdateManager(new GithubSource(GITHUB_URL, null, false));
 			if(!mgr.IsInstalled)
+			{
 				return (null, false);
+			}
 
 			var update = await mgr.CheckForUpdatesAsync();
 			if(update == null)
+			{
 				return (null, false);
+			}
 
 			// Download in the background — caller gets the banner immediately.
 			_ = Task.Run(async () =>
@@ -58,7 +62,9 @@ public sealed class UpdateService: IUpdateService
 	public void ApplyAndRestart()
 	{
 		if(this.pendingUpdate == null)
+		{
 			return;
+		}
 
 		try
 		{

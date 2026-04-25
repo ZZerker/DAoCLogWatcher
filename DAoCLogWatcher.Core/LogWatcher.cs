@@ -97,7 +97,11 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 				try
 				{
 					var maxRead = this.endPosition >= 0?(int)Math.Min(this.readBuffer.Length, this.endPosition - this.fileStream.Position):this.readBuffer.Length;
-					if(maxRead <= 0) yield break;
+					if(maxRead <= 0)
+					{
+						yield break;
+					}
+
 					bytesRead = await this.fileStream.ReadAsync(this.readBuffer.AsMemory(0, maxRead), cancellationToken);
 				}
 				catch(Exception ex) when(ex is OperationCanceledException or ObjectDisposedException)
@@ -147,19 +151,10 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 
 					// TryParse may flush a stale pending event AND return a new event on the same line.
 					// The chain above picks the flushed event first -- emit the secondary event now.
-					if(damage != null&&heal != null)
+					var secondary = GetSecondaryLogLine(line, damage, heal, miss, parsed.CharacterName);
+					if(secondary != null)
 					{
-						yield return new HealLogLine(line, heal)
-						             {
-								             DetectedCharacterName = parsed.CharacterName
-						             };
-					}
-					else if(damage != null&&miss != null)
-					{
-						yield return new MissLogLine(line, miss)
-						             {
-								             DetectedCharacterName = parsed.CharacterName
-						             };
+						yield return secondary;
 					}
 				}
 			}
@@ -186,14 +181,20 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 			where T: class
 	{
 		if(!this.skipOldEntries||evt == null)
+		{
 			return evt;
+		}
+
 		return this.ShouldProcessTimestamp(getTimestamp(evt))?evt:null;
 	}
 
 	private static RealmPointEntry? CorrelateKillWithRp(RealmPointEntry? entry, KillEvent? lastKillEvent)
 	{
 		if(entry == null||entry.Source != RealmPointSource.PlayerKill||lastKillEvent == null)
+		{
 			return entry;
+		}
+
 		var diffSeconds = TimeHelper.ShortestArcSeconds(entry.Timestamp, lastKillEvent.Timestamp);
 		if(diffSeconds <= KILL_RP_CORRELATION_WINDOW_SECONDS)
 		{
@@ -208,13 +209,62 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 
 	private static LogLine CreateLogLine(string line, RealmPointEntry? entry, DamageEvent? damageEvent, HealEvent? healEvent, MissEvent? missEvent, KillEvent? killEvent, SendEvent? sendEvent)
 	{
-		if(entry != null) return new RealmPointLogLine(line, entry);
-		if(damageEvent != null) return new DamageLogLine(line, damageEvent);
-		if(healEvent != null) return new HealLogLine(line, healEvent);
-		if(missEvent != null) return new MissLogLine(line, missEvent);
-		if(killEvent != null) return new KillLogLine(line, killEvent);
-		if(sendEvent != null) return new SendLogLine(line, sendEvent);
+		if(entry != null)
+		{
+			return new RealmPointLogLine(line, entry);
+		}
+
+		if(damageEvent != null)
+		{
+			return new DamageLogLine(line, damageEvent);
+		}
+
+		if(healEvent != null)
+		{
+			return new HealLogLine(line, healEvent);
+		}
+
+		if(missEvent != null)
+		{
+			return new MissLogLine(line, missEvent);
+		}
+
+		if(killEvent != null)
+		{
+			return new KillLogLine(line, killEvent);
+		}
+
+		if(sendEvent != null)
+		{
+			return new SendLogLine(line, sendEvent);
+		}
+
 		return new UnknownLogLine(line);
+	}
+
+	/// <summary>
+	/// Returns a secondary <see cref="LogLine"/> when <see cref="CombatParser.TryParse"/> flushed
+	/// a stale event AND produced a new one on the same input line, null otherwise.
+	/// </summary>
+	private static LogLine? GetSecondaryLogLine(string line, DamageEvent? damage, HealEvent? heal, MissEvent? miss, string? charName)
+	{
+		if(damage != null&&heal != null)
+		{
+			return new HealLogLine(line, heal)
+			       {
+					       DetectedCharacterName = charName
+			       };
+		}
+
+		if(damage != null&&miss != null)
+		{
+			return new MissLogLine(line, miss)
+			       {
+					       DetectedCharacterName = charName
+			       };
+		}
+
+		return null;
 	}
 
 	// ── Line buffer and I/O ──────────────────────────────────────────────
@@ -387,6 +437,7 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 		{
 			lineDateTime = lineDateTime.AddDays(-1);
 		}
+
 		// If the resolved time predates the session start by more than 1 hour, the log
 		// has crossed midnight — this timestamp belongs to the following day.
 		else if(this.CurrentSessionStart.HasValue&&lineDateTime < this.CurrentSessionStart.Value.AddHours(-1))

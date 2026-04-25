@@ -47,16 +47,24 @@ public sealed class CombatProcessor(CombatSummary summary): ICombatProcessor
 			{
 				var diffSec = TimeHelper.ShortestArcSeconds(currentTs.Value, this.multiHitWindowLastHit);
 				if(diffSec >= MULTI_HIT_WINDOW_SECONDS)
+				{
 					this.FinalizeHitWindow();
+				}
 			}
 		}
 
 		if(logLine is DamageLogLine { Event: var damage })
+		{
 			this.ProcessDamage(damage);
+		}
 		else if(logLine is HealLogLine { Event: var heal })
+		{
 			this.ProcessHeal(heal);
+		}
 		else if(logLine is MissLogLine { Event: var miss })
+		{
 			this.ProcessMiss(miss);
+		}
 	}
 
 	public void Reset()
@@ -77,23 +85,29 @@ public sealed class CombatProcessor(CombatSummary summary): ICombatProcessor
 			summary.HitCount++;
 			summary.TotalAbsorbed += damage.Absorbed;
 			if(damage.CritDamage > 0)
+			{
 				summary.CritCount++;
+			}
 
-			summary.DamageByTarget.Accumulate(damage.Target, damage.TotalDamage);
+			summary.DamageByTarget.Accumulate(damage.Opponent, damage.TotalDamage);
 
 			if(damage.IsWeaponAttack)
+			{
 				summary.MeleeHitCount++;
+			}
 			else if(damage.SpellName != null)
+			{
 				summary.SpellHitCount++;
+			}
 
-			var spellKey = damage.IsWeaponAttack?(damage.StyleName ?? "Melee"):(damage.SpellName ?? "Other");
+			var spellKey = damage.IsWeaponAttack?damage.StyleName ?? "Melee":damage.SpellName ?? "Other";
 			summary.DamageBySpell.TryGetValue(spellKey, out var existingSpell);
 			summary.DamageBySpell[spellKey] = (existingSpell.TotalDamage + damage.TotalDamage, existingSpell.HitCount + 1);
 		}
 		else
 		{
 			summary.TotalDamageTaken += damage.TotalDamage;
-			summary.DamageTakenByAttacker.Accumulate(damage.Target, damage.TotalDamage);
+			summary.DamageTakenByAttacker.Accumulate(damage.Opponent, damage.TotalDamage);
 		}
 
 		// Finalize any previous AoE window before logging the new hit, so the aggregate
@@ -101,19 +115,21 @@ public sealed class CombatProcessor(CombatSummary summary): ICombatProcessor
 		// Weapon attacks carry the weapon name as SpellName but are single-target by nature;
 		// including them would interrupt or pollute spell AoE windows mid-sequence.
 		if(damage.IsDealt&&damage.SpellName != null&&!damage.IsWeaponAttack)
+		{
 			this.TrackMultiHit(damage);
+		}
 
 		this.DamageLogged?.Invoke(this,
 		                          new CombatLogEntry
 		                          {
 				                          Timestamp = damage.Timestamp.ToString("HH:mm:ss"),
-				                          Target = damage.Target,
+				                          Opponent = damage.Opponent,
 				                          TotalDamage = damage.TotalDamage,
 				                          IsDealt = damage.IsDealt,
 				                          IsCrit = damage.CritDamage > 0,
 				                          SpellName = damage.SpellName,
 				                          StyleName = damage.StyleName,
-				                          IsWeaponAttack = damage.IsWeaponAttack,
+				                          IsWeaponAttack = damage.IsWeaponAttack
 		                          });
 	}
 
@@ -136,7 +152,7 @@ public sealed class CombatProcessor(CombatSummary summary): ICombatProcessor
 				                        Timestamp = heal.Timestamp.ToString("HH:mm:ss"),
 				                        HitPoints = heal.HitPoints,
 				                        IsOutgoing = heal.IsOutgoing,
-				                        Who = heal.IsOutgoing?heal.Target:heal.Healer,
+				                        Who = heal.IsOutgoing?heal.Target:heal.Healer
 		                        });
 	}
 
@@ -148,7 +164,9 @@ public sealed class CombatProcessor(CombatSummary summary): ICombatProcessor
 		{
 			var diffSec = TimeHelper.ShortestArcSeconds(damage.Timestamp, this.multiHitWindowLastHit);
 			if(this.multiHitSpell != spell||diffSec >= MULTI_HIT_WINDOW_SECONDS)
+			{
 				this.FinalizeHitWindow();
+			}
 		}
 
 		if(this.multiHitSpell == null)
@@ -158,7 +176,7 @@ public sealed class CombatProcessor(CombatSummary summary): ICombatProcessor
 		}
 
 		this.multiHitWindowLastHit = damage.Timestamp;
-		this.multiHitTargets.Add(damage.Target);
+		this.multiHitTargets.Add(damage.Opponent);
 		this.multiHitTotalDamage += damage.TotalDamage;
 	}
 
@@ -170,14 +188,14 @@ public sealed class CombatProcessor(CombatSummary summary): ICombatProcessor
 			                              new CombatLogEntry
 			                              {
 					                              Timestamp = this.multiHitWindowStart.ToString("HH:mm:ss"),
-					                              Target = $"{this.multiHitTargets.Count} targets",
+					                              Opponent = $"{this.multiHitTargets.Count} targets",
 					                              TotalDamage = this.multiHitTotalDamage,
 					                              IsDealt = true,
 					                              IsCrit = false,
 					                              SpellName = this.multiHitSpell,
 					                              IsWeaponAttack = false,
 					                              IsMultiHit = true,
-					                              HitCount = this.multiHitTargets.Count,
+					                              HitCount = this.multiHitTargets.Count
 			                              });
 		}
 
@@ -189,16 +207,20 @@ public sealed class CombatProcessor(CombatSummary summary): ICombatProcessor
 	private void ProcessMiss(MissEvent miss)
 	{
 		if(miss.IsSpell)
+		{
 			summary.SpellResistCount++;
+		}
 		else
+		{
 			summary.MeleeMissCount++;
+		}
 	}
 }
 
 file static class DictionaryExtensions
 {
-	public static void Accumulate<TKey>(this Dictionary<TKey, int> dict, TKey key, int value)
-			where TKey: notnull
+	public static void Accumulate<TKEY>(this Dictionary<TKEY, int> dict, TKEY key, int value)
+			where TKEY: notnull
 	{
 		dict.TryGetValue(key, out var existing);
 		dict[key] = existing + value;

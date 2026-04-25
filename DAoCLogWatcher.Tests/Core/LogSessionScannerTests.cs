@@ -10,9 +10,13 @@ public sealed class LogSessionScannerTests: IDisposable
 
 	public void Dispose()
 	{
-		foreach(var f in tempFiles)
+		foreach(var f in this.tempFiles)
+		{
 			if(File.Exists(f))
+			{
 				File.Delete(f);
+			}
+		}
 	}
 
 	// Creates a temp file with \n line endings (no CRLF ambiguity) and tracks it for cleanup.
@@ -20,19 +24,31 @@ public sealed class LogSessionScannerTests: IDisposable
 	{
 		var path = Path.GetTempFileName();
 		File.WriteAllBytes(path, Encoding.UTF8.GetBytes(content));
-		tempFiles.Add(path);
+		this.tempFiles.Add(path);
 		return path;
 	}
 
 	// ── Helpers ──────────────────────────────────────────────────────────────
 
-	private static string OpenLine(string date) => $"*** Chat Log Opened: {date}\n";
+	private static string OpenLine(string date)
+	{
+		return $"*** Chat Log Opened: {date}\n";
+	}
 
-	private static string CloseLine(string date) => $"*** Chat Log Closed: {date}\n";
+	private static string CloseLine(string date)
+	{
+		return $"*** Chat Log Closed: {date}\n";
+	}
 
-	private static string StatsLine(string name) => $"Statistics for {name} this Session:\n";
+	private static string StatsLine(string name)
+	{
+		return $"Statistics for {name} this Session:\n";
+	}
 
-	private static string ChatLine(string msg) => $"[12:00:00] {msg}\n";
+	private static string ChatLine(string msg)
+	{
+		return $"[12:00:00] {msg}\n";
+	}
 
 	private const string D1 = "Mon Jan 1 12:00:00 2024";
 	private const string D2 = "Tue Jan 2 10:00:00 2024";
@@ -50,14 +66,14 @@ public sealed class LogSessionScannerTests: IDisposable
 	[Fact]
 	public void Scan_EmptyFile_ReturnsEmptyList()
 	{
-		var path = CreateTempFile("");
+		var path = this.CreateTempFile("");
 		LogSessionScanner.Scan(path).Should().BeEmpty();
 	}
 
 	[Fact]
 	public void Scan_SingleSessionNoClose_ReturnsSessionWithNullEndTime()
 	{
-		var path = CreateTempFile(OpenLine(D1));
+		var path = this.CreateTempFile(OpenLine(D1));
 		var sessions = LogSessionScanner.Scan(path);
 
 		sessions.Should().HaveCount(1);
@@ -68,7 +84,7 @@ public sealed class LogSessionScannerTests: IDisposable
 	[Fact]
 	public void Scan_SingleSessionWithClose_ReturnsSessionWithEndTime()
 	{
-		var path = CreateTempFile(OpenLine(D1) + CloseLine(D2));
+		var path = this.CreateTempFile(OpenLine(D1) + CloseLine(D2));
 		var sessions = LogSessionScanner.Scan(path);
 
 		sessions.Should().HaveCount(1);
@@ -79,7 +95,7 @@ public sealed class LogSessionScannerTests: IDisposable
 	[Fact]
 	public void Scan_MultipleSessionsReturnsNewestFirst()
 	{
-		var path = CreateTempFile(OpenLine(D1) + CloseLine(D2) + OpenLine(D2) + CloseLine(D3));
+		var path = this.CreateTempFile(OpenLine(D1) + CloseLine(D2) + OpenLine(D2) + CloseLine(D3));
 		var sessions = LogSessionScanner.Scan(path);
 
 		sessions.Should().HaveCount(2);
@@ -90,7 +106,7 @@ public sealed class LogSessionScannerTests: IDisposable
 	[Fact]
 	public void Scan_ExtractsCharacterName()
 	{
-		var path = CreateTempFile(OpenLine(D1) + StatsLine("Zordrak"));
+		var path = this.CreateTempFile(OpenLine(D1) + StatsLine("Zordrak"));
 		var sessions = LogSessionScanner.Scan(path);
 
 		sessions[0].CharacterName.Should().Be("Zordrak");
@@ -99,7 +115,7 @@ public sealed class LogSessionScannerTests: IDisposable
 	[Fact]
 	public void Scan_CharacterNameOnlyTakenFromFirstStatsLine()
 	{
-		var path = CreateTempFile(OpenLine(D1) + StatsLine("Zordrak") + StatsLine("Altchar"));
+		var path = this.CreateTempFile(OpenLine(D1) + StatsLine("Zordrak") + StatsLine("Altchar"));
 		var sessions = LogSessionScanner.Scan(path);
 
 		sessions[0].CharacterName.Should().Be("Zordrak", "only the first stats line per session is used");
@@ -111,7 +127,7 @@ public sealed class LogSessionScannerTests: IDisposable
 		var line1 = OpenLine(D1);
 		var line2 = CloseLine(D2);
 		var line3 = OpenLine(D2);
-		var path = CreateTempFile(line1 + line2 + line3);
+		var path = this.CreateTempFile(line1 + line2 + line3);
 
 		var sessions = LogSessionScanner.Scan(path);
 		var expectedNewestPos = (long)Encoding.UTF8.GetByteCount(line1 + line2);
@@ -127,7 +143,7 @@ public sealed class LogSessionScannerTests: IDisposable
 		var line2 = CloseLine(D1);
 		var line3 = OpenLine(D2);
 		var content = line1 + line2 + line3;
-		var path = CreateTempFile(content);
+		var path = this.CreateTempFile(content);
 
 		var sessions = LogSessionScanner.Scan(path);
 		var totalBytes = (long)Encoding.UTF8.GetByteCount(content);

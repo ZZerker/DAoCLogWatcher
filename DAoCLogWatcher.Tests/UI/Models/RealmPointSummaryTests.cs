@@ -204,10 +204,10 @@ public sealed class RealmPointSummaryTests
 		var now = DateTime.Now;
 		var summary = new RealmPointSummary
 		              {
-			              TotalRealmPoints = 1000,
-			              FirstEntryTime = now.AddMinutes(-1),
-			              LastEntryTime = now.AddMinutes(-1),
-			              IsLive = true
+				              TotalRealmPoints = 1000,
+				              FirstEntryTime = now.AddMinutes(-1),
+				              LastEntryTime = now.AddMinutes(-1),
+				              IsLive = true
 		              };
 
 		// Act

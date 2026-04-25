@@ -33,7 +33,7 @@ public sealed class DaocLogPathService: IDaocLogPathService
 				                 Path.Combine(home, "Documents", "Electronic Arts", "chat.log"),
 
 				                 // Default Users Home "Documents" folder name (German)
-				                 Path.Combine(home, "Dokumente", "Electronic Arts", "chat.log"),
+				                 Path.Combine(home, "Dokumente", "Electronic Arts", "chat.log")
 		                 };
 
 		return Array.Find(candidates, File.Exists);

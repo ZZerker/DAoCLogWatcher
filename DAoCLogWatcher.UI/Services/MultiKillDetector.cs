@@ -14,9 +14,9 @@ internal sealed class MultiKillDetector
 	private int windowRpCount;
 	private int windowRps;
 	private TimeOnly windowStart;
-	private RealmPointLogEntry? windowFirstEntry;
+	private Action? markFirstEntryAsMultiKill;
 
-	public event EventHandler<RealmPointLogEntry>? MultiKillDetected;
+	public event EventHandler<MultiKillResult>? MultiKillDetected;
 
 	/// <summary>
 	/// Call on every timestamped log line. If the window is open and the
@@ -37,15 +37,15 @@ internal sealed class MultiKillDetector
 	}
 
 	/// <summary>
-	/// Call once a PlayerKill RP entry has been built into a <see cref="RealmPointLogEntry"/>.
-	/// Opens or extends the current window.
+	/// Call once a PlayerKill RP entry has been built. Opens or extends the current window.
+	/// <paramref name="markAsMultiKill"/> is invoked on the first entry when the window closes.
 	/// </summary>
-	public void OnPlayerKillRp(TimeOnly entryTimestamp, int points, RealmPointLogEntry logEntry)
+	public void OnPlayerKillRp(TimeOnly entryTimestamp, int points, Action markAsMultiKill)
 	{
 		if(this.windowRpCount == 0)
 		{
 			this.windowStart = entryTimestamp;
-			this.windowFirstEntry = logEntry;
+			this.markFirstEntryAsMultiKill = markAsMultiKill;
 		}
 
 		this.windowRpCount++;
@@ -56,32 +56,20 @@ internal sealed class MultiKillDetector
 	{
 		this.windowRpCount = 0;
 		this.windowRps = 0;
-		this.windowFirstEntry = null;
+		this.markFirstEntryAsMultiKill = null;
 	}
 
 	private void FinalizeWindow()
 	{
 		if(this.windowRpCount >= 5)
 		{
-			if(this.windowFirstEntry != null)
-			{
-				this.windowFirstEntry.IsMultiKill = true;
-			}
+			this.markFirstEntryAsMultiKill?.Invoke();
 
-			this.MultiKillDetected?.Invoke(this,
-			                               new RealmPointLogEntry
-			                               {
-					                               Timestamp = this.windowStart.ToString("HH:mm:ss"),
-					                               Points = this.windowRps,
-					                               Source = "Multi-Kill",
-					                               Details = $"{this.windowRpCount}x player kills",
-					                               IsMultiKill = true,
-					                               KillCount = this.windowRpCount
-			                               });
+			this.MultiKillDetected?.Invoke(this, new MultiKillResult(this.windowStart, this.windowRps, this.windowRpCount));
 		}
 
 		this.windowRpCount = 0;
 		this.windowRps = 0;
-		this.windowFirstEntry = null;
+		this.markFirstEntryAsMultiKill = null;
 	}
 }

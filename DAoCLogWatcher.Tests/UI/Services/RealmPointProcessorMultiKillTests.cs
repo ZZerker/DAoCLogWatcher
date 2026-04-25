@@ -22,33 +22,43 @@ public sealed class RealmPointProcessorMultiKillTests
 
 	// ── Helpers ───────────────────────────────────────────────────────────────
 
-	private static RealmPointLogLine PkRpLine(TimeOnly ts, int points = 200) =>
-			new("",
-			    new RealmPointEntry
-			    {
-					    Timestamp = ts,
-					    Points = points,
-					    Source = RealmPointSource.PlayerKill,
-					    RawLine = ""
-			    });
+	private static RealmPointLogLine PkRpLine(TimeOnly ts, int points = 200)
+	{
+		return new RealmPointLogLine("",
+		                             new RealmPointEntry
+		                             {
+				                             Timestamp = ts,
+				                             Points = points,
+				                             Source = RealmPointSource.PlayerKill,
+				                             RawLine = ""
+		                             });
+	}
 
-	private static DamageLogLine FlushLine(TimeOnly ts) =>
-			new("",
-			    new DamageEvent
-			    {
-					    Timestamp = ts,
-					    Target = "flush",
-					    BaseDamage = 1,
-					    Absorbed = 0,
-					    IsDealt = false,
-			    });
+	private static DamageLogLine FlushLine(TimeOnly ts)
+	{
+		return new DamageLogLine("",
+		                         new DamageEvent
+		                         {
+				                         Timestamp = ts,
+				                         Opponent = "flush",
+				                         BaseDamage = 1,
+				                         Absorbed = 0,
+				                         IsDealt = false
+		                         });
+	}
 
 	private static readonly TimeOnly T0 = new(20, 0, 0);
 	private static readonly DateTime Session = new(2024, 1, 1);
 
-	private void Feed(RealmPointLogLine line) => this.processor.Process(line, Session, out _, out _);
+	private void Feed(RealmPointLogLine line)
+	{
+		this.processor.Process(line, Session, out _, out _);
+	}
 
-	private void Feed(DamageLogLine line) => this.processor.Process(line, Session, out _, out _);
+	private void Feed(DamageLogLine line)
+	{
+		this.processor.Process(line, Session, out _, out _);
+	}
 
 	// ── Tests ──────────────────────────────────────────────────────────────────
 
@@ -57,48 +67,54 @@ public sealed class RealmPointProcessorMultiKillTests
 	{
 		// Feed 5 kills within 1 second of each other
 		for(var i = 0; i < 5; i++)
-			Feed(PkRpLine(T0.Add(TimeSpan.FromSeconds(i))));
+		{
+			this.Feed(PkRpLine(T0.Add(TimeSpan.FromSeconds(i))));
+		}
 
 		// Flush: threshold after 5 kills = 5 + 5×0.2 = 6.0s; send something 7s after T0
-		Feed(FlushLine(T0.Add(TimeSpan.FromSeconds(7))));
+		this.Feed(FlushLine(T0.Add(TimeSpan.FromSeconds(7))));
 
-		multiKills.Should().HaveCount(1);
-		multiKills[0].Source.Should().Be("Multi-Kill");
+		this.multiKills.Should().HaveCount(1);
+		this.multiKills[0].Source.Should().Be("Multi-Kill");
 	}
 
 	[Fact]
 	public void MultiKill_FourPkRps_DoesNotFire()
 	{
 		for(var i = 0; i < 4; i++)
-			Feed(PkRpLine(T0.Add(TimeSpan.FromSeconds(i))));
+		{
+			this.Feed(PkRpLine(T0.Add(TimeSpan.FromSeconds(i))));
+		}
 
-		Feed(FlushLine(T0.Add(TimeSpan.FromSeconds(10))));
+		this.Feed(FlushLine(T0.Add(TimeSpan.FromSeconds(10))));
 
-		multiKills.Should().BeEmpty("4 kills is below the threshold of 5");
+		this.multiKills.Should().BeEmpty("4 kills is below the threshold of 5");
 	}
 
 	[Fact]
 	public void MultiKill_KillsSpreadBeyondWindow_DoesNotFire()
 	{
 		// First kill starts the window; second kill arrives 10s later — window expires
-		Feed(PkRpLine(T0));
+		this.Feed(PkRpLine(T0));
 
 		// 10s > threshold for 1 kill (5.2s) → window finalized with count=1 on the second kill
-		Feed(PkRpLine(T0.Add(TimeSpan.FromSeconds(10))));
+		this.Feed(PkRpLine(T0.Add(TimeSpan.FromSeconds(10))));
 
-		multiKills.Should().BeEmpty("kills were too spread apart to accumulate 5");
+		this.multiKills.Should().BeEmpty("kills were too spread apart to accumulate 5");
 	}
 
 	[Fact]
 	public void MultiKill_SixKills_FiresOnceWithCorrectCount()
 	{
 		for(var i = 0; i < 6; i++)
-			Feed(PkRpLine(T0.Add(TimeSpan.FromSeconds(i))));
+		{
+			this.Feed(PkRpLine(T0.Add(TimeSpan.FromSeconds(i))));
+		}
 
-		Feed(FlushLine(T0.Add(TimeSpan.FromSeconds(15))));
+		this.Feed(FlushLine(T0.Add(TimeSpan.FromSeconds(15))));
 
-		multiKills.Should().HaveCount(1);
-		multiKills[0].Details.Should().Contain("6");
+		this.multiKills.Should().HaveCount(1);
+		this.multiKills[0].Details.Should().Contain("6");
 	}
 
 	[Fact]
@@ -108,9 +124,11 @@ public sealed class RealmPointProcessorMultiKillTests
 		this.processor.EntryProcessed += (_, e) => firstEntry ??= e;
 
 		for(var i = 0; i < 5; i++)
-			Feed(PkRpLine(T0.Add(TimeSpan.FromSeconds(i))));
+		{
+			this.Feed(PkRpLine(T0.Add(TimeSpan.FromSeconds(i))));
+		}
 
-		Feed(FlushLine(T0.Add(TimeSpan.FromSeconds(7))));
+		this.Feed(FlushLine(T0.Add(TimeSpan.FromSeconds(7))));
 
 		firstEntry.Should().NotBeNull();
 		firstEntry!.IsMultiKill.Should().BeTrue("the first kill entry in a multi-kill window is flagged");
@@ -120,14 +138,16 @@ public sealed class RealmPointProcessorMultiKillTests
 	public void MultiKill_Reset_ClearsInFlightWindow()
 	{
 		for(var i = 0; i < 4; i++)
-			Feed(PkRpLine(T0.Add(TimeSpan.FromSeconds(i))));
+		{
+			this.Feed(PkRpLine(T0.Add(TimeSpan.FromSeconds(i))));
+		}
 
 		this.processor.Reset();
 
 		// Add one more kill after reset — should not combine with pre-reset kills
-		Feed(PkRpLine(T0.Add(TimeSpan.FromSeconds(5))));
-		Feed(FlushLine(T0.Add(TimeSpan.FromSeconds(10))));
+		this.Feed(PkRpLine(T0.Add(TimeSpan.FromSeconds(5))));
+		this.Feed(FlushLine(T0.Add(TimeSpan.FromSeconds(10))));
 
-		multiKills.Should().BeEmpty("reset must discard the in-flight window");
+		this.multiKills.Should().BeEmpty("reset must discard the in-flight window");
 	}
 }

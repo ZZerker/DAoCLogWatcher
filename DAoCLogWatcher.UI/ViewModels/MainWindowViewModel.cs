@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Platform.Storage;
@@ -18,25 +20,24 @@ namespace DAoCLogWatcher.UI.ViewModels;
 public partial class MainWindowViewModel: ViewModelBase, IDisposable
 {
 	private const int PARSING_DEBOUNCE_INTERVAL_MS = 1000;
-	private const int SEND_NOTIFICATION_TIMEOUT_MS = 5000;
 	private const int SEND_NOTIFICATION_MAX_AGE_SECONDS = 60;
-	private const int LOG_ENTRIES_CAPACITY = 1000;
+	private const int COMBAT_CHART_DEBOUNCE_MS = 250;
 
 	private System.Timers.Timer? parsingDebounceTimer;
-	private System.Timers.Timer? sendNotificationTimer;
+	private System.Timers.Timer? combatChartDebounceTimer;
 
-	// Generation counter — incremented on each new watch loop start.
-	// CleanupWatchState only runs if the generation matches, preventing stale
-	// cleanup from an old loop from clobbering a newly-started loop's state.
-	private int watchGeneration;
+	public event EventHandler? CombatChartsUpdateNeeded;
 
 	private readonly IWatchSession watchSession;
 	private readonly IUpdateService updateService;
 	private readonly INotificationService notificationService;
 	private readonly IDaocLogPathService daocLogPathService;
 	private readonly AppSettings settings;
+	private readonly ISettingsService settingsService;
+	private readonly ILogWatcherFactory logWatcherFactory;
 	private readonly IRealmPointProcessor processor;
 	private readonly ICombatProcessor combatProcessor;
+	private readonly WatchController watchController;
 
 	[ObservableProperty] private string? currentFilePath;
 
@@ -49,7 +50,7 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 	partial void OnHighlightMultiKillsChanged(bool value)
 	{
 		this.settings.HighlightMultiKills = value;
-		SettingsService.Save(this.settings);
+		this.settingsService.Save(this.settings);
 	}
 
 	[ObservableProperty] private bool highlightMultiHits;
@@ -57,7 +58,7 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 	partial void OnHighlightMultiHitsChanged(bool value)
 	{
 		this.settings.HighlightMultiHits = value;
-		SettingsService.Save(this.settings);
+		this.settingsService.Save(this.settings);
 	}
 
 	[ObservableProperty] private string? customChatLogPath;
@@ -65,13 +66,17 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 	partial void OnCustomChatLogPathChanged(string? value)
 	{
 		this.settings.CustomChatLogPath = string.IsNullOrWhiteSpace(value)?null:value;
-		SettingsService.Save(this.settings);
+		this.settingsService.Save(this.settings);
 	}
 
 	[RelayCommand]
 	private async Task BrowseChatLogPath(IStorageProvider? storageProvider)
 	{
-		if(storageProvider == null) return;
+		if(storageProvider == null)
+		{
+			return;
+		}
+
 		var options = new FilePickerOpenOptions
 		              {
 				              Title = "Select DAoC Chat Log",
@@ -96,13 +101,22 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 	}
 
 	[RelayCommand]
-	private void ClearChatLogPath() => this.CustomChatLogPath = null;
+	private void ClearChatLogPath()
+	{
+		this.CustomChatLogPath = null;
+	}
 
 	[RelayCommand]
-	private void ToggleSettingsPopup() => this.IsSettingsPopupVisible = !this.IsSettingsPopupVisible;
+	private void ToggleSettingsPopup()
+	{
+		this.IsSettingsPopupVisible = !this.IsSettingsPopupVisible;
+	}
 
 	[RelayCommand]
-	private void CloseSettingsPopup() => this.IsSettingsPopupVisible = false;
+	private void CloseSettingsPopup()
+	{
+		this.IsSettingsPopupVisible = false;
+	}
 
 	[ObservableProperty] private bool isWatching;
 
@@ -110,149 +124,144 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 
 	public string ThemeIcon => this.IsDarkTheme?"☀ Light":"🌙 Dark";
 
-	partial void OnIsDarkThemeChanged(bool value) => this.OnPropertyChanged(nameof(this.ThemeIcon));
+	partial void OnIsDarkThemeChanged(bool value)
+	{
+		this.OnPropertyChanged(nameof(this.ThemeIcon));
+	}
 
 	[RelayCommand]
-	private void ToggleTheme() => this.IsDarkTheme = !this.IsDarkTheme;
+	private void ToggleTheme()
+	{
+		this.IsDarkTheme = !this.IsDarkTheme;
+	}
 
 	[ObservableProperty] private bool isSidebarVisible = true;
 
 	public string SidebarToggleIcon => "◀";
 
-	partial void OnIsSidebarVisibleChanged(bool value) => this.OnPropertyChanged(nameof(this.SidebarToggleIcon));
-
-	[RelayCommand]
-	private void ToggleSidebar() => this.IsSidebarVisible = !this.IsSidebarVisible;
-
-	[ObservableProperty] private bool isRpsHourlyChartVisible = true;
-
-	public string RpsChartToggleIcon => this.IsRpsHourlyChartVisible?"▲":"▼";
-
-	partial void OnIsRpsHourlyChartVisibleChanged(bool value) => this.OnPropertyChanged(nameof(this.RpsChartToggleIcon));
-
-	[RelayCommand]
-	private void ToggleRpsChart() => this.IsRpsHourlyChartVisible = !this.IsRpsHourlyChartVisible;
-
-	[ObservableProperty] private bool isCumulativeRpChartVisible = true;
-
-	public string RpChartToggleIcon => this.IsCumulativeRpChartVisible?"▲":"▼";
-
-	partial void OnIsCumulativeRpChartVisibleChanged(bool value) => this.OnPropertyChanged(nameof(this.RpChartToggleIcon));
-
-	[RelayCommand]
-	private void ToggleRpChart() => this.IsCumulativeRpChartVisible = !this.IsCumulativeRpChartVisible;
-
-	[ObservableProperty] private bool isAbsoluteNumbersVisible = true;
-
-	public string AbsoluteNumbersToggleIcon => this.IsAbsoluteNumbersVisible?"▲":"▼";
-
-	partial void OnIsAbsoluteNumbersVisibleChanged(bool value) => this.OnPropertyChanged(nameof(this.AbsoluteNumbersToggleIcon));
-
-	[RelayCommand]
-	private void ToggleAbsoluteNumbers() => this.IsAbsoluteNumbersVisible = !this.IsAbsoluteNumbersVisible;
-
-	[ObservableProperty] private bool isAbsoluteRpsVisible = true;
-
-	public string AbsoluteRpsToggleIcon => this.IsAbsoluteRpsVisible?"▲":"▼";
-
-	partial void OnIsAbsoluteRpsVisibleChanged(bool value) => this.OnPropertyChanged(nameof(this.AbsoluteRpsToggleIcon));
-
-	[RelayCommand]
-	private void ToggleAbsoluteRps() => this.IsAbsoluteRpsVisible = !this.IsAbsoluteRpsVisible;
-
-	[ObservableProperty] private bool isPercentagesVisible = true;
-
-	public string PercentagesToggleIcon => this.IsPercentagesVisible?"▲":"▼";
-
-	partial void OnIsPercentagesVisibleChanged(bool value) => this.OnPropertyChanged(nameof(this.PercentagesToggleIcon));
-
-	[RelayCommand]
-	private void TogglePercentages() => this.IsPercentagesVisible = !this.IsPercentagesVisible;
-
-	[ObservableProperty] private bool isAvgDmgChartVisible = true;
-
-	public string AvgDmgChartToggleIcon => this.IsAvgDmgChartVisible?"▲":"▼";
-
-	partial void OnIsAvgDmgChartVisibleChanged(bool value) => this.OnPropertyChanged(nameof(this.AvgDmgChartToggleIcon));
-
-	[RelayCommand]
-	private void ToggleAvgDmgChart() => this.IsAvgDmgChartVisible = !this.IsAvgDmgChartVisible;
-
-	[ObservableProperty] private bool isDmgByAttackerChartVisible = true;
-
-	public string DmgByAttackerChartToggleIcon => this.IsDmgByAttackerChartVisible?"▲":"▼";
-
-	partial void OnIsDmgByAttackerChartVisibleChanged(bool value) => this.OnPropertyChanged(nameof(this.DmgByAttackerChartToggleIcon));
-
-	[RelayCommand]
-	private void ToggleDmgByAttackerChart() => this.IsDmgByAttackerChartVisible = !this.IsDmgByAttackerChartVisible;
-
-	[ObservableProperty] private bool isHealsByHealerChartVisible = true;
-
-	public string HealsByHealerChartToggleIcon => this.IsHealsByHealerChartVisible?"▲":"▼";
-
-	partial void OnIsHealsByHealerChartVisibleChanged(bool value) => this.OnPropertyChanged(nameof(this.HealsByHealerChartToggleIcon));
-
-	[RelayCommand]
-	private void ToggleHealsByHealerChart() => this.IsHealsByHealerChartVisible = !this.IsHealsByHealerChartVisible;
-
-	[ObservableProperty] private bool isHealsByTargetChartVisible = true;
-
-	public string HealsByTargetChartToggleIcon => this.IsHealsByTargetChartVisible?"▲":"▼";
-
-	partial void OnIsHealsByTargetChartVisibleChanged(bool value) => this.OnPropertyChanged(nameof(this.HealsByTargetChartToggleIcon));
-
-	[RelayCommand]
-	private void ToggleHealsByTargetChart() => this.IsHealsByTargetChartVisible = !this.IsHealsByTargetChartVisible;
-
-	[ObservableProperty] private bool isRealmPointsTabVisible;
-
-	partial void OnIsRealmPointsTabVisibleChanged(bool value)
+	partial void OnIsSidebarVisibleChanged(bool value)
 	{
-		this.settings.ShowRealmPointsTab = value;
-		SettingsService.Save(this.settings);
+		this.OnPropertyChanged(nameof(this.SidebarToggleIcon));
 	}
 
-	[ObservableProperty] private bool isCombatTabVisible;
-
-	partial void OnIsCombatTabVisibleChanged(bool value)
+	[RelayCommand]
+	private void ToggleSidebar()
 	{
-		this.settings.ShowCombatTab = value;
-		SettingsService.Save(this.settings);
+		this.IsSidebarVisible = !this.IsSidebarVisible;
 	}
 
-	[ObservableProperty] private bool isHealLogTabVisible;
+	public ToggleState RpsChart { get; } = new();
 
-	partial void OnIsHealLogTabVisibleChanged(bool value)
-	{
-		this.settings.ShowHealLogTab = value;
-		SettingsService.Save(this.settings);
-	}
+	public ToggleState CumulativeRpChart { get; } = new();
 
-	[ObservableProperty] private bool isCombatLogTabVisible;
+	public ToggleState AbsoluteNumbers { get; } = new();
 
-	partial void OnIsCombatLogTabVisibleChanged(bool value)
-	{
-		this.settings.ShowCombatLogTab = value;
-		SettingsService.Save(this.settings);
-	}
+	public ToggleState AbsoluteRps { get; } = new();
+
+	public ToggleState Percentages { get; } = new();
+
+	public ToggleState AvgDmgChart { get; } = new();
+
+	public ToggleState DmgByAttackerChart { get; } = new();
+
+	public ToggleState HealsByHealerChart { get; } = new();
+
+	public ToggleState HealsByTargetChart { get; } = new();
+
+	// Tab visibility toggles are initialized in the constructor since their initial
+	// values come from persisted AppSettings.
+	public ToggleState RealmPointsTab { get; private set; } = null!;
+
+	public ToggleState CombatTab { get; private set; } = null!;
+
+	public ToggleState ZoneKillsTab { get; private set; } = null!;
+
+	public ToggleState HealLogTab { get; private set; } = null!;
+
+	public ToggleState CombatLogTab { get; private set; } = null!;
+
+
+	public ToggleState KillHeatmapTab { get; private set; } = null!;
+
+	public FrontierMapData FrontierMap { get; private set; } = null!;
+
+	public IReadOnlyDictionary<string, int> CurrentZoneKills => this.processor.CurrentZoneKills;
+
+	public IReadOnlyList<TimeWindowOption> ZoneKillWindowOptions { get; } = new[]
+	                                                                        {
+			                                                                        new TimeWindowOption
+			                                                                        {
+					                                                                        Label = "2 min",
+					                                                                        Value = TimeSpan.FromMinutes(2)
+			                                                                        },
+			                                                                        new TimeWindowOption
+			                                                                        {
+					                                                                        Label = "5 min",
+					                                                                        Value = TimeSpan.FromMinutes(5)
+			                                                                        },
+			                                                                        new TimeWindowOption
+			                                                                        {
+					                                                                        Label = "10 min",
+					                                                                        Value = TimeSpan.FromMinutes(10)
+			                                                                        },
+			                                                                        new TimeWindowOption
+			                                                                        {
+					                                                                        Label = "20 min",
+					                                                                        Value = TimeSpan.FromMinutes(20)
+			                                                                        },
+			                                                                        new TimeWindowOption
+			                                                                        {
+					                                                                        Label = "30 min",
+					                                                                        Value = TimeSpan.FromMinutes(30)
+			                                                                        },
+			                                                                        new TimeWindowOption
+			                                                                        {
+					                                                                        Label = "60 min",
+					                                                                        Value = TimeSpan.FromMinutes(60)
+			                                                                        }
+	                                                                        };
+
+	public ObservableCollection<ZoneKillSummary> ZoneKills { get; } = new();
+
+	[ObservableProperty] private TimeWindowOption selectedZoneKillWindow = null!;
+
+	[ObservableProperty] private int recentZoneKillCount;
+
+	public ObservableCollection<KillActivityPoint> KillActivityPoints { get; } = new();
+
+	public event EventHandler? KillActivityUpdated;
 
 	[ObservableProperty] private bool showSendNotifications;
 
 	partial void OnShowSendNotificationsChanged(bool value)
 	{
 		this.settings.ShowSendNotifications = value;
-		SettingsService.Save(this.settings);
+		this.settingsService.Save(this.settings);
 	}
 
-	[ObservableProperty] private bool isSendNotificationVisible;
-	[ObservableProperty] private string? sendNotificationSender;
-	[ObservableProperty] private string? sendNotificationMessage;
+	partial void OnSelectedZoneKillWindowChanged(TimeWindowOption value)
+	{
+		this.settings.ZoneKillWindowMinutes = (int)value.Value.TotalMinutes;
+		this.settingsService.Save(this.settings);
+		this.processor.SetZoneKillWindow(value.Value);
+		this.UpdateZoneKills();
+		this.UpdateKillActivity();
+	}
+
+	public SendNotificationController SendNotification { get; } = new();
 
 	[ObservableProperty] private bool isParsing;
 
 	[ObservableProperty] private bool isUpdateAvailable;
 	[ObservableProperty] private string? updateVersionText;
+
+	[ObservableProperty] private string? watchError;
+
+	[RelayCommand]
+	private void DismissWatchError()
+	{
+		this.WatchError = null;
+	}
 
 	[ObservableProperty] private string? detectedCharacterName;
 	[ObservableProperty] private int kills;
@@ -263,28 +272,28 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 
 	public bool HasBestMultiKill => this.BestMultiKill > 0;
 
-	partial void OnKillsChanged(int value) => this.OnPropertyChanged(nameof(this.KdRatio));
+	partial void OnKillsChanged(int value)
+	{
+		this.OnPropertyChanged(nameof(this.KdRatio));
+	}
 
-	partial void OnDeathsChanged(int value) => this.OnPropertyChanged(nameof(this.KdRatio));
+	partial void OnDeathsChanged(int value)
+	{
+		this.OnPropertyChanged(nameof(this.KdRatio));
+	}
 
-	partial void OnBestMultiKillChanged(int value) => this.OnPropertyChanged(nameof(this.HasBestMultiKill));
+	partial void OnBestMultiKillChanged(int value)
+	{
+		this.OnPropertyChanged(nameof(this.HasBestMultiKill));
+	}
 
-	partial void OnRpFilterTextChanged(string value) => this.RefreshRpFilter();
-	partial void OnHealFilterTextChanged(string value) => this.RefreshHealFilter();
-	partial void OnCombatFilterTextChanged(string value) => this.RefreshCombatFilter();
+	public FilteredCollection<RealmPointLogEntry> RpLog { get; } = new(static (e, f) => string.IsNullOrWhiteSpace(f)||e.Details.Contains(f, StringComparison.OrdinalIgnoreCase)||e.Source.Contains(f, StringComparison.OrdinalIgnoreCase));
 
-	[ObservableProperty] private string rpFilterText = string.Empty;
-	[ObservableProperty] private string healFilterText = string.Empty;
-	[ObservableProperty] private string combatFilterText = string.Empty;
+	public FilteredCollection<HealLogEntry> HealLog { get; } = new(static (e, f) =>
+			                                                               string.IsNullOrWhiteSpace(f)||(e.Who ?? string.Empty).Contains(f, StringComparison.OrdinalIgnoreCase)||
+			                                                               e.DirectionLabel.Contains(f, StringComparison.OrdinalIgnoreCase));
 
-	public ObservableCollection<RealmPointLogEntry> LogEntries { get; } = [];
-	public ObservableCollection<RealmPointLogEntry> FilteredLogEntries { get; } = [];
-
-	public ObservableCollection<HealLogEntry> HealLogEntries { get; } = [];
-	public ObservableCollection<HealLogEntry> FilteredHealLogEntries { get; } = [];
-
-	public ObservableCollection<CombatLogEntry> CombatLogEntries { get; } = [];
-	public ObservableCollection<CombatLogEntry> FilteredCombatLogEntries { get; } = [];
+	public FilteredCollection<CombatLogEntry> CombatLog { get; } = new(static (e, f) => string.IsNullOrWhiteSpace(f)||e.Opponent.Contains(f, StringComparison.OrdinalIgnoreCase)||e.Source.Contains(f, StringComparison.OrdinalIgnoreCase));
 
 	public RealmPointSummary Summary { get; }
 
@@ -298,10 +307,13 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 	                           IUpdateService updateService,
 	                           INotificationService notificationService,
 	                           IDaocLogPathService daocLogPathService,
+	                           ISettingsService settingsService,
+	                           ILogWatcherFactory logWatcherFactory,
 	                           AppSettings settings,
 	                           RealmPointSummary summary,
 	                           RpsChartData chartData,
-	                           CombatSummary combatSummary)
+	                           CombatSummary combatSummary,
+	                           FrontierMapService frontierMapService)
 	{
 		this.watchSession = watchSession;
 		this.notificationService = notificationService;
@@ -309,7 +321,10 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 		this.processor = processor;
 		this.combatProcessor = combatProcessor;
 		this.updateService = updateService;
+		this.settingsService = settingsService;
+		this.logWatcherFactory = logWatcherFactory;
 		this.settings = settings;
+		this.watchController = new WatchController(watchSession);
 		this.Summary = summary;
 		this.ChartData = chartData;
 		this.CombatSummary = combatSummary;
@@ -317,16 +332,53 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 		this.highlightMultiHits = this.settings.HighlightMultiHits;
 		this.customChatLogPath = this.settings.CustomChatLogPath;
 		this.showSendNotifications = this.settings.ShowSendNotifications;
-		this.isRealmPointsTabVisible = this.settings.ShowRealmPointsTab;
-		this.isCombatTabVisible = this.settings.ShowCombatTab;
-		this.isHealLogTabVisible = this.settings.ShowHealLogTab;
-		this.isCombatLogTabVisible = this.settings.ShowCombatLogTab;
+		this.RealmPointsTab = new ToggleState(this.settings.ShowRealmPointsTab,
+		                                      v =>
+		                                      {
+			                                      this.settings.ShowRealmPointsTab = v;
+			                                      this.settingsService.Save(this.settings);
+		                                      });
+		this.CombatTab = new ToggleState(this.settings.ShowCombatTab,
+		                                 v =>
+		                                 {
+			                                 this.settings.ShowCombatTab = v;
+			                                 this.settingsService.Save(this.settings);
+		                                 });
+		this.ZoneKillsTab = new ToggleState(this.settings.ShowZoneKillsTab,
+		                                    v =>
+		                                    {
+			                                    this.settings.ShowZoneKillsTab = v;
+			                                    this.settingsService.Save(this.settings);
+		                                    });
+		this.HealLogTab = new ToggleState(this.settings.ShowHealLogTab,
+		                                  v =>
+		                                  {
+			                                  this.settings.ShowHealLogTab = v;
+			                                  this.settingsService.Save(this.settings);
+		                                  });
+		this.CombatLogTab = new ToggleState(this.settings.ShowCombatLogTab,
+		                                    v =>
+		                                    {
+			                                    this.settings.ShowCombatLogTab = v;
+			                                    this.settingsService.Save(this.settings);
+		                                    });
+		this.KillHeatmapTab = new ToggleState(this.settings.ShowKillHeatmapTab,
+		                                      v =>
+		                                      {
+			                                      this.settings.ShowKillHeatmapTab = v;
+			                                      this.settingsService.Save(this.settings);
+		                                      });
+		this.FrontierMap = frontierMapService.Load();
+		this.SelectedZoneKillWindow = this.ZoneKillWindowOptions.FirstOrDefault(option => option.Value.TotalMinutes == this.settings.ZoneKillWindowMinutes) ?? this.ZoneKillWindowOptions[1];
 		this.processor.EntryProcessed += this.OnEntryProcessed;
+		this.processor.ZoneKillsUpdated += this.OnZoneKillsUpdated;
 		this.processor.MultiKillDetected += this.OnMultiKillDetected;
 		this.combatProcessor.DamageLogged += this.OnDamageLogged;
 		this.combatProcessor.HealLogged += this.OnHealLogged;
 		this.combatProcessor.MultiHitDetected += this.OnMultiHitDetected;
+		this.CombatSummary.PropertyChanged += this.OnCombatSummaryPropertyChanged;
 		this.TimeFilter.FilterChanged += this.OnTimeFilterChanged;
+		this.watchSession.ErrorOccurred += this.OnWatchSessionError;
 		_ = this.CheckForUpdatesAsync();
 	}
 
@@ -338,12 +390,41 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 		}
 	}
 
+	private void OnWatchSessionError(object? sender, string message)
+	{
+		Dispatcher.UIThread.InvokeAsync(() => this.WatchError = message);
+	}
+
+	private void OnCombatSummaryPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+	{
+		if(e.PropertyName is not ("TotalHealsReceived" or "TotalDamageDealt" or "TotalDamageTaken" or "TotalHealingDone"))
+		{
+			return;
+		}
+
+		if(this.combatChartDebounceTimer == null)
+		{
+			this.combatChartDebounceTimer = new System.Timers.Timer(COMBAT_CHART_DEBOUNCE_MS)
+			                                {
+					                                AutoReset = false
+			                                };
+			this.combatChartDebounceTimer.Elapsed += (_, _) => this.CombatChartsUpdateNeeded?.Invoke(this, EventArgs.Empty);
+		}
+
+		this.combatChartDebounceTimer.Stop();
+		this.combatChartDebounceTimer.Start();
+	}
+
 	private async Task RestartAsync()
 	{
 		await this.watchSession.StopAndWaitAsync();
-		if(string.IsNullOrWhiteSpace(this.CurrentFilePath)) return;
+		if(string.IsNullOrWhiteSpace(this.CurrentFilePath))
+		{
+			return;
+		}
+
 		var (filterEnabled, filterHours) = this.TimeFilter.GetFilterParameters();
-		await this.RunWatchLoop(new LogWatcher(this.CurrentFilePath, 0, filterEnabled, filterHours));
+		await this.RunWatchLoop(this.logWatcherFactory.Create(this.CurrentFilePath, 0, filterEnabled, filterHours));
 	}
 
 	[RelayCommand]
@@ -369,7 +450,10 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 	[RelayCommand]
 	private async Task OpenFile(IStorageProvider? storageProvider)
 	{
-		if(storageProvider == null) return;
+		if(storageProvider == null)
+		{
+			return;
+		}
 
 		var options = new FilePickerOpenOptions
 		              {
@@ -399,7 +483,10 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 	[RelayCommand]
 	private async Task OpenSessionPicker(Window? ownerWindow)
 	{
-		if(ownerWindow == null) return;
+		if(ownerWindow == null)
+		{
+			return;
+		}
 
 		string? path = null;
 		if(!string.IsNullOrWhiteSpace(this.CustomChatLogPath)&&File.Exists(this.CustomChatLogPath))
@@ -411,14 +498,23 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 			path = this.daocLogPathService.FindDaocLogPath();
 		}
 
-		if(path == null||!File.Exists(path)) return;
+		if(path == null||!File.Exists(path))
+		{
+			return;
+		}
 
 		var sessions = await Task.Run(() => LogSessionScanner.Scan(path));
-		if(sessions.Count == 0) return;
+		if(sessions.Count == 0)
+		{
+			return;
+		}
 
 		var dialog = new LogSessionDialog(sessions);
 		var selected = await dialog.ShowDialog<LogSession?>(ownerWindow);
-		if(selected == null) return;
+		if(selected == null)
+		{
+			return;
+		}
 
 		this.CurrentFilePath = path;
 		await this.StartWatchingFromSession(selected);
@@ -426,7 +522,10 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 
 	private async Task StartWatchingFromSession(LogSession session)
 	{
-		if(string.IsNullOrWhiteSpace(this.CurrentFilePath)) return;
+		if(string.IsNullOrWhiteSpace(this.CurrentFilePath))
+		{
+			return;
+		}
 
 		if(this.IsWatching)
 		{
@@ -434,7 +533,7 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 		}
 
 		var endPos = session.EndTime.HasValue?session.EndFilePosition:-1;
-		var watcher = new LogWatcher(this.CurrentFilePath, session.FilePosition, enableTimeFiltering: false, endPosition: endPos);
+		var watcher = this.logWatcherFactory.Create(this.CurrentFilePath, session.FilePosition, false, endPosition: endPos);
 		await this.RunWatchLoop(watcher);
 	}
 
@@ -468,30 +567,12 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 		}
 	}
 
-	private void ShowSendToast(string sender, string message)
+	private void ShowSendToast(string toastSender, string toastMessage)
 	{
-		this.SendNotificationSender = sender;
-		this.SendNotificationMessage = message;
-		this.IsSendNotificationVisible = true;
-
-		if(this.sendNotificationTimer == null)
-		{
-			this.sendNotificationTimer = new System.Timers.Timer(SEND_NOTIFICATION_TIMEOUT_MS)
-			                             {
-					                             AutoReset = false
-			                             };
-			this.sendNotificationTimer.Elapsed += (s, e) => Dispatcher.UIThread.InvokeAsync(() => this.IsSendNotificationVisible = false);
-		}
-
-		this.sendNotificationTimer.Stop();
-		this.sendNotificationTimer.Start();
-
-		this.notificationService.ShowToast(sender, message);
+		this.SendNotification.Show(toastSender, toastMessage);
+		this.notificationService.ShowToast(toastSender, toastMessage);
 		this.notificationService.PlayNotificationSound();
 	}
-
-	[RelayCommand]
-	private void DismissSendNotification() => this.IsSendNotificationVisible = false;
 
 	private void ResetParsingDebounce()
 	{
@@ -513,156 +594,170 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 		this.parsingDebounceTimer.Start();
 	}
 
-	private void OnEntryProcessed(object? sender, RealmPointLogEntry e) => this.AddLogEntry(e);
+	private void OnEntryProcessed(object? sender, RealmPointLogEntry e)
+	{
+		this.RpLog.Add(e);
+	}
 
 	private void OnMultiKillDetected(object? sender, RealmPointLogEntry e)
 	{
 		this.BestMultiKill = Math.Max(this.BestMultiKill, e.KillCount);
-		this.AddLogEntry(e);
+		this.RpLog.Add(e);
 	}
 
-	private void OnDamageLogged(object? sender, CombatLogEntry e) => this.AddCombatLogEntry(e);
-
-	private void OnHealLogged(object? sender, HealLogEntry e) => this.AddHealLogEntry(e);
-
-	private void OnMultiHitDetected(object? sender, CombatLogEntry e) => this.AddCombatLogEntry(e);
-
-	private void AddLogEntry(RealmPointLogEntry entry)
+	private void OnDamageLogged(object? sender, CombatLogEntry e)
 	{
-		AddCapped(this.LogEntries, entry);
-		if(this.MatchesRpFilter(entry))
-		{
-			AddCapped(this.FilteredLogEntries, entry);
-		}
+		this.CombatLog.Add(e);
 	}
 
-	private bool MatchesRpFilter(RealmPointLogEntry e) =>
-		string.IsNullOrWhiteSpace(this.RpFilterText) ||
-		e.Details.Contains(this.RpFilterText, StringComparison.OrdinalIgnoreCase) ||
-		e.Source.Contains(this.RpFilterText, StringComparison.OrdinalIgnoreCase);
-
-	private void RefreshRpFilter()
+	private void OnHealLogged(object? sender, HealLogEntry e)
 	{
-		this.FilteredLogEntries.Clear();
-		foreach(var e in this.LogEntries)
-		{
-			if(this.MatchesRpFilter(e))
-			{
-				this.FilteredLogEntries.Add(e);
-				if(this.FilteredLogEntries.Count >= LOG_ENTRIES_CAPACITY)
-				{
-					break;
-				}
-			}
-		}
+		this.HealLog.Add(e);
 	}
 
-	[RelayCommand]
-	private void ClearRpFilter() => this.RpFilterText = string.Empty;
-
-	private void AddHealLogEntry(HealLogEntry entry)
+	private void OnZoneKillsUpdated(object? sender, EventArgs e)
 	{
-		AddCapped(this.HealLogEntries, entry);
-		if(this.MatchesHealFilter(entry))
-		{
-			AddCapped(this.FilteredHealLogEntries, entry);
-		}
+		this.UpdateZoneKills();
 	}
 
-	private bool MatchesHealFilter(HealLogEntry e) =>
-		string.IsNullOrWhiteSpace(this.HealFilterText) ||
-		(e.Who ?? string.Empty).Contains(this.HealFilterText, StringComparison.OrdinalIgnoreCase) ||
-		e.DirectionLabel.Contains(this.HealFilterText, StringComparison.OrdinalIgnoreCase);
-
-	private void RefreshHealFilter()
+	private void OnMultiHitDetected(object? sender, CombatLogEntry e)
 	{
-		this.FilteredHealLogEntries.Clear();
-		foreach(var e in this.HealLogEntries)
-		{
-			if(this.MatchesHealFilter(e))
-			{
-				this.FilteredHealLogEntries.Add(e);
-				if(this.FilteredHealLogEntries.Count >= LOG_ENTRIES_CAPACITY)
-				{
-					break;
-				}
-			}
-		}
+		this.CombatLog.Add(e);
 	}
 
-	[RelayCommand]
-	private void ClearHealFilter() => this.HealFilterText = string.Empty;
-
-	private void AddCombatLogEntry(CombatLogEntry entry)
+	private void UpdateZoneKills()
 	{
-		AddCapped(this.CombatLogEntries, entry);
-		if(this.MatchesCombatFilter(entry))
+		var zoneCounts = this.processor.CurrentZoneKills.Where(kv => kv.Value > 1).OrderByDescending(kv => kv.Value).ThenBy(kv => kv.Key, StringComparer.OrdinalIgnoreCase).Take(20).ToList();
+
+		var totalCount = zoneCounts.Sum(kv => kv.Value);
+		var maxCount = zoneCounts.Count > 0?zoneCounts.Max(kv => kv.Value):1;
+
+		this.ZoneKills.Clear();
+		foreach(var kv in zoneCounts)
 		{
-			AddCapped(this.FilteredCombatLogEntries, entry);
+			var heatRatio = maxCount == 0?0.0:(double)kv.Value / maxCount;
+			this.ZoneKills.Add(new ZoneKillSummary
+			                   {
+					                   Zone = kv.Key,
+					                   KillCount = kv.Value,
+					                   Percentage = totalCount == 0?0.0:(double)kv.Value / totalCount * 100.0,
+					                   HeatColor = GetZoneHeatColor(heatRatio)
+			                   });
 		}
+
+		this.RecentZoneKillCount = totalCount;
+		this.UpdateKillActivity();
 	}
 
-	private bool MatchesCombatFilter(CombatLogEntry e) =>
-		string.IsNullOrWhiteSpace(this.CombatFilterText) ||
-		e.Target.Contains(this.CombatFilterText, StringComparison.OrdinalIgnoreCase) ||
-		e.Source.Contains(this.CombatFilterText, StringComparison.OrdinalIgnoreCase);
-
-	private void RefreshCombatFilter()
+	private void UpdateKillActivity()
 	{
-		this.FilteredCombatLogEntries.Clear();
-		foreach(var e in this.CombatLogEntries)
+		this.KillActivityPoints.Clear();
+		foreach(var point in this.processor.KillActivityPoints)
 		{
-			if(this.MatchesCombatFilter(e))
-			{
-				this.FilteredCombatLogEntries.Add(e);
-				if(this.FilteredCombatLogEntries.Count >= LOG_ENTRIES_CAPACITY)
-				{
-					break;
-				}
-			}
+			this.KillActivityPoints.Add(point);
 		}
+
+		this.KillActivityUpdated?.Invoke(this, EventArgs.Empty);
 	}
 
-	[RelayCommand]
-	private void ClearCombatFilter() => this.CombatFilterText = string.Empty;
-
-	private static void AddCapped<T>(ObservableCollection<T> collection, T item)
+	private static string GetZoneHeatColor(double ratio)
 	{
-		collection.Insert(0, item);
-		if(collection.Count > LOG_ENTRIES_CAPACITY)
+		// Use a smooth green->yellow->red gradient based on hue.
+		// 0.0 -> green (120°), 0.5 -> yellow (60°), 1.0 -> red (0°).
+		ratio = Math.Clamp(ratio, 0.0, 1.0);
+		var hue = 120.0 - 120.0 * ratio;
+		return HslToHex(hue, 0.95, 0.55);
+	}
+
+	private static string HslToHex(double hue, double saturation, double lightness)
+	{
+		hue %= 360.0;
+		if(hue < 0)
 		{
-			collection.RemoveAt(collection.Count - 1);
+			hue += 360.0;
 		}
+
+		var c = (1.0 - Math.Abs(2.0 * lightness - 1.0)) * saturation;
+		var x = c * (1.0 - Math.Abs(hue / 60.0 % 2.0 - 1.0));
+		var m = lightness - c / 2.0;
+
+		double r1, g1, b1;
+		if(hue < 60)
+		{
+			r1 = c;
+			g1 = x;
+			b1 = 0;
+		}
+		else if(hue < 120)
+		{
+			r1 = x;
+			g1 = c;
+			b1 = 0;
+		}
+		else if(hue < 180)
+		{
+			r1 = 0;
+			g1 = c;
+			b1 = x;
+		}
+		else if(hue < 240)
+		{
+			r1 = 0;
+			g1 = x;
+			b1 = c;
+		}
+		else if(hue < 300)
+		{
+			r1 = x;
+			g1 = 0;
+			b1 = c;
+		}
+		else
+		{
+			r1 = c;
+			g1 = 0;
+			b1 = x;
+		}
+
+		var r = (int)Math.Round((r1 + m) * 255.0);
+		var g = (int)Math.Round((g1 + m) * 255.0);
+		var b = (int)Math.Round((b1 + m) * 255.0);
+
+		return $"#{r:X2}{g:X2}{b:X2}";
 	}
 
 	[RelayCommand]
 	private async Task StartWatching()
 	{
-		if(string.IsNullOrWhiteSpace(this.CurrentFilePath)||this.IsWatching) return;
+		if(string.IsNullOrWhiteSpace(this.CurrentFilePath)||this.IsWatching)
+		{
+			return;
+		}
 
 		var (filterEnabled, filterHours) = this.TimeFilter.GetFilterParameters();
-		await this.RunWatchLoop(new LogWatcher(this.CurrentFilePath, 0, filterEnabled, filterHours));
+		await this.RunWatchLoop(this.logWatcherFactory.Create(this.CurrentFilePath, 0, filterEnabled, filterHours));
 	}
 
-	private async Task RunWatchLoop(LogWatcher watcher)
+	private Task RunWatchLoop(LogWatcher watcher)
 	{
-		var myGeneration = ++this.watchGeneration;
-		this.IsWatching = true;
-		this.ResetAllState();
-		this.Summary.IsLive = true;
-
-		await this.watchSession.RunAsync(watcher,
-		                                 () => Dispatcher.UIThread.InvokeAsync(() => this.Summary.RefreshRpsPerHour()),
-		                                 async line =>
-		                                 {
-			                                 var capturedLine = line;
-			                                 await Dispatcher.UIThread.InvokeAsync(() => this.ProcessLogLine(capturedLine), DispatcherPriority.Normal);
-		                                 });
-
-		if(myGeneration == this.watchGeneration)
-		{
-			this.CleanupWatchState();
-		}
+		return this.watchController.RunAsync(watcher,
+		                                     () =>
+		                                     {
+			                                     this.IsWatching = true;
+			                                     this.ResetAllState();
+			                                     this.Summary.IsLive = true;
+		                                     },
+		                                     () =>
+		                                     {
+			                                     this.Summary.RefreshRpsPerHour();
+			                                     this.processor.RefreshZoneKills();
+		                                     },
+		                                     line =>
+		                                     {
+			                                     this.ProcessLogLine(line);
+			                                     return Task.CompletedTask;
+		                                     },
+		                                     this.CleanupWatchState);
 	}
 
 	private void CleanupWatchState()
@@ -670,9 +765,6 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 		this.parsingDebounceTimer?.Stop();
 		this.parsingDebounceTimer?.Dispose();
 		this.parsingDebounceTimer = null;
-		this.sendNotificationTimer?.Stop();
-		this.sendNotificationTimer?.Dispose();
-		this.sendNotificationTimer = null;
 		this.IsParsing = false;
 		this.IsWatching = false;
 		this.Summary.IsLive = false;
@@ -682,7 +774,7 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 	[RelayCommand]
 	private void StopWatching()
 	{
-		this.watchSession.RequestStop();
+		this.watchController.Stop();
 		this.IsWatching = false;
 		this.ResetAllState();
 	}
@@ -690,16 +782,16 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 	private void ResetAllState()
 	{
 		this.Summary.Reset();
-		this.LogEntries.Clear();
-		this.FilteredLogEntries.Clear();
-		this.HealLogEntries.Clear();
-		this.FilteredHealLogEntries.Clear();
-		this.CombatLogEntries.Clear();
-		this.FilteredCombatLogEntries.Clear();
+		this.RpLog.Clear();
+		this.HealLog.Clear();
+		this.CombatLog.Clear();
 		this.ChartData.Reset();
 		this.CombatSummary.Reset();
 		this.processor.Reset();
 		this.combatProcessor.Reset();
+		this.ZoneKills.Clear();
+		this.KillActivityPoints.Clear();
+		this.RecentZoneKillCount = 0;
 		this.DetectedCharacterName = null;
 		this.Kills = 0;
 		this.Deaths = 0;
@@ -714,20 +806,34 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 	}
 
 	[RelayCommand]
-	private void DismissUpdate() => this.IsUpdateAvailable = false;
+	private void DismissUpdate()
+	{
+		this.IsUpdateAvailable = false;
+	}
 
 	[RelayCommand]
-	private void ApplyUpdateAndRestart() => this.updateService.ApplyAndRestart();
+	private void ApplyUpdateAndRestart()
+	{
+		this.updateService.ApplyAndRestart();
+	}
 
 	public void Dispose()
 	{
 		this.processor.EntryProcessed -= this.OnEntryProcessed;
 		this.processor.MultiKillDetected -= this.OnMultiKillDetected;
+		this.processor.ZoneKillsUpdated -= this.OnZoneKillsUpdated;
 		this.combatProcessor.DamageLogged -= this.OnDamageLogged;
 		this.combatProcessor.HealLogged -= this.OnHealLogged;
 		this.combatProcessor.MultiHitDetected -= this.OnMultiHitDetected;
+		this.CombatSummary.PropertyChanged -= this.OnCombatSummaryPropertyChanged;
 		this.TimeFilter.FilterChanged -= this.OnTimeFilterChanged;
-		this.watchSession.RequestStop();
+		this.watchSession.ErrorOccurred -= this.OnWatchSessionError;
+		this.watchController.Stop();
+		this.parsingDebounceTimer?.Stop();
+		this.parsingDebounceTimer?.Dispose();
+		this.combatChartDebounceTimer?.Stop();
+		this.combatChartDebounceTimer?.Dispose();
+		this.SendNotification.Dispose();
 		GC.SuppressFinalize(this);
 	}
 }

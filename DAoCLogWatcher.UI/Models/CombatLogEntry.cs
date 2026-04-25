@@ -4,7 +4,7 @@ public class CombatLogEntry
 {
 	public required string Timestamp { get; init; }
 
-	public required string Target { get; init; }
+	public required string Opponent { get; init; }
 
 	public required int TotalDamage { get; init; }
 
@@ -23,10 +23,10 @@ public class CombatLogEntry
 	/// <summary>Number of targets hit; 0 for individual hit entries, N for multi-hit aggregate entries.</summary>
 	public int HitCount { get; init; }
 
-	public string DirectionLabel => IsDealt?"Dealt":"Taken";
+	public string DirectionLabel => this.IsDealt?"Dealt":"Taken";
 
-	public string Source => IsWeaponAttack?(StyleName ?? "Melee"):(SpellName ?? "Other");
+	public string Source => this.IsWeaponAttack?this.StyleName ?? "Melee":this.SpellName ?? "Other";
 
 	/// <summary>True for regular (non-AoE) dealt hits — used to show "Dealt" label without overlap.</summary>
-	public bool ShowDealtLabel => IsDealt&&!IsMultiHit;
+	public bool ShowDealtLabel => this.IsDealt&&!this.IsMultiHit;
 }

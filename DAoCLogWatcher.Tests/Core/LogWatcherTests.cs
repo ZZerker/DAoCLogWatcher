@@ -82,7 +82,7 @@ public sealed class LogWatcherTests: IDisposable
 		var initialContent = "[12:00:00] You get 1000 realm points for Campaign Quest!\n";
 		await File.WriteAllTextAsync(this.testLogFilePath, initialContent);
 
-		var watcher = new LogWatcher(this.testLogFilePath, startPosition: 0, enableTimeFiltering: false);
+		var watcher = new LogWatcher(this.testLogFilePath, 0, false);
 		using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(1));
 
 		var lines = new List<LogLine>();
@@ -94,7 +94,9 @@ public sealed class LogWatcherTests: IDisposable
 			                        {
 				                        lines.Add(line);
 				                        if(lines.Count >= 1)
+				                        {
 					                        cts.Cancel();
+				                        }
 			                        }
 		                        });
 
@@ -115,7 +117,7 @@ public sealed class LogWatcherTests: IDisposable
 		await File.WriteAllTextAsync(this.testLogFilePath, content);
 
 		var startPosition = Encoding.UTF8.GetByteCount("[12:00:00] First line\n");
-		var watcher = new LogWatcher(this.testLogFilePath, startPosition: startPosition, enableTimeFiltering: false);
+		var watcher = new LogWatcher(this.testLogFilePath, startPosition, false);
 		using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(1));
 
 		var lines = new List<LogLine>();
@@ -127,7 +129,9 @@ public sealed class LogWatcherTests: IDisposable
 			                        {
 				                        lines.Add(line);
 				                        if(lines.Count >= 1)
+				                        {
 					                        cts.Cancel();
+				                        }
 			                        }
 		                        });
 
@@ -156,7 +160,9 @@ public sealed class LogWatcherTests: IDisposable
 			                         {
 				                         lines.Add(line);
 				                         if(lines.Count >= 2)
+				                         {
 					                         cts.Cancel();
+				                         }
 			                         }
 		                         });
 
@@ -164,6 +170,7 @@ public sealed class LogWatcherTests: IDisposable
 		await Task.Delay(100);
 
 		await using(var stream = new FileStream(this.testLogFilePath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite))
+		{
 			await using(var writer = new StreamWriter(stream))
 			{
 				await writer.WriteLineAsync("[12:00:00] You get 1000 realm points for Campaign Quest!");
@@ -172,6 +179,7 @@ public sealed class LogWatcherTests: IDisposable
 				await writer.WriteLineAsync("[12:00:01] You get 500 realm points for Tower Capture!");
 				await writer.FlushAsync();
 			}
+		}
 
 		await watchTask;
 
@@ -272,13 +280,16 @@ public sealed class LogWatcherTests: IDisposable
 			                         {
 				                         lines.Add(line);
 				                         if(lines.Count >= 1)
+				                         {
 					                         cts.Cancel();
+				                         }
 			                         }
 		                         });
 
 		await Task.Delay(100);
 
 		await using(var stream = new FileStream(this.testLogFilePath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite))
+		{
 			await using(var writer = new StreamWriter(stream))
 			{
 				await writer.WriteAsync("[12:00:00] Incomplete");
@@ -287,6 +298,7 @@ public sealed class LogWatcherTests: IDisposable
 				await writer.WriteLineAsync(" line completed!");
 				await writer.FlushAsync();
 			}
+		}
 
 		await watchTask;
 
@@ -368,7 +380,10 @@ public sealed class LogWatcherTests: IDisposable
 		await foreach(var line in watcher.WatchAsync(cts.Token))
 		{
 			if(line.DetectedCharacterName != null)
+			{
 				statsLine = line;
+			}
+
 			if(line.Text.Contains("Campaign Quest"))
 			{
 				cts.Cancel();
@@ -412,7 +427,7 @@ public sealed class LogWatcherTests: IDisposable
 		// Arrange – stats line appears before the filter cutoff (old context), should be ignored
 		var oldTime = DateTime.Now.AddHours(-8).ToString("HH:mm:ss");
 		var recentTime = DateTime.Now.AddHours(-1).ToString("HH:mm:ss");
-		var sessionDateStr = DateTime.Now.AddHours(-10).ToString("ddd MMM d HH:mm:ss yyyy", System.Globalization.CultureInfo.InvariantCulture);
+		var sessionDateStr = DateTime.Now.AddHours(-10).ToString("ddd MMM d HH:mm:ss yyyy", CultureInfo.InvariantCulture);
 
 		var content = $"*** Chat Log Opened: {sessionDateStr}\n" + $"[{oldTime}] Options: /stats [ rp | kills | deathblows | solo | irs | heal | rez | player <name|target>  ]\n" + "Statistics for OldContextChar this Session:\n" +
 		              $"[{recentTime}] You get 500 realm points for Battle Tick!\n";
@@ -439,7 +454,7 @@ public sealed class LogWatcherTests: IDisposable
 	{
 		// Arrange – stats line appears within the filter window, should be detected
 		var recentTime = DateTime.Now.AddHours(-1).ToString("HH:mm:ss");
-		var sessionDateStr = DateTime.Now.AddHours(-2).ToString("ddd MMM d HH:mm:ss yyyy", System.Globalization.CultureInfo.InvariantCulture);
+		var sessionDateStr = DateTime.Now.AddHours(-2).ToString("ddd MMM d HH:mm:ss yyyy", CultureInfo.InvariantCulture);
 
 		var content = $"*** Chat Log Opened: {sessionDateStr}\n" + $"[{recentTime}] Options: /stats [ rp | kills | deathblows | solo | irs | heal | rez | player <name|target>  ]\n" + "Statistics for RecentChar this Session:\n" +
 		              $"[{recentTime}] You get 500 realm points for Battle Tick!\n";
@@ -501,7 +516,10 @@ public sealed class LogWatcherTests: IDisposable
 		await foreach(var line in watcher.WatchAsync(cts.Token))
 		{
 			if(line is KillLogLine kl)
+			{
 				killLine = kl;
+			}
+
 			if(line.Text.Contains("Battle Tick"))
 			{
 				cts.Cancel();
@@ -523,7 +541,7 @@ public sealed class LogWatcherTests: IDisposable
 		// Arrange – kill line is outside the filter window, should not be yielded
 		var oldTime = DateTime.Now.AddHours(-8).ToString("HH:mm:ss");
 		var recentTime = DateTime.Now.AddHours(-1).ToString("HH:mm:ss");
-		var sessionDateStr = DateTime.Now.AddHours(-10).ToString("ddd MMM d HH:mm:ss yyyy", System.Globalization.CultureInfo.InvariantCulture);
+		var sessionDateStr = DateTime.Now.AddHours(-10).ToString("ddd MMM d HH:mm:ss yyyy", CultureInfo.InvariantCulture);
 
 		var content = $"*** Chat Log Opened: {sessionDateStr}\n" + $"[{oldTime}] Dfensze was just killed by Linkx in Emain Macha.\n" + $"[{recentTime}] You get 500 realm points for Battle Tick!\n";
 
@@ -536,7 +554,10 @@ public sealed class LogWatcherTests: IDisposable
 		await foreach(var line in watcher.WatchAsync(cts.Token))
 		{
 			if(line is KillLogLine kl)
+			{
 				killLines.Add(kl);
+			}
+
 			if(line.Text.Contains("Battle Tick"))
 			{
 				cts.Cancel();
@@ -580,7 +601,7 @@ public sealed class LogWatcherTests: IDisposable
 		// ShouldProcessLine) used to let the resolved PlayerKill entry slip through the time filter.
 		// The entry's own timestamp must also be checked against the window.
 		var oldTime = DateTime.Now.AddHours(-48).ToString("HH:mm:ss");
-		var sessionDate = DateTime.Now.AddDays(-2).ToString("ddd MMM d HH:mm:ss yyyy", System.Globalization.CultureInfo.InvariantCulture);
+		var sessionDate = DateTime.Now.AddDays(-2).ToString("ddd MMM d HH:mm:ss yyyy", CultureInfo.InvariantCulture);
 
 		var content = $"*** Chat Log Opened: {sessionDate}\n" + $"[{oldTime}] You get 51 realm points!\n" + $"[{oldTime}] XP Guild Bonus: 160,671\n" + "You gain a total of 3,374,108 experience points.\n";
 
@@ -593,7 +614,9 @@ public sealed class LogWatcherTests: IDisposable
 		await foreach(var line in watcher.WatchAsync(cts.Token))
 		{
 			if(line is RealmPointLogLine rp)
+			{
 				entries.Add(rp);
+			}
 		}
 
 		entries.Should().BeEmpty("entries from 48 hours ago must be filtered out even when resolved on a timestamp-less line");
@@ -623,14 +646,20 @@ public sealed class LogWatcherTests: IDisposable
 		await foreach(var line in watcher.WatchAsync(cts.Token))
 		{
 			if(line is RealmPointLogLine rp)
+			{
 				entries.Add(rp);
+			}
 		}
 
 		// Assert
 		if(shouldBeIncluded)
+		{
 			entries.Should().HaveCount(1, reason);
+		}
 		else
+		{
 			entries.Should().BeEmpty(reason);
+		}
 	}
 
 	[Fact]
@@ -640,13 +669,12 @@ public sealed class LogWatcherTests: IDisposable
 		// The line's timestamp (e.g. 00:03) must not be resolved to yesterday's date and incorrectly
 		// rejected as being ~24 hours old.
 		var sessionOpenedAt = DateTime.Now.Date.AddDays(-1).AddHours(23).AddMinutes(55); // yesterday 23:55
-		var lineTime = DateTime.Now.Date.AddMinutes(3);                                  // today 00:03
+		var lineTime = DateTime.Now.Date.AddMinutes(3); // today 00:03
 
 		var sessionDateStr = sessionOpenedAt.ToString("ddd MMM d HH:mm:ss yyyy", CultureInfo.InvariantCulture);
 		var lineTimeStr = lineTime.ToString("HH:mm:ss", CultureInfo.InvariantCulture);
 
-		var content = $"*** Chat Log Opened: {sessionDateStr}\n" +
-		              $"[{lineTimeStr}] You get 500 realm points for Battle Tick!\n";
+		var content = $"*** Chat Log Opened: {sessionDateStr}\n" + $"[{lineTimeStr}] You get 500 realm points for Battle Tick!\n";
 
 		await File.WriteAllTextAsync(this.testLogFilePath, content);
 
@@ -657,7 +685,9 @@ public sealed class LogWatcherTests: IDisposable
 		await foreach(var line in watcher.WatchAsync(cts.Token))
 		{
 			if(line is RealmPointLogLine rp)
+			{
 				entries.Add(rp);
+			}
 		}
 
 		entries.Should().HaveCount(1, "a line logged a few minutes past midnight must not be filtered out");

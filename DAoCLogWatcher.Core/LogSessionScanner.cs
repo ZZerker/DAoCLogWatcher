@@ -46,7 +46,7 @@ public static partial class LogSessionScanner
 			{
 				if(readBuffer[i] == (byte)'\n')
 				{
-					var end = (lineLen > 0&&lineBuffer[lineLen - 1] == (byte)'\r')?lineLen - 1:lineLen;
+					var end = lineLen > 0&&lineBuffer[lineLen - 1] == (byte)'\r'?lineLen - 1:lineLen;
 					var line = Encoding.UTF8.GetString(lineBuffer, 0, end);
 					ProcessScanLine(line, lineStart, sessions, ref current);
 					lineLen = 0;

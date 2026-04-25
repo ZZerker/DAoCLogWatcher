@@ -24,7 +24,11 @@ public partial class TimeFilterService: ObservableObject
 	/// <summary>Returns the current filter parameters to pass to <see cref="Core.LogWatcher"/>.</summary>
 	public (bool Enabled, double Hours) GetFilterParameters()
 	{
-		if(this.SelectedTimeFilterIndex == 0) return (false, 0);
+		if(this.SelectedTimeFilterIndex == 0)
+		{
+			return (false, 0);
+		}
+
 		var hours = this.SelectedTimeFilterIndex switch
 		{
 				1 => 168.0, // 1 week
@@ -43,7 +47,11 @@ public partial class TimeFilterService: ObservableObject
 
 	partial void OnSelectedTimeFilterIndexChanged(int value)
 	{
-		if(this.suppressFilterChange) return;
+		if(this.suppressFilterChange)
+		{
+			return;
+		}
+
 		if(value == CUSTOM_FILTER_INDEX)
 		{
 			this.IsCustomPopupVisible = true;
@@ -59,7 +67,11 @@ public partial class TimeFilterService: ObservableObject
 	private void ApplyCustomFilter()
 	{
 		this.customTotalHours = (double)(this.CustomInputHours ?? 0) + (double)(this.CustomInputMinutes ?? 0) / 60.0;
-		if(this.customTotalHours <= 0) this.customTotalHours = 1.0 / 60; // minimum 1 min
+		if(this.customTotalHours <= 0)
+		{
+			this.customTotalHours = 1.0 / 60; // minimum 1 min
+		}
+
 		this.previousFilterIndex = CUSTOM_FILTER_INDEX;
 		this.IsCustomPopupVisible = false;
 		this.FilterChanged?.Invoke(this, EventArgs.Empty);

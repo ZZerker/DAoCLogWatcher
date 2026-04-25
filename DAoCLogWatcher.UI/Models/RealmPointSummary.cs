@@ -49,23 +49,23 @@ public partial class RealmPointSummary: ObservableObject
 
 	public int TotalEntries => this.PlayerKills + this.CampaignQuests + this.Ticks + this.Siege + this.AssaultOrder + this.SupportActivity + this.RelicCapture + this.TimedMissions + this.Misc;
 
-	public double PlayerKillsPercentage => this.TotalRealmPoints > 0?(this.PlayerKillsRP * 100.0 / this.TotalRealmPoints):0;
+	public double PlayerKillsPercentage => this.TotalRealmPoints > 0?this.PlayerKillsRP * 100.0 / this.TotalRealmPoints:0;
 
-	public double CampaignQuestsPercentage => this.TotalRealmPoints > 0?(this.CampaignQuestsRP * 100.0 / this.TotalRealmPoints):0;
+	public double CampaignQuestsPercentage => this.TotalRealmPoints > 0?this.CampaignQuestsRP * 100.0 / this.TotalRealmPoints:0;
 
-	public double TicksPercentage => this.TotalRealmPoints > 0?(this.TicksRP * 100.0 / this.TotalRealmPoints):0;
+	public double TicksPercentage => this.TotalRealmPoints > 0?this.TicksRP * 100.0 / this.TotalRealmPoints:0;
 
-	public double SiegePercentage => this.TotalRealmPoints > 0?(this.SiegeRP * 100.0 / this.TotalRealmPoints):0;
+	public double SiegePercentage => this.TotalRealmPoints > 0?this.SiegeRP * 100.0 / this.TotalRealmPoints:0;
 
-	public double AssaultOrderPercentage => this.TotalRealmPoints > 0?(this.AssaultOrderRP * 100.0 / this.TotalRealmPoints):0;
+	public double AssaultOrderPercentage => this.TotalRealmPoints > 0?this.AssaultOrderRP * 100.0 / this.TotalRealmPoints:0;
 
-	public double SupportActivityPercentage => this.TotalRealmPoints > 0?(this.SupportActivityRP * 100.0 / this.TotalRealmPoints):0;
+	public double SupportActivityPercentage => this.TotalRealmPoints > 0?this.SupportActivityRP * 100.0 / this.TotalRealmPoints:0;
 
-	public double RelicCapturePercentage => this.TotalRealmPoints > 0?(this.RelicCaptureRP * 100.0 / this.TotalRealmPoints):0;
+	public double RelicCapturePercentage => this.TotalRealmPoints > 0?this.RelicCaptureRP * 100.0 / this.TotalRealmPoints:0;
 
-	public double TimedMissionsPercentage => this.TotalRealmPoints > 0?(this.TimedMissionsRP * 100.0 / this.TotalRealmPoints):0;
+	public double TimedMissionsPercentage => this.TotalRealmPoints > 0?this.TimedMissionsRP * 100.0 / this.TotalRealmPoints:0;
 
-	public double MiscPercentage => this.TotalRealmPoints > 0?(this.MiscRP * 100.0 / this.TotalRealmPoints):0;
+	public double MiscPercentage => this.TotalRealmPoints > 0?this.MiscRP * 100.0 / this.TotalRealmPoints:0;
 
 	public bool IsLive { get; set; }
 
@@ -74,13 +74,17 @@ public partial class RealmPointSummary: ObservableObject
 		get
 		{
 			if(!this.FirstEntryTime.HasValue||this.TotalRealmPoints == 0)
+			{
 				return 0;
+			}
 
-			var endTime = this.IsLive?DateTime.Now:(this.LastEntryTime ?? DateTime.Now);
+			var endTime = this.IsLive?DateTime.Now:this.LastEntryTime ?? DateTime.Now;
 			var duration = endTime - this.FirstEntryTime.Value;
 
 			if(duration.TotalHours <= 0)
+			{
 				return 0;
+			}
 
 			return this.TotalRealmPoints / duration.TotalHours;
 		}
@@ -121,23 +125,50 @@ public partial class RealmPointSummary: ObservableObject
 		this.OnPropertyChanged(nameof(this.RpsPerHour));
 	}
 
-	partial void OnPlayerKillsChanged(int value) => this.NotifyPercentagesChanged();
+	partial void OnPlayerKillsChanged(int value)
+	{
+		this.NotifyPercentagesChanged();
+	}
 
-	partial void OnCampaignQuestsChanged(int value) => this.NotifyPercentagesChanged();
+	partial void OnCampaignQuestsChanged(int value)
+	{
+		this.NotifyPercentagesChanged();
+	}
 
-	partial void OnTicksChanged(int value) => this.NotifyPercentagesChanged();
+	partial void OnTicksChanged(int value)
+	{
+		this.NotifyPercentagesChanged();
+	}
 
-	partial void OnSiegeChanged(int value) => this.NotifyPercentagesChanged();
+	partial void OnSiegeChanged(int value)
+	{
+		this.NotifyPercentagesChanged();
+	}
 
-	partial void OnAssaultOrderChanged(int value) => this.NotifyPercentagesChanged();
+	partial void OnAssaultOrderChanged(int value)
+	{
+		this.NotifyPercentagesChanged();
+	}
 
-	partial void OnSupportActivityChanged(int value) => this.NotifyPercentagesChanged();
+	partial void OnSupportActivityChanged(int value)
+	{
+		this.NotifyPercentagesChanged();
+	}
 
-	partial void OnRelicCaptureChanged(int value) => this.NotifyPercentagesChanged();
+	partial void OnRelicCaptureChanged(int value)
+	{
+		this.NotifyPercentagesChanged();
+	}
 
-	partial void OnTimedMissionsChanged(int value) => this.NotifyPercentagesChanged();
+	partial void OnTimedMissionsChanged(int value)
+	{
+		this.NotifyPercentagesChanged();
+	}
 
-	partial void OnMiscChanged(int value) => this.NotifyPercentagesChanged();
+	partial void OnMiscChanged(int value)
+	{
+		this.NotifyPercentagesChanged();
+	}
 
 	private void NotifyPercentagesChanged()
 	{

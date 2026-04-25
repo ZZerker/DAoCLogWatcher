@@ -11,6 +11,8 @@ public interface IWatchSession: IDisposable
 {
 	DateTime? CurrentSessionStart { get; }
 
+	event EventHandler<string>? ErrorOccurred;
+
 	Task RunAsync(LogWatcher watcher, Action onRpsRefresh, Func<LogLine, Task> onLine);
 
 	Task StopAndWaitAsync();
@@ -26,6 +28,8 @@ public sealed class WatchSession: IWatchSession
 	private Task? currentTask;
 	private System.Timers.Timer? rpsRefreshTimer;
 	private LogWatcher? currentWatcher;
+
+	public event EventHandler<string>? ErrorOccurred;
 
 	public DateTime? CurrentSessionStart => this.currentWatcher?.CurrentSessionStart;
 
@@ -61,6 +65,7 @@ public sealed class WatchSession: IWatchSession
 		catch(Exception ex)
 		{
 			Debug.WriteLine($"[WatchSession.RunCoreAsync] {ex.GetType().Name}: {ex.Message}");
+			this.ErrorOccurred?.Invoke(this, $"{ex.GetType().Name}: {ex.Message}");
 		}
 		finally
 		{

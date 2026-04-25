@@ -71,8 +71,15 @@ internal sealed class KillStatTracker
 		var deaths = 0;
 		foreach(var ev in this.killEventBuffer)
 		{
-			if(ev.Killer == characterName) kills++;
-			if(ev.Victim == characterName) deaths++;
+			if(ev.Killer == characterName)
+			{
+				kills++;
+			}
+
+			if(ev.Victim == characterName)
+			{
+				deaths++;
+			}
 		}
 
 		if(kills != this.Kills||deaths != this.Deaths)

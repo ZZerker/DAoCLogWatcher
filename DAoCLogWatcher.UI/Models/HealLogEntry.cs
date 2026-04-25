@@ -11,5 +11,5 @@ public class HealLogEntry
 	/// <summary>Healer name (incoming) or target name (outgoing).</summary>
 	public string? Who { get; init; }
 
-	public string DirectionLabel => IsOutgoing?"Done":"Received";
+	public string DirectionLabel => this.IsOutgoing?"Done":"Received";
 }

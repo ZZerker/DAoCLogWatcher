@@ -1,0 +1,120 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:DAoCLogWatcher.UI.ViewModels"
+             xmlns:scott="using:ScottPlot.Avalonia"
+             x:Class="DAoCLogWatcher.UI.Views.Tabs.HealLogTabView"
+             x:DataType="vm:MainWindowViewModel">
+
+    <Grid RowDefinitions="*" Margin="10,10,10,0">
+        <DockPanel>
+            <StackPanel DockPanel.Dock="Top" Margin="0,0,0,15" Spacing="10">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Heal Log" FontSize="22" FontWeight="Bold"
+                               Margin="0,0,15,0"
+                               Foreground="{DynamicResource AppTextPrimary}" />
+                    <TextBlock
+                        Text="{Binding HealLog.Filtered.Count, StringFormat='({0} entries)'}"
+                        FontSize="14" VerticalAlignment="Center"
+                        Foreground="{DynamicResource AppTextMuted}" />
+                </StackPanel>
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBox Grid.Column="0"
+                             Text="{Binding HealLog.FilterText}"
+                             Watermark="Filter by healer or direction…"
+                             FontSize="13" />
+                    <Button Grid.Column="1"
+                            Content="✕"
+                            Command="{Binding HealLog.ClearFilterCommand}"
+                            IsVisible="{Binding HealLog.FilterText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                            Margin="6,0,0,0"
+                            Padding="8,4"
+                            FontSize="13" />
+                </Grid>
+            </StackPanel>
+
+            <StackPanel DockPanel.Dock="Bottom" Spacing="10" Margin="0,10,0,0">
+                <Border Background="{DynamicResource AppCardBackground}" CornerRadius="6" Padding="15">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="HEALS RECEIVED" FontWeight="SemiBold" FontSize="11"
+                                   Foreground="{DynamicResource AppTextMuted}" />
+                        <TextBlock Text="{Binding CombatSummary.TotalHealsReceived}"
+                                   FontSize="28"
+                                   FontWeight="Bold" Foreground="#FF00D968" />
+                        <Grid>
+                            <TextBlock Text="BY HEALER" FontWeight="SemiBold" FontSize="11"
+                                       Foreground="{DynamicResource AppTextMuted}"
+                                       VerticalAlignment="Center" />
+                            <Button Content="{Binding HealsByHealerChart.Icon}"
+                                    Command="{Binding HealsByHealerChart.ToggleCommand}"
+                                    HorizontalAlignment="Right" Background="Transparent"
+                                    Foreground="{DynamicResource AppTextMuted}" Padding="6,2"
+                                    BorderThickness="0" FontSize="14" />
+                        </Grid>
+                        <scott:AvaPlot x:Name="HealsByHealerChart" Height="200"
+                                       IsVisible="{Binding HealsByHealerChart.Value}" />
+                    </StackPanel>
+                </Border>
+
+                <Border Background="{DynamicResource AppCardBackground}" CornerRadius="6" Padding="15">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="HEALS DONE" FontWeight="SemiBold" FontSize="11"
+                                   Foreground="{DynamicResource AppTextMuted}" />
+                        <TextBlock Text="{Binding CombatSummary.TotalHealingDone}"
+                                   FontSize="28"
+                                   FontWeight="Bold" Foreground="#FF00D968" />
+                        <Grid>
+                            <TextBlock Text="BY TARGET" FontWeight="SemiBold" FontSize="11"
+                                       Foreground="{DynamicResource AppTextMuted}"
+                                       VerticalAlignment="Center" />
+                            <Button Content="{Binding HealsByTargetChart.Icon}"
+                                    Command="{Binding HealsByTargetChart.ToggleCommand}"
+                                    HorizontalAlignment="Right" Background="Transparent"
+                                    Foreground="{DynamicResource AppTextMuted}" Padding="6,2"
+                                    BorderThickness="0" FontSize="14" />
+                        </Grid>
+                        <scott:AvaPlot x:Name="HealsByTargetChart" Height="200"
+                                       IsVisible="{Binding HealsByTargetChart.Value}" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <ScrollViewer Background="{DynamicResource AppCardBackground}" CornerRadius="6"
+                          Padding="10"
+                          HorizontalScrollBarVisibility="Disabled">
+                <ItemsControl ItemsSource="{Binding HealLog.Filtered}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border BorderBrush="{DynamicResource AppRowBorder}"
+                                    BorderThickness="0,0,0,1" Padding="10,8"
+                                    Background="Transparent">
+                                <Grid ColumnDefinitions="Auto,Auto,Auto,*">
+                                    <TextBlock Grid.Column="0" Text="{Binding Timestamp}"
+                                               Foreground="{DynamicResource AppTextMuted}"
+                                               FontFamily="Consolas,Courier New,monospace"
+                                               FontSize="13"
+                                               Margin="0,0,20,0"
+                                               MinWidth="80" />
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding HitPoints, StringFormat='+{0} HP'}"
+                                               FontWeight="Bold"
+                                               FontSize="13"
+                                               Margin="0,0,20,0"
+                                               MinWidth="90"
+                                               Foreground="#FF00D968" />
+                                    <TextBlock Grid.Column="2" Text="{Binding DirectionLabel}"
+                                               FontSize="13"
+                                               Margin="0,0,20,0"
+                                               MinWidth="80"
+                                               Foreground="#FF00D9FF" />
+                                    <TextBlock Grid.Column="3" Text="{Binding Who}"
+                                               Foreground="{DynamicResource AppTextSecondary}"
+                                               FontSize="13" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </DockPanel>
+    </Grid>
+</UserControl>

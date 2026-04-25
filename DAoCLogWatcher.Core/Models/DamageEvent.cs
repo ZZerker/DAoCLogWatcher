@@ -4,8 +4,8 @@ public sealed record DamageEvent
 {
 	public required TimeOnly Timestamp { get; init; }
 
-	/// <summary>The enemy's name — target when IsDealt, attacker when not IsDealt.</summary>
-	public required string Target { get; init; }
+	/// <summary>The enemy's name — the attacked target when IsDealt, the attacker when not IsDealt.</summary>
+	public required string Opponent { get; init; }
 
 	public required int BaseDamage { get; init; }
 
@@ -27,5 +27,5 @@ public sealed record DamageEvent
 	/// <summary>True when the hit came from a weapon swing ("You attack X with your Y and hit"); false for spells/generic.</summary>
 	public bool IsWeaponAttack { get; init; }
 
-	public int TotalDamage => BaseDamage + CritDamage;
+	public int TotalDamage => this.BaseDamage + this.CritDamage;
 }

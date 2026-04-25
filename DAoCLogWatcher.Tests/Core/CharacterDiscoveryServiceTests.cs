@@ -16,7 +16,9 @@ public sealed class CharacterDiscoveryServiceTests: IDisposable
 	public void Dispose()
 	{
 		if(Directory.Exists(this.testDirectory))
-			Directory.Delete(this.testDirectory, recursive: true);
+		{
+			Directory.Delete(this.testDirectory, true);
+		}
 	}
 
 	[Fact]
