@@ -31,14 +31,16 @@ public sealed class ZoneKillTracker
 	private TimeSpan activeWindow = DefaultWindow;
 
 	public ZoneKillTracker()
-			: this(Path.Combine(AppContext.BaseDirectory, ZONE_EXPORT_FILE_NAME))
+			: this(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DAoCLogWatcher", ZONE_EXPORT_FILE_NAME))
 	{
 	}
 
 	internal ZoneKillTracker(string zoneExportPath)
 	{
 		this.zoneExportPath = zoneExportPath;
+#if DEBUG
 		this.LoadUniqueZonesFromDisk();
+#endif
 	}
 
 	public event EventHandler? Updated;
@@ -266,6 +268,7 @@ public sealed class ZoneKillTracker
 
 	private void TrackUniqueZone(string? zone)
 	{
+#if DEBUG
 		if(string.IsNullOrWhiteSpace(zone))
 		{
 			return;
@@ -283,6 +286,7 @@ public sealed class ZoneKillTracker
 		{
 			this.PersistUniqueZonesToDisk();
 		}
+#endif
 	}
 
 	private void LoadUniqueZonesFromDisk()
