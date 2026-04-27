@@ -1702,8 +1702,8 @@
       "zoneId": 175,
       "defaultRealm": null,
       "currentRealm": null,
-      "game": null,
-      "pixel": null
+      "game": { "x": 584056, "y": 627592 },
+      "pixel": { "x": 873, "y": 1300 }
     },
     {
       "keepId": null,

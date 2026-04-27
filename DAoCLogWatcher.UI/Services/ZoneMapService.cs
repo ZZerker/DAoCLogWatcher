@@ -30,9 +30,14 @@ public class ZoneMapService
 	private SKBitmap? legendBitmap; // used in commented-out legacy rendering block
 #pragma warning restore CS0169
 	private Dictionary<string, LocationEntry>? locationIndex;
+	private Dictionary<int, PixelBounds>? zonePixelIndex;
 	private SKBitmap? keepR1, keepR2, keepR3;
 	private SKBitmap? towerR1, towerR2, towerR3;
 	private SKBitmap? flameBitmap;
+	// [realm 1-3, size 1-3] — 1-based indexing, slot [0,*] and [*,0] unused
+	private readonly SKBitmap?[,] fightBitmaps = new SKBitmap?[4, 4];
+	private readonly SKBitmap?[,] groupBitmaps = new SKBitmap?[4, 4];
+	private List<(string Name, double Px, double Py, bool IsKeep)> burningKeeps = [];
 
 	public void InitializePlot(Plot plot, FrontierMapData map)
 	{
@@ -83,7 +88,7 @@ public class ZoneMapService
 		plot.Axes.SetLimits(-20, 1440, -1580, 20);
 	}
 
-	public void ApplyHeatmapOverlay(Plot plot, FrontierMapData map, IReadOnlyDictionary<string, int> zoneCounts, IReadOnlyDictionary<string, WarmapKeepState>? liveKeeps = null)
+	public void ApplyHeatmapOverlay(Plot plot, FrontierMapData map, IReadOnlyDictionary<string, int> zoneCounts, IReadOnlyDictionary<string, WarmapKeepState>? liveKeeps = null, IReadOnlyList<WarmapActivityEntry>? fights = null, IReadOnlyList<WarmapActivityEntry>? groups = null, bool showFights = true)
 	{
 		this.EnsureIconsLoaded();
 		plot.Clear();
@@ -242,6 +247,8 @@ public class ZoneMapService
 		}
 
 		// base keeps + name labels (on top of heatmap)
+		var newBurningKeeps = new List<(string Name, double Px, double Py, bool IsKeep)>();
+
 		foreach(var k in map.Keeps.Where(k => k.Pixel != null&&k.Type == "keep"))
 		{
 			WarmapKeepState? live = null;
@@ -249,6 +256,7 @@ public class ZoneMapService
 			var realm = live != null ? RealmFromInt(live.Realm) : k.DefaultRealm;
 			if(live?.InCombat == true)
 			{
+				newBurningKeeps.Add((k.Name, k.Pixel!.X, k.Pixel.Y, true));
 				this.DrawFlame(plot, k.Pixel!.X, -k.Pixel.Y, isKeep: true);
 			}
 
@@ -267,11 +275,14 @@ public class ZoneMapService
 			var realm = live != null ? RealmFromInt(live.Realm) : k.DefaultRealm;
 			if(live?.InCombat == true)
 			{
+				newBurningKeeps.Add((k.Name, k.Pixel!.X, k.Pixel.Y, false));
 				this.DrawFlame(plot, k.Pixel!.X, -k.Pixel.Y, isKeep: false);
 			}
 
 			this.DrawTowerIcon(plot, k.Pixel!.X, -k.Pixel.Y, realm);
 		}
+
+		this.burningKeeps = newBurningKeeps;
 
 		foreach(var k in map.Keeps.Where(k => k.Pixel != null&&k.Type == "dock"))
 		{
@@ -321,7 +332,100 @@ public class ZoneMapService
 			}
 		}
 
+		if(showFights)
+		{
+			var zoneIdx = this.GetOrBuildZoneIndex(map);
+			if(groups != null)
+			{
+				this.DrawActivityMarkers(plot, groups, isFight: false, zoneIdx);
+			}
+
+			if(fights != null)
+			{
+				this.DrawActivityMarkers(plot, fights, isFight: true, zoneIdx);
+			}
+		}
+
 		plot.Axes.SetLimits(-20, 1440, -1580, 20);
+	}
+
+	public (string Name, TimeSpan Duration)? GetBurnTooltip(double mapX, double mapY, IReadOnlyDictionary<string, DateTime> combatStarts)
+	{
+		(string Name, double Px, double Py, bool IsKeep)? best = null;
+		var bestDist = double.MaxValue;
+
+		foreach(var entry in this.burningKeeps)
+		{
+			var dx = mapX - entry.Px;
+			var dy = mapY - entry.Py;
+			var dist = Math.Sqrt(dx * dx + dy * dy);
+			var threshold = entry.IsKeep ? 20.0 : 12.0;
+			if(dist <= threshold && dist < bestDist)
+			{
+				best = entry;
+				bestDist = dist;
+			}
+		}
+
+		if(best == null)
+		{
+			return null;
+		}
+
+		var normalized = NormalizeName(best.Value.Name);
+		if(!combatStarts.TryGetValue(normalized, out var startTime))
+		{
+			return null;
+		}
+
+		return (best.Value.Name, DateTime.UtcNow - startTime);
+	}
+
+	private Dictionary<int, PixelBounds> GetOrBuildZoneIndex(FrontierMapData map)
+	{
+		if(this.zonePixelIndex != null)
+		{
+			return this.zonePixelIndex;
+		}
+
+		this.zonePixelIndex = map.Zones
+		                         .Where(z => z.PixelBounds != null)
+		                         .ToDictionary(z => z.ZoneId, z => z.PixelBounds!);
+		return this.zonePixelIndex;
+	}
+
+	private void DrawActivityMarkers(Plot plot, IReadOnlyList<WarmapActivityEntry> entries, bool isFight, Dictionary<int, PixelBounds> zoneIndex)
+	{
+		var bitmaps = isFight?this.fightBitmaps:this.groupBitmaps;
+		double[] halfSizes = [0.0, 7.0, 11.0, 15.0];
+
+		foreach(var entry in entries)
+		{
+			if(!zoneIndex.TryGetValue(entry.Zone, out var bounds))
+			{
+				continue;
+			}
+
+			var offsetX = ((entry.X << 13) + 4096) / 256.0;
+			var offsetY = ((entry.Y << 13) + 4096) / 256.0;
+			var px = bounds.X + offsetX;
+			var py = -(bounds.Y + offsetY);
+
+			var s = Math.Clamp(entry.Size, 1, 3);
+			var c = Math.Clamp(entry.Realm, 1, 3);
+			var bmp = bitmaps[c, s];
+			var half = halfSizes[s];
+
+			if(bmp != null)
+			{
+				plot.Add.ImageRect(new ScottPlot.Image(bmp), new CoordinateRect(px - half, px + half, py - half, py + half));
+			}
+			else
+			{
+				var m = plot.Add.Marker(px, py, MarkerShape.FilledCircle, (float)(half * 2));
+				m.Color = RealmColor(RealmFromInt(c)).WithAlpha(0.8);
+			}
+		}
 	}
 
 	private Dictionary<string, LocationEntry> GetOrBuildIndex(FrontierMapData map)
@@ -368,6 +472,15 @@ public class ZoneMapService
 		this.towerR2 = LoadBitmap("avares://DAoCLogWatcher.UI/Assets/map/tower_r2.png");
 		this.towerR3 = LoadBitmap("avares://DAoCLogWatcher.UI/Assets/map/tower_r3.png");
 		this.flameBitmap = LoadBitmap("avares://DAoCLogWatcher.UI/Assets/map/keep_f.png");
+
+		for(var realm = 1; realm <= 3; realm++)
+		{
+			for(var size = 1; size <= 3; size++)
+			{
+				this.fightBitmaps[realm, size] = LoadBitmap($"avares://DAoCLogWatcher.UI/Assets/map/fight_{realm}_{size}.png");
+				this.groupBitmaps[realm, size] = LoadBitmap($"avares://DAoCLogWatcher.UI/Assets/map/group_{realm}_{size}.png");
+			}
+		}
 	}
 
 	private static SKBitmap? LoadBitmap(string uri)

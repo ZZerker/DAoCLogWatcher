@@ -34,6 +34,9 @@ public sealed class RealmPointProcessor: IRealmPointProcessor
 
 	public IReadOnlyList<KillActivityPoint> KillActivityPoints => this.zoneKillTracker.KillActivityPoints;
 
+	public IReadOnlyList<KillActivityPoint> GetSessionActivityPoints(DateTime sessionStart, DateTime now) =>
+		this.zoneKillTracker.GetSessionActivityPoints(sessionStart, now);
+
 	public string? DetectedCharacterName { get; private set; }
 
 	public int Kills => this.killStatTracker.Kills;

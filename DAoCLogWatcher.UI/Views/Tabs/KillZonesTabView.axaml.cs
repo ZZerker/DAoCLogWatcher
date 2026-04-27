@@ -59,7 +59,7 @@ public partial class KillZonesTabView: UserControl
 			return;
 		}
 
-		this.UpdateGlobalActivityChart(this.vm.KillActivityPoints.Select(p => (p.Time, (double)p.KillCount)).ToList());
+		this.UpdateGlobalActivityChart(this.vm.GetSessionKillActivityPoints().Select(p => (p.Time, (double)p.KillCount)).ToList());
 	}
 
 	private void UpdateGlobalActivityChart(List<(DateTime Time, double KillCount)> dataPoints)
@@ -80,7 +80,11 @@ public partial class KillZonesTabView: UserControl
 				this.globalActivityScatter.MarkerSize = 6;
 				this.globalActivityScatter.MarkerShape = ScottPlot.MarkerShape.FilledCircle;
 
-				this.GlobalActivityChart.Plot.Axes.AutoScale();
+				var parseStart = this.vm?.Summary.SessionStartTime ?? dataPoints[0].Time;
+				var xMin = parseStart.ToOADate();
+				var xMax = DateTime.Now.ToOADate();
+				var yMax = values.Max() * 1.15;
+				this.GlobalActivityChart.Plot.Axes.SetLimits(xMin, xMax, 0, yMax);
 			}
 
 			(this.globalActivityHighlight, this.globalActivityTooltip) = ChartHelper.AddHoverOverlays(this.GlobalActivityChart, "#7CDAFF");

@@ -17,6 +17,10 @@
             </StackPanel>
             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10"
                         VerticalAlignment="Center">
+                <CheckBox x:Name="ShowFightsCheckBox" IsChecked="True"
+                          Content="Live Fights"
+                          Foreground="{DynamicResource AppTextSecondary}" FontSize="13"
+                          VerticalAlignment="Center" />
                 <TextBlock
                     Text="{Binding RecentZoneKillCount, StringFormat='Total: {0} kills'}"
                     Foreground="{DynamicResource AppTextSecondary}" FontSize="13"
@@ -33,10 +37,19 @@
                 </ComboBox>
             </StackPanel>
         </Grid>
-        <controls:AspectRatioPanel Grid.Row="1" Ratio="0.91667"
-                                   HorizontalAlignment="Center" VerticalAlignment="Center"
-                                   Margin="0,2,0,0">
-            <scott:AvaPlot x:Name="KillHeatmapPlot" />
-        </controls:AspectRatioPanel>
+        <Panel Grid.Row="1">
+            <controls:AspectRatioPanel Ratio="0.91667"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       Margin="0,2,0,0">
+                <scott:AvaPlot x:Name="KillHeatmapPlot" />
+            </controls:AspectRatioPanel>
+            <Canvas x:Name="TooltipCanvas" IsHitTestVisible="False">
+                <Border x:Name="BurnTooltip" IsVisible="False"
+                        Background="#CC1E1E1E" BorderBrush="#FF6600" BorderThickness="1"
+                        CornerRadius="3" Padding="7,4,7,5">
+                    <TextBlock x:Name="BurnTooltipText" Foreground="#FFFFFF" FontSize="12" />
+                </Border>
+            </Canvas>
+        </Panel>
     </Grid>
 </UserControl>

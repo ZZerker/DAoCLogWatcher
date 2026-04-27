@@ -229,6 +229,12 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 
 	public ObservableCollection<KillActivityPoint> KillActivityPoints { get; } = new();
 
+	public IReadOnlyList<KillActivityPoint> GetSessionKillActivityPoints()
+	{
+		var sessionStart = this.Summary.SessionStartTime ?? DateTime.Now;
+		return this.processor.GetSessionActivityPoints(sessionStart, DateTime.Now);
+	}
+
 	public event EventHandler? KillActivityUpdated;
 
 	[ObservableProperty] private bool showSendNotifications;
@@ -532,6 +538,7 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 			await this.watchSession.StopAndWaitAsync();
 		}
 
+		this.Summary.SessionStartTime = session.StartTime;
 		var endPos = session.EndTime.HasValue?session.EndFilePosition:-1;
 		var watcher = this.logWatcherFactory.Create(this.CurrentFilePath, session.FilePosition, false, endPosition: endPos);
 		await this.RunWatchLoop(watcher);

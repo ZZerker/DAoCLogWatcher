@@ -29,5 +29,7 @@ public interface IRealmPointProcessor
 
 	IReadOnlyList<KillActivityPoint> KillActivityPoints { get; }
 
+	IReadOnlyList<KillActivityPoint> GetSessionActivityPoints(DateTime sessionStart, DateTime now);
+
 	void Reset();
 }

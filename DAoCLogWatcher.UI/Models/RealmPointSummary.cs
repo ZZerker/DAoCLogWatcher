@@ -9,6 +9,8 @@ public partial class RealmPointSummary: ObservableObject
 
 	[ObservableProperty] private DateTime? firstEntryTime;
 
+	public DateTime? SessionStartTime { get; set; }
+
 	[ObservableProperty] private DateTime? lastEntryTime;
 
 	[ObservableProperty] private int playerKills;
@@ -73,13 +75,19 @@ public partial class RealmPointSummary: ObservableObject
 	{
 		get
 		{
-			if(!this.FirstEntryTime.HasValue||this.TotalRealmPoints == 0)
+			if(this.TotalRealmPoints == 0)
+			{
+				return 0;
+			}
+
+			var startTime = this.SessionStartTime ?? this.FirstEntryTime;
+			if(!startTime.HasValue)
 			{
 				return 0;
 			}
 
 			var endTime = this.IsLive?DateTime.Now:this.LastEntryTime ?? DateTime.Now;
-			var duration = endTime - this.FirstEntryTime.Value;
+			var duration = endTime - startTime.Value;
 
 			if(duration.TotalHours <= 0)
 			{
@@ -93,6 +101,7 @@ public partial class RealmPointSummary: ObservableObject
 	public void Reset()
 	{
 		this.IsLive = false;
+		this.SessionStartTime = null;
 		this.TotalRealmPoints = 0;
 		this.FirstEntryTime = null;
 		this.LastEntryTime = null;
@@ -115,8 +124,6 @@ public partial class RealmPointSummary: ObservableObject
 		this.TimedMissionsRP = 0;
 		this.MiscRP = 0;
 
-		// Percentage and TotalEntries changes are raised by the individual setters above via OnXChanged.
-		// RpsPerHour has no setter-driven notification, so it must be raised explicitly.
 		this.OnPropertyChanged(nameof(this.RpsPerHour));
 	}
 

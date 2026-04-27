@@ -266,13 +266,6 @@
                 </Grid>
                 <Grid ColumnDefinitions="*,Auto">
                     <StackPanel VerticalAlignment="Center" Spacing="2">
-                        <TextBlock Text="Kill Zones Tab" Foreground="{DynamicResource AppTextPrimary}" FontSize="12" />
-                    </StackPanel>
-                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding ZoneKillsTab.Value}"
-                                  OffContent="" OnContent="" VerticalAlignment="Center" />
-                </Grid>
-                <Grid ColumnDefinitions="*,Auto">
-                    <StackPanel VerticalAlignment="Center" Spacing="2">
                         <TextBlock Text="Heal Log Tab" Foreground="{DynamicResource AppTextPrimary}" FontSize="12" />
                     </StackPanel>
                     <ToggleSwitch Grid.Column="1" IsChecked="{Binding HealLogTab.Value}"
@@ -283,6 +276,13 @@
                         <TextBlock Text="Combat Log Tab" Foreground="{DynamicResource AppTextPrimary}" FontSize="12" />
                     </StackPanel>
                     <ToggleSwitch Grid.Column="1" IsChecked="{Binding CombatLogTab.Value}"
+                                  OffContent="" OnContent="" VerticalAlignment="Center" />
+                </Grid>
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel VerticalAlignment="Center" Spacing="2">
+                        <TextBlock Text="Kill Zones Tab" Foreground="{DynamicResource AppTextPrimary}" FontSize="12" />
+                    </StackPanel>
+                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding ZoneKillsTab.Value}"
                                   OffContent="" OnContent="" VerticalAlignment="Center" />
                 </Grid>
                 <Grid ColumnDefinitions="*,Auto">

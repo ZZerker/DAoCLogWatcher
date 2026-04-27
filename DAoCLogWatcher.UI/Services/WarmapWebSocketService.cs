@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
@@ -11,23 +12,32 @@ namespace DAoCLogWatcher.UI.Services;
 
 public sealed record WarmapKeepState(int Realm, bool InCombat);
 
+public sealed record WarmapActivityEntry(int Zone, int X, int Y, int Size, int Realm);
+
 public sealed class WarmapWebSocketService: IDisposable
 {
 	private const string WsUri = "wss://ws.eden-daoc.net:60005";
 	private static readonly TimeSpan PingInterval = TimeSpan.FromSeconds(30);
 	private static readonly TimeSpan PingIdleThreshold = TimeSpan.FromSeconds(25);
 	private static readonly TimeSpan ReconnectDelay = TimeSpan.FromSeconds(5);
+	private const long ActivityExpiryMs = 45 * 1000;
 
 	private readonly Dictionary<int, string> idToName = new();
 	private readonly Dictionary<string, WarmapKeepState> states = new();
+	private readonly Dictionary<string, DateTime> combatStartTimes = new();
+	private readonly Dictionary<string, (WarmapActivityEntry Entry, long LastMs)> fights = new();
+	private readonly Dictionary<string, (WarmapActivityEntry Entry, long LastMs)> groups = new();
 	private readonly Lock stateLock = new();
 	private CancellationTokenSource? cts;
+	private Timer? expiryTimer;
 
 	public event EventHandler? KeepsUpdated;
+	public event EventHandler? FightsUpdated;
 
 	public void Start()
 	{
 		this.cts = new CancellationTokenSource();
+		this.expiryTimer = new Timer(_ => this.ExpireStaleActivity(), null, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10));
 		_ = this.RunAsync(this.cts.Token);
 	}
 
@@ -36,6 +46,30 @@ public sealed class WarmapWebSocketService: IDisposable
 		lock(this.stateLock)
 		{
 			return new Dictionary<string, WarmapKeepState>(this.states);
+		}
+	}
+
+	public IReadOnlyList<WarmapActivityEntry> GetFightsSnapshot()
+	{
+		lock(this.stateLock)
+		{
+			return this.fights.Values.Select(v => v.Entry).ToList();
+		}
+	}
+
+	public IReadOnlyList<WarmapActivityEntry> GetGroupsSnapshot()
+	{
+		lock(this.stateLock)
+		{
+			return this.groups.Values.Select(v => v.Entry).ToList();
+		}
+	}
+
+	public IReadOnlyDictionary<string, DateTime> GetCombatStartSnapshot()
+	{
+		lock(this.stateLock)
+		{
+			return new Dictionary<string, DateTime>(this.combatStartTimes);
 		}
 	}
 
@@ -133,7 +167,6 @@ public sealed class WarmapWebSocketService: IDisposable
 		}
 		catch(JsonException)
 		{
-			// malformed message — ignore
 			return;
 		}
 
@@ -148,6 +181,10 @@ public sealed class WarmapWebSocketService: IDisposable
 			else if(root.TryGetProperty("keep", out var keepEl))
 			{
 				this.ProcessKeepUpdate(keepEl);
+			}
+			else if(root.TryGetProperty("warmap", out var warmapEl))
+			{
+				this.ProcessWarmapMessage(warmapEl);
 			}
 		}
 	}
@@ -175,6 +212,14 @@ public sealed class WarmapWebSocketService: IDisposable
 
 				this.idToName[id] = name;
 				this.states[name] = new WarmapKeepState(rlm, combat);
+				if(combat && !this.combatStartTimes.ContainsKey(name))
+				{
+					this.combatStartTimes[name] = DateTime.UtcNow;
+				}
+				else if(!combat)
+				{
+					this.combatStartTimes.Remove(name);
+				}
 			}
 		}
 
@@ -199,19 +244,133 @@ public sealed class WarmapWebSocketService: IDisposable
 			var rlm = keepEl.TryGetProperty("r", out var rEl)?rEl.GetInt32():existing.Realm;
 			var combat = keepEl.TryGetProperty("c", out var cEl)?cEl.GetInt32() != 0:existing.InCombat;
 			this.states[name] = new WarmapKeepState(rlm, combat);
+			if(combat && !existing.InCombat && !this.combatStartTimes.ContainsKey(name))
+			{
+				this.combatStartTimes[name] = DateTime.UtcNow;
+			}
+			else if(!combat)
+			{
+				this.combatStartTimes.Remove(name);
+			}
 		}
 
 		this.KeepsUpdated?.Invoke(this, EventArgs.Empty);
 	}
 
+	private void ProcessWarmapMessage(JsonElement warmapEl)
+	{
+		var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+		var changed = false;
+
+		lock(this.stateLock)
+		{
+			if(warmapEl.TryGetProperty("f", out var fightsEl))
+			{
+				foreach(var item in fightsEl.EnumerateArray())
+				{
+					if(!item.TryGetProperty("z", out var zEl)||!zEl.TryGetInt32(out var z))
+					{
+						continue;
+					}
+
+					if(!item.TryGetProperty("x", out var xEl)||!xEl.TryGetInt32(out var x))
+					{
+						continue;
+					}
+
+					if(!item.TryGetProperty("y", out var yEl)||!yEl.TryGetInt32(out var y))
+					{
+						continue;
+					}
+
+					var s = item.TryGetProperty("s", out var sEl)?sEl.GetInt32():1;
+					var c = item.TryGetProperty("c", out var cEl)?cEl.GetInt32():0;
+					var key = $"{z}_{x}_{y}";
+					this.fights[key] = (new WarmapActivityEntry(z, x, y, Math.Clamp(s, 1, 3), c), now);
+					changed = true;
+				}
+			}
+
+			if(warmapEl.TryGetProperty("g", out var groupsEl))
+			{
+				foreach(var item in groupsEl.EnumerateArray())
+				{
+					if(!item.TryGetProperty("z", out var zEl)||!zEl.TryGetInt32(out var z))
+					{
+						continue;
+					}
+
+					if(!item.TryGetProperty("x", out var xEl)||!xEl.TryGetInt32(out var x))
+					{
+						continue;
+					}
+
+					if(!item.TryGetProperty("y", out var yEl)||!yEl.TryGetInt32(out var y))
+					{
+						continue;
+					}
+
+					var s = item.TryGetProperty("s", out var sEl)?sEl.GetInt32():1;
+					if(s == 0)
+					{
+						s = 1;
+					}
+
+					var c = item.TryGetProperty("c", out var cEl)?cEl.GetInt32():0;
+					var key = $"{z}_{x}_{y}";
+					this.groups[key] = (new WarmapActivityEntry(z, x, y, Math.Clamp(s, 1, 3), c), now);
+					changed = true;
+				}
+			}
+		}
+
+		if(changed)
+		{
+			this.FightsUpdated?.Invoke(this, EventArgs.Empty);
+		}
+	}
+
+	private void ExpireStaleActivity()
+	{
+		var cutoff = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - ActivityExpiryMs;
+		var changed = false;
+
+		lock(this.stateLock)
+		{
+			foreach(var key in this.fights.Keys.ToList())
+			{
+				if(this.fights[key].LastMs < cutoff)
+				{
+					this.fights.Remove(key);
+					changed = true;
+				}
+			}
+
+			foreach(var key in this.groups.Keys.ToList())
+			{
+				if(this.groups[key].LastMs < cutoff)
+				{
+					this.groups.Remove(key);
+					changed = true;
+				}
+			}
+		}
+
+		if(changed)
+		{
+			this.FightsUpdated?.Invoke(this, EventArgs.Empty);
+		}
+	}
+
 	private static string Normalize(string s)
 	{
-		return s.Replace('\u2019', '\'').Replace('\u2018', '\'').Trim();
+		return s.Replace('’', '\'').Replace('‘', '\'').Trim();
 	}
 
 	public void Dispose()
 	{
 		this.cts?.Cancel();
 		this.cts?.Dispose();
+		this.expiryTimer?.Dispose();
 	}
 }

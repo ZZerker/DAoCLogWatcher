@@ -23,6 +23,7 @@ public sealed class ZoneKillTracker
 	private readonly LinkedList<ZoneKillEntry> recentKills = new();
 	private readonly Dictionary<string, int> currentCounts = new(StringComparer.OrdinalIgnoreCase);
 	private readonly List<KillActivityPoint> activityPoints = new();
+	private readonly List<DateTime> allKillTimes = new();
 	private readonly HashSet<string> uniqueZones = new(StringComparer.OrdinalIgnoreCase);
 	private readonly string zoneExportPath;
 	private readonly object uniqueZonesLock = new();
@@ -51,6 +52,7 @@ public sealed class ZoneKillTracker
 	public void Track(KillEvent killEvent, DateTime? sessionStartTime)
 	{
 		var killDateTime = ResolveKillDateTime(killEvent.Timestamp, sessionStartTime);
+		this.allKillTimes.Add(killDateTime);
 		this.recentKills.AddLast(new ZoneKillEntry(killDateTime, killEvent.Zone));
 		this.TrackUniqueZone(killEvent.Zone);
 		this.ExpireTooOld(killDateTime);
@@ -104,7 +106,57 @@ public sealed class ZoneKillTracker
 		this.recentKills.Clear();
 		this.currentCounts.Clear();
 		this.activityPoints.Clear();
+		this.allKillTimes.Clear();
 		this.Updated?.Invoke(this, EventArgs.Empty);
+	}
+
+	public IReadOnlyList<KillActivityPoint> GetSessionActivityPoints(DateTime sessionStart, DateTime now)
+	{
+		if(this.allKillTimes.Count == 0)
+		{
+			return Array.Empty<KillActivityPoint>();
+		}
+
+		var lastKill = this.allKillTimes[^1];
+		var end = lastKill < now ? lastKill : now;
+		if(sessionStart > end)
+		{
+			sessionStart = this.allKillTimes[0];
+		}
+
+		var duration = end - sessionStart;
+		if(duration <= TimeSpan.Zero)
+		{
+			return Array.Empty<KillActivityPoint>();
+		}
+
+		var bucketMinutes = Math.Max(1.0, duration.TotalMinutes / 40.0);
+		var bucketCount = (int)Math.Ceiling(duration.TotalMinutes / bucketMinutes);
+		var bucketDuration = TimeSpan.FromMinutes(bucketMinutes);
+		var counts = new int[bucketCount];
+
+		foreach(var t in this.allKillTimes)
+		{
+			if(t < sessionStart || t > end)
+			{
+				continue;
+			}
+
+			var index = Math.Clamp((int)Math.Floor((t - sessionStart).Ticks / (double)bucketDuration.Ticks), 0, bucketCount - 1);
+			counts[index]++;
+		}
+
+		var result = new List<KillActivityPoint>(bucketCount);
+		for(var i = 0; i < bucketCount; i++)
+		{
+			result.Add(new KillActivityPoint
+			           {
+					           Time = sessionStart + TimeSpan.FromTicks((long)(bucketDuration.Ticks * i + bucketDuration.Ticks * 0.5)),
+					           KillCount = counts[i]
+			           });
+		}
+
+		return result;
 	}
 
 	private void UpdateCounts(DateTime now)

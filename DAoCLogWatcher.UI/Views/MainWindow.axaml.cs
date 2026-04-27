@@ -7,7 +7,6 @@ using Avalonia.Animation;
 using Avalonia.Animation.Easings;
 using Avalonia.Controls;
 using Avalonia.Styling;
-using Avalonia.Threading;
 using DAoCLogWatcher.UI.Services;
 
 namespace DAoCLogWatcher.UI.Views;
