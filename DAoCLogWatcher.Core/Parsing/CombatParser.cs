@@ -327,10 +327,11 @@ public sealed partial class CombatParser
 			return false;
 		}
 
-		var spellName = this.ResolveSpellName(ts);
+		var spellName = this.ResolveSpellName(ts, out var isConfirmedFallback);
 		var isWeaponAttack = spellName == null;
 		var styleName = isWeaponAttack?this.ResolveStyleName(ts):null;
-		pending = new PendingDamage(ts, match.Groups["target"].Value, int.Parse(match.Groups["dmg"].Value, CultureInfo.InvariantCulture), ParseAbsorbed(match), true, spellName, isWeaponAttack, styleName);
+		var isDotTick = isConfirmedFallback&&!isWeaponAttack;
+		pending = new PendingDamage(ts, match.Groups["target"].Value, int.Parse(match.Groups["dmg"].Value, CultureInfo.InvariantCulture), ParseAbsorbed(match), true, spellName, isWeaponAttack, styleName, isDotTick);
 		return true;
 	}
 
@@ -343,7 +344,7 @@ public sealed partial class CombatParser
 			return false;
 		}
 
-		pending = new PendingDamage(ts, match.Groups["target"].Value, int.Parse(match.Groups["dmg"].Value, CultureInfo.InvariantCulture), ParseAbsorbed(match), true, match.Groups["spell"].Value, false);
+		pending = new PendingDamage(ts, match.Groups["target"].Value, int.Parse(match.Groups["dmg"].Value, CultureInfo.InvariantCulture), ParseAbsorbed(match), true, match.Groups["spell"].Value, false, IsDotTick: true);
 		return true;
 	}
 
@@ -453,8 +454,10 @@ public sealed partial class CombatParser
 	///    Covers DoT/rain ticks that arrive long after the cast.
 	///    Buff casts never get confirmed (no hit within window), so they don't pollute.
 	/// </summary>
-	private string? ResolveSpellName(TimeOnly hitTimestamp)
+	private string? ResolveSpellName(TimeOnly hitTimestamp, out bool isConfirmedFallback)
 	{
+		isConfirmedFallback = false;
+
 		// Bow shots have priority — check before spell cast (pet summons etc. cast between fire and hit must not win)
 		if(this.pendingBowShotName != null)
 		{
@@ -476,6 +479,7 @@ public sealed partial class CombatParser
 			}
 		}
 
+		isConfirmedFallback = this.confirmedDamageSpellName != null;
 		return this.confirmedDamageSpellName;
 	}
 
@@ -638,7 +642,7 @@ public sealed partial class CombatParser
 	[GeneratedRegex(@"^\[\d{2}:\d{2}:\d{2}\] You fail to execute your .+? perfectly!", RegexOptions.Compiled|RegexOptions.CultureInvariant)]
 	private static partial Regex StyleFailedRegex();
 
-	private readonly record struct PendingDamage(TimeOnly Timestamp, string Opponent, int BaseDamage, int Absorbed, bool IsDealt, string? SpellName, bool IsWeaponAttack, string? StyleName = null)
+	private readonly record struct PendingDamage(TimeOnly Timestamp, string Opponent, int BaseDamage, int Absorbed, bool IsDealt, string? SpellName, bool IsWeaponAttack, string? StyleName = null, bool IsDotTick = false)
 	{
 		public DamageEvent ToDamageEvent(int critDamage)
 		{
@@ -652,7 +656,8 @@ public sealed partial class CombatParser
 					       CritDamage = critDamage,
 					       SpellName = SpellName,
 					       IsWeaponAttack = IsWeaponAttack,
-					       StyleName = StyleName
+					       StyleName = StyleName,
+					       IsDotTick = IsDotTick
 			       };
 		}
 	}

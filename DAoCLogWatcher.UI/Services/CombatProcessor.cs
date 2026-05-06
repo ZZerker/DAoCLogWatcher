@@ -18,8 +18,11 @@ public sealed class CombatProcessor(CombatSummary summary): ICombatProcessor
 	private TimeOnly multiHitWindowStart;
 	private TimeOnly multiHitWindowLastHit;
 	private readonly HashSet<string> multiHitTargets = new();
-
 	private int multiHitTotalDamage;
+
+	private string? dotStackSpell;
+	private TimeOnly dotStackWindowLastTick;
+	private readonly Dictionary<string, CombatLogEntry> dotStackEntries = new();
 
 	// Sliding window: closes when no new hit of the same spell arrives within 4 seconds
 	// of the previous hit. Using the last hit (not the window start) avoids premature
@@ -28,27 +31,36 @@ public sealed class CombatProcessor(CombatSummary summary): ICombatProcessor
 	// same cast, producing timestamps 1–2s apart in reverse order).
 	private const double MULTI_HIT_WINDOW_SECONDS = 4.0;
 	private const int MULTI_HIT_THRESHOLD = 5;
+	private const double DOT_STACK_WINDOW_SECONDS = 15.0;
 
 	public void Process(LogLine logLine)
 	{
-		// Flush the AoE window if enough time has passed since the last hit — ensures
-		// multi-hit fires even when only heals or incoming hits arrive after the AoE,
-		// without any subsequent outgoing spell damage to trigger TrackMultiHit.
-		if(this.multiHitSpell != null)
+		// Flush time-based windows (AoE multi-hit and DoT stacks) when a new timestamped
+		// event arrives far enough after the last window hit.
+		var currentTs = logLine switch
 		{
-			var currentTs = logLine switch
-			{
-					DamageLogLine d => (TimeOnly?)d.Event.Timestamp,
-					HealLogLine h => h.Event.Timestamp,
-					MissLogLine m => m.Event.Timestamp,
-					_ => null
-			};
-			if(currentTs.HasValue)
+				DamageLogLine d => (TimeOnly?)d.Event.Timestamp,
+				HealLogLine h => h.Event.Timestamp,
+				MissLogLine m => m.Event.Timestamp,
+				_ => null
+		};
+		if(currentTs.HasValue)
+		{
+			if(this.multiHitSpell != null)
 			{
 				var diffSec = TimeHelper.ShortestArcSeconds(currentTs.Value, this.multiHitWindowLastHit);
 				if(diffSec >= MULTI_HIT_WINDOW_SECONDS)
 				{
 					this.FinalizeHitWindow();
+				}
+			}
+
+			if(this.dotStackSpell != null)
+			{
+				var diffSec = TimeHelper.ShortestArcSeconds(currentTs.Value, this.dotStackWindowLastTick);
+				if(diffSec >= DOT_STACK_WINDOW_SECONDS)
+				{
+					this.CloseDotStack();
 				}
 			}
 		}
@@ -75,6 +87,9 @@ public sealed class CombatProcessor(CombatSummary summary): ICombatProcessor
 		this.multiHitWindowLastHit = default;
 		this.multiHitTargets.Clear();
 		this.multiHitTotalDamage = 0;
+		this.dotStackSpell = null;
+		this.dotStackWindowLastTick = default;
+		this.dotStackEntries.Clear();
 	}
 
 	private void ProcessDamage(DamageEvent damage)
@@ -114,23 +129,31 @@ public sealed class CombatProcessor(CombatSummary summary): ICombatProcessor
 		// entry appears immediately after the last AoE hit rather than after this one.
 		// Weapon attacks carry the weapon name as SpellName but are single-target by nature;
 		// including them would interrupt or pollute spell AoE windows mid-sequence.
-		if(damage.IsDealt&&damage.SpellName != null&&!damage.IsWeaponAttack)
+		if(damage.IsDealt&&damage.SpellName != null&&!damage.IsWeaponAttack&&!damage.IsDotTick)
 		{
 			this.TrackMultiHit(damage);
 		}
 
-		this.DamageLogged?.Invoke(this,
-		                          new CombatLogEntry
-		                          {
-				                          Timestamp = damage.Timestamp.ToString("HH:mm:ss"),
-				                          Opponent = damage.Opponent,
-				                          TotalDamage = damage.TotalDamage,
-				                          IsDealt = damage.IsDealt,
-				                          IsCrit = damage.CritDamage > 0,
-				                          SpellName = damage.SpellName,
-				                          StyleName = damage.StyleName,
-				                          IsWeaponAttack = damage.IsWeaponAttack
-		                          });
+		if(damage.IsDotTick&&damage.IsDealt)
+		{
+			this.TrackDotStack(damage);
+		}
+		else
+		{
+			this.DamageLogged?.Invoke(this,
+			                          new CombatLogEntry
+			                          {
+					                          Timestamp = damage.Timestamp.ToString("HH:mm:ss"),
+					                          Opponent = damage.Opponent,
+					                          TotalDamage = damage.TotalDamage,
+					                          IsDealt = damage.IsDealt,
+					                          IsCrit = damage.CritDamage > 0,
+					                          SpellName = damage.SpellName,
+					                          StyleName = damage.StyleName,
+					                          IsWeaponAttack = damage.IsWeaponAttack,
+					                          IsDotTick = damage.IsDotTick
+			                          });
+		}
 	}
 
 	private void ProcessHeal(HealEvent heal)
@@ -202,6 +225,57 @@ public sealed class CombatProcessor(CombatSummary summary): ICombatProcessor
 		this.multiHitSpell = null;
 		this.multiHitTargets.Clear();
 		this.multiHitTotalDamage = 0;
+	}
+
+	private void TrackDotStack(DamageEvent damage)
+	{
+		var spell = damage.SpellName!;
+		var target = damage.Opponent;
+
+		if(this.dotStackSpell != null&&this.dotStackSpell != spell)
+		{
+			this.CloseDotStack();
+		}
+
+		if(this.dotStackSpell == null)
+		{
+			this.dotStackSpell = spell;
+		}
+
+		if(!this.dotStackEntries.TryGetValue(target, out var entry))
+		{
+			entry = new CombatLogEntry
+			{
+				Timestamp = damage.Timestamp.ToString("HH:mm:ss"),
+				Opponent = target,
+				TotalDamage = damage.TotalDamage,
+				IsDealt = true,
+				IsCrit = damage.CritDamage > 0,
+				SpellName = spell,
+				IsWeaponAttack = false,
+				IsDotTick = true,
+				HitCount = 1
+			};
+			this.dotStackEntries[target] = entry;
+			this.DamageLogged?.Invoke(this, entry);
+		}
+		else
+		{
+			entry.TotalDamage += damage.TotalDamage;
+			entry.HitCount++;
+			if(damage.CritDamage > 0)
+			{
+				entry.IsCrit = true;
+			}
+		}
+
+		this.dotStackWindowLastTick = damage.Timestamp;
+	}
+
+	private void CloseDotStack()
+	{
+		this.dotStackSpell = null;
+		this.dotStackEntries.Clear();
 	}
 
 	private void ProcessMiss(MissEvent miss)

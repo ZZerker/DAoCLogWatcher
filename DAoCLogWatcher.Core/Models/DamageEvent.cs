@@ -27,5 +27,8 @@ public sealed record DamageEvent
 	/// <summary>True when the hit came from a weapon swing ("You attack X with your Y and hit"); false for spells/generic.</summary>
 	public bool IsWeaponAttack { get; init; }
 
+	/// <summary>True when the hit was parsed from a "Your X hits Y" DoT/rain tick line rather than attributed via spell context.</summary>
+	public bool IsDotTick { get; init; }
+
 	public int TotalDamage => this.BaseDamage + this.CritDamage;
 }

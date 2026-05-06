@@ -10,8 +10,6 @@ namespace DAoCLogWatcher.UI.Services;
 /// </summary>
 internal sealed class KillStatTracker
 {
-	private const int KILL_BUFFER_MAX_SIZE = 500;
-
 	private readonly List<KillEvent> killEventBuffer = new();
 
 	public int Kills { get; private set; }
@@ -26,10 +24,6 @@ internal sealed class KillStatTracker
 	public void OnKillEvent(KillEvent ev, string? characterName, ref bool killStatsChanged)
 	{
 		this.killEventBuffer.Add(ev);
-		if(this.killEventBuffer.Count > KILL_BUFFER_MAX_SIZE)
-		{
-			this.killEventBuffer.RemoveAt(0);
-		}
 
 		if(characterName == null)
 		{
