@@ -48,10 +48,13 @@
                                                FontSize="13"
                                                Margin="0,0,20,0"
                                                MinWidth="80" />
-                                    <Grid Grid.Column="1" MinWidth="55" Margin="0,0,20,0">
+                                    <Grid Grid.Column="1" MinWidth="75" Margin="0,0,20,0">
                                         <TextBlock Text="AoE" FontSize="13" FontWeight="Bold"
                                                    IsVisible="{Binding IsMultiHit}"
                                                    Foreground="#FFCC44FF" />
+                                        <TextBlock Text="{Binding DotLabel}" FontSize="13" FontWeight="Bold"
+                                                   IsVisible="{Binding IsDotTick}"
+                                                   Foreground="#FFFF9933" />
                                         <TextBlock Text="Dealt" FontSize="13" FontWeight="Bold"
                                                    IsVisible="{Binding ShowDealtLabel}"
                                                    Foreground="#FF00D968" />

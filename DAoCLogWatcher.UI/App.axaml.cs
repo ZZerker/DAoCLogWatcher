@@ -34,6 +34,7 @@ public partial class App: Application
 			services.AddSingleton<ISettingsService, SettingsService>();
 			services.AddSingleton(sp => sp.GetRequiredService<ISettingsService>().Load());
 			services.AddSingleton<ILogWatcherFactory, LogWatcherFactory>();
+			services.AddSingleton(_ => SpellRegistry.LoadFromEmbedded());
 			services.AddSingleton<RealmPointSummary>();
 			services.AddSingleton<RpsChartData>();
 			services.AddSingleton<CombatSummary>();

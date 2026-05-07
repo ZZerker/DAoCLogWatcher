@@ -18,6 +18,8 @@ public partial class CombatLogEntry: ObservableObject
 
 	public bool IsDotTick { get; init; }
 
+	public bool IsAoe { get; init; }
+
 	public bool IsMultiHit { get; init; }
 
 	/// <summary>Number of targets hit for AoE; number of ticks for DoT stacks; 0 for individual hits.</summary>
@@ -31,7 +33,7 @@ public partial class CombatLogEntry: ObservableObject
 
 	public string Source => this.IsWeaponAttack?this.StyleName ?? "Melee":this.SpellName ?? "Other";
 
-	public string DotLabel => this.HitCount > 1?$"DoT ×{this.HitCount}":"DoT";
+	public string DotLabel => (this.IsAoe ? "AoE DoT" : "DoT") + (this.HitCount > 1 ? $" ×{this.HitCount}" : "");
 
 	/// <summary>True for regular (non-AoE, non-DoT) dealt hits — used to show "Dealt" label without overlap.</summary>
 	public bool ShowDealtLabel => this.IsDealt&&!this.IsMultiHit&&!this.IsDotTick;

@@ -6,8 +6,9 @@ using DAoCLogWatcher.UI.Models;
 
 namespace DAoCLogWatcher.UI.Services;
 
-public sealed class CombatProcessor(CombatSummary summary): ICombatProcessor
+public sealed class CombatProcessor(CombatSummary summary, SpellRegistry? dotRegistry = null): ICombatProcessor
 {
+	private readonly SpellRegistry registry = dotRegistry ?? SpellRegistry.Empty;
 	public event EventHandler<CombatLogEntry>? DamageLogged;
 
 	public event EventHandler<HealLogEntry>? HealLogged;
@@ -15,12 +16,14 @@ public sealed class CombatProcessor(CombatSummary summary): ICombatProcessor
 	public event EventHandler<CombatLogEntry>? MultiHitDetected;
 
 	private string? multiHitSpell;
+	private bool multiHitIsKnownAoeNuke;
 	private TimeOnly multiHitWindowStart;
 	private TimeOnly multiHitWindowLastHit;
 	private readonly HashSet<string> multiHitTargets = new();
 	private int multiHitTotalDamage;
 
 	private string? dotStackSpell;
+	private double dotStackWindowSeconds;
 	private TimeOnly dotStackWindowLastTick;
 	private readonly Dictionary<string, CombatLogEntry> dotStackEntries = new();
 
@@ -31,7 +34,8 @@ public sealed class CombatProcessor(CombatSummary summary): ICombatProcessor
 	// same cast, producing timestamps 1–2s apart in reverse order).
 	private const double MULTI_HIT_WINDOW_SECONDS = 4.0;
 	private const int MULTI_HIT_THRESHOLD = 5;
-	private const double DOT_STACK_WINDOW_SECONDS = 15.0;
+	private const double DOT_STACK_FALLBACK_SECONDS = 15.0;
+	private const double DOT_STACK_SLACK_SECONDS = 1.0;
 
 	public void Process(LogLine logLine)
 	{
@@ -58,7 +62,7 @@ public sealed class CombatProcessor(CombatSummary summary): ICombatProcessor
 			if(this.dotStackSpell != null)
 			{
 				var diffSec = TimeHelper.ShortestArcSeconds(currentTs.Value, this.dotStackWindowLastTick);
-				if(diffSec >= DOT_STACK_WINDOW_SECONDS)
+				if(diffSec >= this.dotStackWindowSeconds)
 				{
 					this.CloseDotStack();
 				}
@@ -83,11 +87,13 @@ public sealed class CombatProcessor(CombatSummary summary): ICombatProcessor
 	{
 		summary.Reset();
 		this.multiHitSpell = null;
+		this.multiHitIsKnownAoeNuke = false;
 		this.multiHitWindowStart = default;
 		this.multiHitWindowLastHit = default;
 		this.multiHitTargets.Clear();
 		this.multiHitTotalDamage = 0;
 		this.dotStackSpell = null;
+		this.dotStackWindowSeconds = 0;
 		this.dotStackWindowLastTick = default;
 		this.dotStackEntries.Clear();
 	}
@@ -195,6 +201,7 @@ public sealed class CombatProcessor(CombatSummary summary): ICombatProcessor
 		if(this.multiHitSpell == null)
 		{
 			this.multiHitSpell = spell;
+			this.multiHitIsKnownAoeNuke = this.registry.IsKnownAoeNuke(spell);
 			this.multiHitWindowStart = damage.Timestamp;
 		}
 
@@ -205,7 +212,8 @@ public sealed class CombatProcessor(CombatSummary summary): ICombatProcessor
 
 	private void FinalizeHitWindow()
 	{
-		if(this.multiHitTargets.Count >= MULTI_HIT_THRESHOLD&&this.multiHitSpell != null)
+		var threshold = this.multiHitIsKnownAoeNuke ? 2 : MULTI_HIT_THRESHOLD;
+		if(this.multiHitTargets.Count >= threshold)
 		{
 			this.MultiHitDetected?.Invoke(this,
 			                              new CombatLogEntry
@@ -240,10 +248,12 @@ public sealed class CombatProcessor(CombatSummary summary): ICombatProcessor
 		if(this.dotStackSpell == null)
 		{
 			this.dotStackSpell = spell;
+			this.dotStackWindowSeconds = this.DotWindowFor(spell);
 		}
 
 		if(!this.dotStackEntries.TryGetValue(target, out var entry))
 		{
+			var isAoe = this.registry.TryGet(spell, out var info) && info.IsAoe;
 			entry = new CombatLogEntry
 			{
 				Timestamp = damage.Timestamp.ToString("HH:mm:ss"),
@@ -254,6 +264,7 @@ public sealed class CombatProcessor(CombatSummary summary): ICombatProcessor
 				SpellName = spell,
 				IsWeaponAttack = false,
 				IsDotTick = true,
+				IsAoe = isAoe,
 				HitCount = 1
 			};
 			this.dotStackEntries[target] = entry;
@@ -276,6 +287,17 @@ public sealed class CombatProcessor(CombatSummary summary): ICombatProcessor
 	{
 		this.dotStackSpell = null;
 		this.dotStackEntries.Clear();
+	}
+
+	private double DotWindowFor(string spell)
+	{
+		if(!this.registry.TryGet(spell, out var info) || info.DurationSeconds <= 0)
+		{
+			return DOT_STACK_FALLBACK_SECONDS;
+		}
+
+		var tick = info.FrequencySeconds > 0 ? info.FrequencySeconds : 2;
+		return info.DurationSeconds + tick + DOT_STACK_SLACK_SECONDS;
 	}
 
 	private void ProcessMiss(MissEvent miss)
