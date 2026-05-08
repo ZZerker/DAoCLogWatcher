@@ -82,7 +82,7 @@ public partial class KillZonesTabView: UserControl
 
 				var parseStart = this.vm?.Summary.SessionStartTime ?? dataPoints[0].Time;
 				var xMin = parseStart.ToOADate();
-				var xMax = DateTime.Now.ToOADate();
+				var xMax = dataPoints[^1].Time.ToOADate();
 				var yMax = values.Max() * 1.15;
 				this.GlobalActivityChart.Plot.Axes.SetLimits(xMin, xMax, 0, yMax);
 			}
