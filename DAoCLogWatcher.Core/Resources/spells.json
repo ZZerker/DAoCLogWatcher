@@ -1,1 +1,2361 @@
-[{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Abrasive Force","frequencySeconds":2},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Annihilate Evil","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Banish Evil","frequencySeconds":0},{"isAoeNuke":false,"durationSeconds":20,"isAoe":true,"name":"Billowing Death","frequencySeconds":-1},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Blast of Sand","frequencySeconds":0},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Blight","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":10,"isAoe":false,"name":"Bones to Ash","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Bones to Blood","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":10,"isAoe":false,"name":"Bones to Dirt","frequencySeconds":-1},{"isAoeNuke":false,"durationSeconds":10,"isAoe":false,"name":"Bones to Dust","frequencySeconds":-1},{"isAoeNuke":false,"durationSeconds":10,"isAoe":false,"name":"Bones to Grit","frequencySeconds":-1},{"isAoeNuke":false,"durationSeconds":10,"isAoe":false,"name":"Bones to Powder","frequencySeconds":-1},{"isAoeNuke":false,"durationSeconds":10,"isAoe":false,"name":"Bones to Silt","frequencySeconds":-1},{"isAoeNuke":false,"durationSeconds":12,"isAoe":true,"name":"Bore Spirit","frequencySeconds":2},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Brawler\u0027s Affliction","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Brawler\u0027s Bruise","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Brawler\u0027s Contamination","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Brawler\u0027s Destruction","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Brawler\u0027s Devastation","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Brawler\u0027s Infliction","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Brawler\u0027s Laceration","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Brawler\u0027s Mutilation","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Brawler\u0027s Outrage","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Burst of Steam","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Burst of Steam  (Minor)","frequencySeconds":0},{"isAoeNuke":false,"durationSeconds":18,"isAoe":false,"name":"Bursting Embers","frequencySeconds":2},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Cacophonous Burst","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Call Mjollnir","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Cataclysm of Illusion","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Channeled Anger","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Channeled Frenzy","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Channeled Fury","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Channeled Hatred","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Channeled Wrath","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Clamorous Concussion","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Clangorous Burst","frequencySeconds":0},{"isAoeNuke":false,"durationSeconds":12,"isAoe":true,"name":"Cloud of Decay","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":true,"name":"Cloud of Decomposition","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":true,"name":"Cloud of Dessication","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":true,"name":"Cloud of Deterioration","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":true,"name":"Cloud of Rot","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Clouded Agony","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Clouded Destruction","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Clouded Distress","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Clouded Pain","frequencySeconds":2},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Command Mjollnir","frequencySeconds":0},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Complete Mind Annihilation","frequencySeconds":2},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Concussive Blast","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Concussive Blast (Minor)","frequencySeconds":0},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Contamination","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":10,"isAoe":false,"name":"Corrosive Cloud","frequencySeconds":-1},{"isAoeNuke":false,"durationSeconds":10,"isAoe":false,"name":"Corrosive Fog","frequencySeconds":-1},{"isAoeNuke":false,"durationSeconds":10,"isAoe":false,"name":"Corrosive Smoke","frequencySeconds":-1},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Corruption","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Crushing Force","frequencySeconds":2},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Deafening Cascade","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Deafening Explosion","frequencySeconds":0},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Decrepify","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Defedation","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Degeneration","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Delaceration","frequencySeconds":2},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Deluge of Illusion","frequencySeconds":0},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Deterioration","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Devolution","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Dilapidation","frequencySeconds":2},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Disenchanting Burst","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Disenchanting Emanation","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Disenchanting Emission","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Disenchanting Eruption","frequencySeconds":0},{"isAoeNuke":false,"durationSeconds":10,"isAoe":false,"name":"Disintegrating Cloud","frequencySeconds":-1},{"isAoeNuke":false,"durationSeconds":10,"isAoe":false,"name":"Disintegrating Fog","frequencySeconds":-1},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Disintegrating Force","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":10,"isAoe":false,"name":"Disintegrating Smoke","frequencySeconds":-1},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Dispel Evil","frequencySeconds":0},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Disperse Bones","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Disperse Skeleton","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":10,"isAoe":false,"name":"Dissolving Cloud","frequencySeconds":-1},{"isAoeNuke":false,"durationSeconds":10,"isAoe":false,"name":"Dissolving Fog","frequencySeconds":-1},{"isAoeNuke":false,"durationSeconds":10,"isAoe":false,"name":"Dissolving Mist","frequencySeconds":-1},{"isAoeNuke":false,"durationSeconds":10,"isAoe":false,"name":"Dissolving Smoke","frequencySeconds":-1},{"isAoeNuke":false,"durationSeconds":12,"isAoe":true,"name":"Drill Spirit","frequencySeconds":2},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Drive Evil","frequencySeconds":0},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Dry Rot","frequencySeconds":2},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Ear-splitting Cascade","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Earth Eddies","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Earth Ripple","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Earth Splash","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Earth Wave","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Ebullient Blast","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Ebullient Blast (Minor)","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Explosive Blast","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Explosive Blast (Minor)","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Explosive Burst","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Explosive Burst (Minor)","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Explosive Orb","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Explosive Orb (Major)","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Explosive Orb (Minor)","frequencySeconds":0},{"isAoeNuke":false,"durationSeconds":18,"isAoe":false,"name":"Flaming Embers","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":18,"isAoe":false,"name":"Flickering Embers","frequencySeconds":2},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Flood of Illusion","frequencySeconds":0},{"isAoeNuke":false,"durationSeconds":20,"isAoe":true,"name":"Flowing Death","frequencySeconds":-1},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Flux of Illusion","frequencySeconds":0},{"isAoeNuke":false,"durationSeconds":12,"isAoe":true,"name":"Fog of Delirium","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":10,"isAoe":true,"name":"Freezing Clench","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":10,"isAoe":true,"name":"Freezing Grasp","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":10,"isAoe":true,"name":"Freezing Hold","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":10,"isAoe":true,"name":"Freezing Howl","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":10,"isAoe":true,"name":"Freezing Terror","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Fungal  Degeneration","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Fungal Blight","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Fungal Decay","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Fungal Decrepitude","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Fungal Deterioration","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Fungal Devolution","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Fungal Dilapidation","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Fungal Disintegration","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Fungal Dispersion","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Fungal Erosion","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Fungal Solvent","frequencySeconds":2},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Greater Gust of Sand","frequencySeconds":0},{"isAoeNuke":false,"durationSeconds":20,"isAoe":false,"name":"Greater Lethal Poison","frequencySeconds":4},{"isAoeNuke":false,"durationSeconds":20,"isAoe":false,"name":"Greater Lethal Venom","frequencySeconds":4},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Greater Mind Dissolution","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Greater Mind Melt","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Greater Molten Blanket","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Greater Molten Wrap","frequencySeconds":2},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Greater Sand Flurry","frequencySeconds":0},{"isAoeNuke":false,"durationSeconds":12,"isAoe":true,"name":"Greater Sheet of Lava","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":true,"name":"Greater Sheet of Magma","frequencySeconds":2},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Greater Thunder Bellow","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Greater Thunder Howl","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Greater Thunder Roar","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Greater Thunder Shout","frequencySeconds":0},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Grinding Force","frequencySeconds":2},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Gust of Sand","frequencySeconds":0},{"isAoeNuke":false,"durationSeconds":12,"isAoe":true,"name":"Hallucinatory Winds","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":18,"isAoe":false,"name":"Heated Embers","frequencySeconds":2},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Heavenly Blast","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Heavenly Bolt","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Heavenly Detonation","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Heavenly Force","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Heavenly Strike","frequencySeconds":0},{"isAoeNuke":false,"durationSeconds":20,"isAoe":true,"name":"Heightening Death","frequencySeconds":-1},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Humming Spike","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Hurricane of Sand","frequencySeconds":0},{"isAoeNuke":false,"durationSeconds":10,"isAoe":false,"name":"Illusory Ache","frequencySeconds":-1},{"isAoeNuke":false,"durationSeconds":10,"isAoe":false,"name":"Illusory Agony","frequencySeconds":-1},{"isAoeNuke":false,"durationSeconds":10,"isAoe":false,"name":"Illusory Anguish","frequencySeconds":-1},{"isAoeNuke":false,"durationSeconds":10,"isAoe":false,"name":"Illusory Convulsions","frequencySeconds":-1},{"isAoeNuke":false,"durationSeconds":10,"isAoe":false,"name":"Illusory Cramps","frequencySeconds":-1},{"isAoeNuke":false,"durationSeconds":10,"isAoe":false,"name":"Illusory Excrutiation","frequencySeconds":-1},{"isAoeNuke":false,"durationSeconds":10,"isAoe":false,"name":"Illusory Lacerations","frequencySeconds":-1},{"isAoeNuke":false,"durationSeconds":10,"isAoe":false,"name":"Illusory Neuralgia","frequencySeconds":-1},{"isAoeNuke":false,"durationSeconds":10,"isAoe":false,"name":"Illusory Pains","frequencySeconds":-1},{"isAoeNuke":false,"durationSeconds":10,"isAoe":false,"name":"Illusory Spasms","frequencySeconds":-1},{"isAoeNuke":false,"durationSeconds":10,"isAoe":false,"name":"Illusory Torture","frequencySeconds":-1},{"isAoeNuke":false,"durationSeconds":18,"isAoe":false,"name":"Incinerating Embers","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":16,"isAoe":false,"name":"Infernal Degredation","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":16,"isAoe":false,"name":"Infernal Erosion","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":16,"isAoe":false,"name":"Infernal Eruption","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":16,"isAoe":false,"name":"Infernal Infection","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":16,"isAoe":false,"name":"Infernal Rot","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":16,"isAoe":false,"name":"Infernal Sore","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":20,"isAoe":true,"name":"Infinite Death","frequencySeconds":-1},{"isAoeNuke":false,"durationSeconds":20,"isAoe":false,"name":"Insidious Lethal Venom","frequencySeconds":4},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Inundation of Illusion","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Invoke Mjollnir","frequencySeconds":0},{"isAoeNuke":false,"durationSeconds":12,"isAoe":true,"name":"Lance Spirit","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Lesser Abrasive Force","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":10,"isAoe":false,"name":"Lesser Bones to Ash","frequencySeconds":-1},{"isAoeNuke":false,"durationSeconds":10,"isAoe":false,"name":"Lesser Bones to Dirt","frequencySeconds":-1},{"isAoeNuke":false,"durationSeconds":10,"isAoe":false,"name":"Lesser Bones to Dust","frequencySeconds":-1},{"isAoeNuke":false,"durationSeconds":10,"isAoe":false,"name":"Lesser Bones to Grit","frequencySeconds":-1},{"isAoeNuke":false,"durationSeconds":10,"isAoe":false,"name":"Lesser Bones to Powder","frequencySeconds":-1},{"isAoeNuke":false,"durationSeconds":10,"isAoe":false,"name":"Lesser Bones to Silt","frequencySeconds":-1},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Lesser Contamination","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Lesser Crushing Force","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Lesser Decrepify","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Lesser Degeneration","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Lesser Delaceration","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Lesser Deterioration","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Lesser Devolution","frequencySeconds":2},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Lesser Disenchanting Burst","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Lesser Disenchanting Emanationdirect","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Lesser Disenchanting Emission","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Lesser Disenchanting Eruption","frequencySeconds":0},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Lesser Disintegrating Force","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Lesser Grinding Force","frequencySeconds":2},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Lesser Gust of Sand","frequencySeconds":0},{"isAoeNuke":false,"durationSeconds":20,"isAoe":false,"name":"Lesser Lethal Poison","frequencySeconds":4},{"isAoeNuke":false,"durationSeconds":20,"isAoe":false,"name":"Lesser Lethal Venom","frequencySeconds":4},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Lesser Mana Ripple","frequencySeconds":0},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Lesser Mind Dissolution","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Lesser Mind Fade","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Lesser Mind Melt","frequencySeconds":2},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Lesser Null Ebullition","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Lesser Null Squall","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Lesser Null Storm","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Lesser Null Tempest","frequencySeconds":0},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Lesser Pounding Force","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Lesser Pulverizing Force","frequencySeconds":2},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Lesser Sand Flurry","frequencySeconds":0},{"isAoeNuke":false,"durationSeconds":20,"isAoe":false,"name":"Lethal Poison","frequencySeconds":4},{"isAoeNuke":false,"durationSeconds":20,"isAoe":false,"name":"Lifebane","frequencySeconds":4},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Liquify Bones","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Liquify Skeleton","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":10,"isAoe":false,"name":"Locust Cloud","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":10,"isAoe":false,"name":"Locust Flock","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":10,"isAoe":false,"name":"Locust Horde","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":10,"isAoe":false,"name":"Locust Mass","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":10,"isAoe":false,"name":"Locust Swarm","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":20,"isAoe":false,"name":"Major Lethal Poison","frequencySeconds":4},{"isAoeNuke":false,"durationSeconds":20,"isAoe":false,"name":"Major Lethal Venom","frequencySeconds":4},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Mana Billow","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Mana Burst","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Mana Eddy","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Mana Flood","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Mana Flux","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Mana Ripple","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Mana Splash","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Mana Surge","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Mark of Devastation","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Mark of Havoc","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Mark of Ruin","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Mark of Undoing","frequencySeconds":0},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Melt Bones","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Melt Skeleton","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Mind Annihilation","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Mind Dissolution","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Mind Fade","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Mind Melt","frequencySeconds":2},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Minor Concussion","frequencySeconds":0},{"isAoeNuke":false,"durationSeconds":20,"isAoe":false,"name":"Minor Lethal Poison","frequencySeconds":4},{"isAoeNuke":false,"durationSeconds":20,"isAoe":false,"name":"Minor Lethal Venom","frequencySeconds":4},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Minor Mind Fade","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Moldiness","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Molten Blanket","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":18,"isAoe":false,"name":"Molten Embers","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Molten Wrap","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Nature\u0027s Bane","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Nature\u0027s Blight","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Nature\u0027s Decay","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Nature\u0027s Ill","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Nature\u0027s Nausea","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Nature\u0027s Poison","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Nature\u0027s Rot","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Nature\u0027s Toxin","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Nature\u0027s Venom","frequencySeconds":2},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Null Ebullition","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Null Squall","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Null Storm","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Null Tempest","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Odin\u0027s Anger","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Odin\u0027s Frenzy","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Odin\u0027s Grudge","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Odin\u0027s Hatred","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Odin\u0027s Ire","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Odin\u0027s Rage","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Odin\u0027s Vengeance","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Odin\u0027s Wrath","frequencySeconds":0},{"isAoeNuke":false,"durationSeconds":12,"isAoe":true,"name":"Perforate Spirit","frequencySeconds":2},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Piercing Cascade","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Piercing Concussion","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Piercing Explosion","frequencySeconds":0},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Pollution","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Pounding Force","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Pulverizing Force","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":true,"name":"Puncture Spirit","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Render Bones","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Render Skeleton","frequencySeconds":2},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Repel Evil","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Repulse Evil","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Resonant Concussion","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Resonant Explosion","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Roaring Concussion","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Rush of Illusion","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Sand Flurry","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Screaming Cascade","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Sea of Illusion","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Shattering Cascade","frequencySeconds":0},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Sheet of Lava","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":true,"name":"Sheet of Magma","frequencySeconds":2},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Shrieking Cascade","frequencySeconds":0},{"isAoeNuke":false,"durationSeconds":12,"isAoe":true,"name":"Shroud of Madness","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Skeleton to Blood","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":18,"isAoe":false,"name":"Smoldering Embers","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Soften Bones","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Soften Skeleton","frequencySeconds":2},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Soul Annihilation","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Soul Banish","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Soul Blast","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Soul Destruction","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Soul Dispersal","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Soul Dissipation","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Soul Explosion","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Spell Blast","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Spell Bombardment","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Spell Burst","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Spellbinder\u0027s Blast","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Spellbinder\u0027s Bombardment","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Spellbinder\u0027s Burst","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Sphere of Annihilation","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Sphere of Negation","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Sphere of Oblivion","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Sphere of Unmaking","frequencySeconds":0},{"isAoeNuke":false,"durationSeconds":12,"isAoe":true,"name":"Spore Burst","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":true,"name":"Spore Cloud","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":true,"name":"Spore Explosion","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":true,"name":"Spore Storm","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":12,"isAoe":true,"name":"Spore Whirlwind","frequencySeconds":2},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Steaming Blast","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Steaming Blast (Major)","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Steaming Blast (Minor)","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Steaming Wind","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Steaming Wind (Major)","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Steaming Wind (Minor)","frequencySeconds":0},{"isAoeNuke":false,"durationSeconds":12,"isAoe":true,"name":"Storm of Insanity","frequencySeconds":2},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Summon Mjollnir","frequencySeconds":0},{"isAoeNuke":false,"durationSeconds":20,"isAoe":true,"name":"Swelling Death","frequencySeconds":-1},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Tempest of Sand","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Thunder Bellow","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Thunder Howl","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Thunder Roar","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Thunder Shout","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Thunderous Burst","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Thunderous Burst (Major)","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Thunderous Burst (Minor)","frequencySeconds":0},{"isAoeNuke":false,"durationSeconds":12,"isAoe":true,"name":"Torrent of Dementia","frequencySeconds":2},{"isAoeNuke":false,"durationSeconds":20,"isAoe":true,"name":"Unending Death","frequencySeconds":-1},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Valhalla\u0027s Contempt","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Valhalla\u0027s Despite","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Valhalla\u0027s Disdain","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Valhalla\u0027s Rage","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Valhalla\u0027s Scorn","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Wailing Cascade","frequencySeconds":0},{"isAoeNuke":true,"durationSeconds":0,"isAoe":false,"name":"Whirring Spike","frequencySeconds":0},{"isAoeNuke":false,"durationSeconds":12,"isAoe":false,"name":"Wither","frequencySeconds":2}]
+[
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Abrasive Force",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Annihilate Evil",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Banish Evil",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 20,
+        "isAoe": true,
+        "name": "Billowing Death",
+        "frequencySeconds": -1
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Blast of Sand",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Blight",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 10,
+        "isAoe": false,
+        "name": "Bones to Ash",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Bones to Blood",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 10,
+        "isAoe": false,
+        "name": "Bones to Dirt",
+        "frequencySeconds": -1
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 10,
+        "isAoe": false,
+        "name": "Bones to Dust",
+        "frequencySeconds": -1
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 10,
+        "isAoe": false,
+        "name": "Bones to Grit",
+        "frequencySeconds": -1
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 10,
+        "isAoe": false,
+        "name": "Bones to Powder",
+        "frequencySeconds": -1
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 10,
+        "isAoe": false,
+        "name": "Bones to Silt",
+        "frequencySeconds": -1
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": true,
+        "name": "Bore Spirit",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Brawler\u0027s Affliction",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Brawler\u0027s Bruise",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Brawler\u0027s Contamination",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Brawler\u0027s Destruction",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Brawler\u0027s Devastation",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Brawler\u0027s Infliction",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Brawler\u0027s Laceration",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Brawler\u0027s Mutilation",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Brawler\u0027s Outrage",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Burst of Steam",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Burst of Steam  (Minor)",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 18,
+        "isAoe": false,
+        "name": "Bursting Embers",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Cacophonous Burst",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Call Mjollnir",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Cataclysm of Illusion",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Channeled Anger",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Channeled Frenzy",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Channeled Fury",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Channeled Hatred",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Channeled Wrath",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Clamorous Concussion",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Clangorous Burst",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": true,
+        "name": "Cloud of Decay",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": true,
+        "name": "Cloud of Decomposition",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": true,
+        "name": "Cloud of Dessication",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": true,
+        "name": "Cloud of Deterioration",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": true,
+        "name": "Cloud of Rot",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Clouded Agony",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Clouded Destruction",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Clouded Distress",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Clouded Pain",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Command Mjollnir",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Complete Mind Annihilation",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Concussive Blast",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Concussive Blast (Minor)",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Contamination",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 10,
+        "isAoe": false,
+        "name": "Corrosive Cloud",
+        "frequencySeconds": -1
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 10,
+        "isAoe": false,
+        "name": "Corrosive Fog",
+        "frequencySeconds": -1
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 10,
+        "isAoe": false,
+        "name": "Corrosive Smoke",
+        "frequencySeconds": -1
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Corruption",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Crushing Force",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Deafening Cascade",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Deafening Explosion",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Decrepify",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Defedation",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Degeneration",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Delaceration",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Deluge of Illusion",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Deterioration",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Devolution",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Dilapidation",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Disenchanting Burst",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Disenchanting Emanation",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Disenchanting Emission",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Disenchanting Eruption",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 10,
+        "isAoe": false,
+        "name": "Disintegrating Cloud",
+        "frequencySeconds": -1
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 10,
+        "isAoe": false,
+        "name": "Disintegrating Fog",
+        "frequencySeconds": -1
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Disintegrating Force",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 10,
+        "isAoe": false,
+        "name": "Disintegrating Smoke",
+        "frequencySeconds": -1
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Dispel Evil",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Disperse Bones",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Disperse Skeleton",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 10,
+        "isAoe": false,
+        "name": "Dissolving Cloud",
+        "frequencySeconds": -1
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 10,
+        "isAoe": false,
+        "name": "Dissolving Fog",
+        "frequencySeconds": -1
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 10,
+        "isAoe": false,
+        "name": "Dissolving Mist",
+        "frequencySeconds": -1
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 10,
+        "isAoe": false,
+        "name": "Dissolving Smoke",
+        "frequencySeconds": -1
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": true,
+        "name": "Drill Spirit",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Drive Evil",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Dry Rot",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Ear-splitting Cascade",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Earth Eddies",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Earth Ripple",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Earth Splash",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Earth Wave",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Ebullient Blast",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Ebullient Blast (Minor)",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Explosive Blast",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Explosive Blast (Minor)",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Explosive Burst",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Explosive Burst (Minor)",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Explosive Orb",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Explosive Orb (Major)",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Explosive Orb (Minor)",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 18,
+        "isAoe": false,
+        "name": "Flaming Embers",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 18,
+        "isAoe": false,
+        "name": "Flickering Embers",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Flood of Illusion",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 20,
+        "isAoe": true,
+        "name": "Flowing Death",
+        "frequencySeconds": -1
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Flux of Illusion",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": true,
+        "name": "Fog of Delirium",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 10,
+        "isAoe": true,
+        "name": "Freezing Clench",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 10,
+        "isAoe": true,
+        "name": "Freezing Grasp",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 10,
+        "isAoe": true,
+        "name": "Freezing Hold",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 10,
+        "isAoe": true,
+        "name": "Freezing Howl",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 10,
+        "isAoe": true,
+        "name": "Freezing Terror",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Fungal  Degeneration",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Fungal Blight",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Fungal Decay",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Fungal Decrepitude",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Fungal Deterioration",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Fungal Devolution",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Fungal Dilapidation",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Fungal Disintegration",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Fungal Dispersion",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Fungal Erosion",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Fungal Solvent",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Greater Gust of Sand",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 20,
+        "isAoe": false,
+        "name": "Greater Lethal Poison",
+        "frequencySeconds": 4
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 20,
+        "isAoe": false,
+        "name": "Greater Lethal Venom",
+        "frequencySeconds": 4
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Greater Mind Dissolution",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Greater Mind Melt",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Greater Molten Blanket",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Greater Molten Wrap",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Greater Sand Flurry",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": true,
+        "name": "Greater Sheet of Lava",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": true,
+        "name": "Greater Sheet of Magma",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Greater Thunder Bellow",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Greater Thunder Howl",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Greater Thunder Roar",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Greater Thunder Shout",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Grinding Force",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Gust of Sand",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": true,
+        "name": "Hallucinatory Winds",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 18,
+        "isAoe": false,
+        "name": "Heated Embers",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Heavenly Blast",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Heavenly Bolt",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Heavenly Detonation",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Heavenly Force",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Heavenly Strike",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 20,
+        "isAoe": true,
+        "name": "Heightening Death",
+        "frequencySeconds": -1
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Humming Spike",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Hurricane of Sand",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 10,
+        "isAoe": false,
+        "name": "Illusory Ache",
+        "frequencySeconds": -1
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 10,
+        "isAoe": false,
+        "name": "Illusory Agony",
+        "frequencySeconds": -1
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 10,
+        "isAoe": false,
+        "name": "Illusory Anguish",
+        "frequencySeconds": -1
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 10,
+        "isAoe": false,
+        "name": "Illusory Convulsions",
+        "frequencySeconds": -1
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 10,
+        "isAoe": false,
+        "name": "Illusory Cramps",
+        "frequencySeconds": -1
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 10,
+        "isAoe": false,
+        "name": "Illusory Excrutiation",
+        "frequencySeconds": -1
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 10,
+        "isAoe": false,
+        "name": "Illusory Lacerations",
+        "frequencySeconds": -1
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 10,
+        "isAoe": false,
+        "name": "Illusory Neuralgia",
+        "frequencySeconds": -1
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 10,
+        "isAoe": false,
+        "name": "Illusory Pains",
+        "frequencySeconds": -1
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 10,
+        "isAoe": false,
+        "name": "Illusory Spasms",
+        "frequencySeconds": -1
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 10,
+        "isAoe": false,
+        "name": "Illusory Torture",
+        "frequencySeconds": -1
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 18,
+        "isAoe": false,
+        "name": "Incinerating Embers",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 16,
+        "isAoe": false,
+        "name": "Infernal Degredation",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 16,
+        "isAoe": false,
+        "name": "Infernal Erosion",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 16,
+        "isAoe": false,
+        "name": "Infernal Eruption",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 16,
+        "isAoe": false,
+        "name": "Infernal Infection",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 16,
+        "isAoe": false,
+        "name": "Infernal Rot",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 16,
+        "isAoe": false,
+        "name": "Infernal Sore",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 20,
+        "isAoe": true,
+        "name": "Infinite Death",
+        "frequencySeconds": -1
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 20,
+        "isAoe": false,
+        "name": "Insidious Lethal Venom",
+        "frequencySeconds": 4
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Inundation of Illusion",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Invoke Mjollnir",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": true,
+        "name": "Lance Spirit",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Lesser Abrasive Force",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 10,
+        "isAoe": false,
+        "name": "Lesser Bones to Ash",
+        "frequencySeconds": -1
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 10,
+        "isAoe": false,
+        "name": "Lesser Bones to Dirt",
+        "frequencySeconds": -1
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 10,
+        "isAoe": false,
+        "name": "Lesser Bones to Dust",
+        "frequencySeconds": -1
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 10,
+        "isAoe": false,
+        "name": "Lesser Bones to Grit",
+        "frequencySeconds": -1
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 10,
+        "isAoe": false,
+        "name": "Lesser Bones to Powder",
+        "frequencySeconds": -1
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 10,
+        "isAoe": false,
+        "name": "Lesser Bones to Silt",
+        "frequencySeconds": -1
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Lesser Contamination",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Lesser Crushing Force",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Lesser Decrepify",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Lesser Degeneration",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Lesser Delaceration",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Lesser Deterioration",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Lesser Devolution",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Lesser Disenchanting Burst",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Lesser Disenchanting Emanationdirect",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Lesser Disenchanting Emission",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Lesser Disenchanting Eruption",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Lesser Disintegrating Force",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Lesser Grinding Force",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Lesser Gust of Sand",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 20,
+        "isAoe": false,
+        "name": "Lesser Lethal Poison",
+        "frequencySeconds": 4
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 20,
+        "isAoe": false,
+        "name": "Lesser Lethal Venom",
+        "frequencySeconds": 4
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Lesser Mana Ripple",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Lesser Mind Dissolution",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Lesser Mind Fade",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Lesser Mind Melt",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Lesser Null Ebullition",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Lesser Null Squall",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Lesser Null Storm",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Lesser Null Tempest",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Lesser Pounding Force",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Lesser Pulverizing Force",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Lesser Sand Flurry",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 20,
+        "isAoe": false,
+        "name": "Lethal Poison",
+        "frequencySeconds": 4
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 20,
+        "isAoe": false,
+        "name": "Lifebane",
+        "frequencySeconds": 4
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Liquify Bones",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Liquify Skeleton",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 10,
+        "isAoe": false,
+        "name": "Locust Cloud",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 10,
+        "isAoe": false,
+        "name": "Locust Flock",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 10,
+        "isAoe": false,
+        "name": "Locust Horde",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 10,
+        "isAoe": false,
+        "name": "Locust Mass",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 10,
+        "isAoe": false,
+        "name": "Locust Swarm",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 20,
+        "isAoe": false,
+        "name": "Major Lethal Poison",
+        "frequencySeconds": 4
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 20,
+        "isAoe": false,
+        "name": "Major Lethal Venom",
+        "frequencySeconds": 4
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Mana Billow",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Mana Burst",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Mana Eddy",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Mana Flood",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Mana Flux",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Mana Ripple",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Mana Splash",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Mana Surge",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Mark of Devastation",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Mark of Havoc",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Mark of Ruin",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Mark of Undoing",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Melt Bones",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Melt Skeleton",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Mind Annihilation",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Mind Dissolution",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Mind Fade",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Mind Melt",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Minor Concussion",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 20,
+        "isAoe": false,
+        "name": "Minor Lethal Poison",
+        "frequencySeconds": 4
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 20,
+        "isAoe": false,
+        "name": "Minor Lethal Venom",
+        "frequencySeconds": 4
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Minor Mind Fade",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Moldiness",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Molten Blanket",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 18,
+        "isAoe": false,
+        "name": "Molten Embers",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Molten Wrap",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Nature\u0027s Bane",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Nature\u0027s Blight",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Nature\u0027s Decay",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Nature\u0027s Ill",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Nature\u0027s Nausea",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Nature\u0027s Poison",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Nature\u0027s Rot",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Nature\u0027s Toxin",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Nature\u0027s Venom",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Null Ebullition",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Null Squall",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Null Storm",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Null Tempest",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Odin\u0027s Anger",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Odin\u0027s Frenzy",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Odin\u0027s Grudge",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Odin\u0027s Hatred",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Odin\u0027s Ire",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Odin\u0027s Rage",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Odin\u0027s Vengeance",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Odin\u0027s Wrath",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": true,
+        "name": "Perforate Spirit",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Piercing Cascade",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Piercing Concussion",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Piercing Explosion",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Pollution",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Pounding Force",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Pulverizing Force",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": true,
+        "name": "Puncture Spirit",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Render Bones",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Render Skeleton",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Repel Evil",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Repulse Evil",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Resonant Concussion",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Resonant Explosion",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Roaring Concussion",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Rush of Illusion",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Sand Flurry",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Screaming Cascade",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Sea of Illusion",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Shattering Cascade",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Sheet of Lava",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": true,
+        "name": "Sheet of Magma",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Shrieking Cascade",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": true,
+        "name": "Shroud of Madness",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Skeleton to Blood",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 18,
+        "isAoe": false,
+        "name": "Smoldering Embers",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Soften Bones",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Soften Skeleton",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Soul Annihilation",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Soul Banish",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Soul Blast",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Soul Destruction",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Soul Dispersal",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Soul Dissipation",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Soul Explosion",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Spell Blast",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Spell Bombardment",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Spell Burst",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Spellbinder\u0027s Blast",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Spellbinder\u0027s Bombardment",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Spellbinder\u0027s Burst",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Sphere of Annihilation",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Sphere of Negation",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Sphere of Oblivion",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Sphere of Unmaking",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": true,
+        "name": "Spore Burst",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": true,
+        "name": "Spore Cloud",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": true,
+        "name": "Spore Explosion",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": true,
+        "name": "Spore Storm",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": true,
+        "name": "Spore Whirlwind",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Steaming Blast",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Steaming Blast (Major)",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Steaming Blast (Minor)",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Steaming Wind",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Steaming Wind (Major)",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Steaming Wind (Minor)",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": true,
+        "name": "Storm of Insanity",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Summon Mjollnir",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 20,
+        "isAoe": true,
+        "name": "Swelling Death",
+        "frequencySeconds": -1
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Tempest of Sand",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Thunder Bellow",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Thunder Howl",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Thunder Roar",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Thunder Shout",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Thunderous Burst",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Thunderous Burst (Major)",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Thunderous Burst (Minor)",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": true,
+        "name": "Torrent of Dementia",
+        "frequencySeconds": 2
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 20,
+        "isAoe": true,
+        "name": "Unending Death",
+        "frequencySeconds": -1
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Valhalla\u0027s Contempt",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Valhalla\u0027s Despite",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Valhalla\u0027s Disdain",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Valhalla\u0027s Rage",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Valhalla\u0027s Scorn",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Wailing Cascade",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": true,
+        "durationSeconds": 0,
+        "isAoe": false,
+        "name": "Whirring Spike",
+        "frequencySeconds": 0
+    },
+    {
+        "isAoeNuke": false,
+        "durationSeconds": 12,
+        "isAoe": false,
+        "name": "Wither",
+        "frequencySeconds": 2
+    }
+]

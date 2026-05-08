@@ -3,16 +3,17 @@
 ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/ZZerker/DAoCLogWatcher/total)
 ![GitHub Release](https://img.shields.io/github/v/release/ZZerker/DAoCLogWatcher)
 ![CI](https://img.shields.io/github/actions/workflow/status/ZZerker/DAoCLogWatcher/ci.yml?branch=main)
+[![Discord](https://img.shields.io/badge/Discord-Join-5865F2?logo=discord&logoColor=white)](https://discord.gg/V7Z5y3Ke9v)
 
 A real-time tracker for **Dark Age of Camelot (Eden)**. Load your `chat.log` and instantly see how many RPs you're earning, where they're coming from, how fast they're rolling in, your kill/death stats, live combat metrics, and a frontier kill heatmap with live keep ownership and fight locations pulled from the warmap — all updated as you play.
 
-> **Beta** — core RP tracking works well; combat, heal, and damage features are early beta and still being improved. Please report issues on the [Issues](https://github.com/ZZerker/DAoCLogWatcher/issues) page.
+> Combat, heal, and damage tracking are in early beta and still being improved. Report issues on the [Issues](https://github.com/ZZerker/DAoCLogWatcher/issues) page or join the [Discord](https://discord.gg/V7Z5y3Ke9v).
 
 ## TL;DR — Getting Started
 
 1. In-game, run **`/chatlog`** to start writing your chat log to disk (only needed once per session)
 2. Run **`/stats`** in-game so the app can detect your character name
-3. Open DAoCLogWatcher — use the **Open DAoC Log** button or pick a session from the session browser
+3. Open DAoCLogWatcher — use **Browse Sessions** to pick a specific play session (recommended), or **Open DAoC Log** to tail the file from the current moment
 
 ![DAoC Log Watcher screenshot](DAoCLogWatcher.Core/TestFiles/DAoC_Log_Watcher.png)
 
@@ -32,7 +33,7 @@ A real-time tracker for **Dark Age of Camelot (Eden)**. Load your `chat.log` and
 - **Log filters** — filter the Realm Points, Combat Log, and Heal Log tabs by player name, source, spell, or style; results update live as new entries arrive
 - **Time filters** — limit the log to a preset window (1h–1 week) or a custom hours/minutes value
 - **Kill Heatmap** — a live frontier map showing your kill density as a colour-intensity overlay; keep and tower icons are coloured by current realm owner and update as control changes; burning keeps show a flame icon; active fights and group locations streamed from the warmap are displayed as realm-coloured markers on the map
-- **Zone Kills** — shows which frontier zones have had the most kills in the active window, ranked by percentage with a heat-colour indicator; a Global Activity chart below plots kill rate over the full session
+- **Zone Kills** — shows which frontier zones have had the most kills in the active window, ranked by percentage with a heat-colour indicator; a Global Actisvity chart below plots kill rate over the full session
 - **Live warmap data** — the app connects to the Eden warmap WebSocket and pulls in real-time keep/tower realm ownership, keeps under attack, active fight locations, and roaming group positions; no in-game action needed
 - **Screenshot to clipboard** — capture the full window to your clipboard with one click
 - **Auto-update** — the app checks for new releases on startup and prompts you to install them
@@ -52,6 +53,8 @@ A real-time tracker for **Dark Age of Camelot (Eden)**. Load your `chat.log` and
   - **Miss & resist rates** — melee miss rate (misses + blocks) and spell resist rate, tracked separately
   - **Attack type breakdown** — avg damage per weapon / spell / melee style, shown as a bar chart
 - **Melee style attribution** — weapon hits are attributed to the style that triggered them; unexecuted styles produce plain unattributed swings; multi-hit classes carry the style across all hits in a swing sequence
+- **DoT tick tracking** — active DoTs on each target are shown as live-updating stack entries in the combat log; each tick updates the entry in place rather than flooding the log
+- **Data-driven spell detection** — AoE nukes and DoT windows are resolved against Eden spell data, improving attribution accuracy across all classes and specs
 - **Combat log tab** — scrollable per-hit log showing timestamp, direction, damage, source (style, spell, or weapon name), and target
 - **Heal log tab** — scrollable per-heal log showing timestamp, HP, direction, and who was healed
 
@@ -170,11 +173,15 @@ If **Open DAoC Log** can't find the file automatically, use **Open Log File** to
 
 | Feature | Status |
 |---|---|
-| RP source categorization | Some log line formats are not yet parsed — sources may be misidentified or fall into "Other" |
-| Kill / death count | Requires at least one `/stats` in the log — kill and death events are buffered and retroactively counted once the character name is detected |
 | Combat & heal tracking | Early beta — spell attribution, damage categorization, and heal tracking may be incomplete or incorrect for some classes and abilities |
 
-Please report unexpected behaviour on the [Issues](https://github.com/ZZerker/DAoCLogWatcher/issues) page. **Log examples are especially helpful** — if a number looks wrong, paste the relevant lines from your `chat.log` in the issue and it will be fixed.
+Please report unexpected behaviour on the [Issues](https://github.com/ZZerker/DAoCLogWatcher/issues) page or in [Discord](https://discord.gg/V7Z5y3Ke9v). **Log examples are especially helpful** — if a number looks wrong, paste the relevant lines from your `chat.log` and it will be fixed.
+
+---
+
+## Community
+
+Join us on [Discord](https://discord.gg/V7Z5y3Ke9v) for bug reports, feature requests, and sharing log samples.
 
 ---
 

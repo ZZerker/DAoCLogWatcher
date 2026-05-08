@@ -1,10 +1,12 @@
 using System;
+using System.ComponentModel;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Threading;
 using DAoCLogWatcher.UI.Services;
 using DAoCLogWatcher.UI.ViewModels;
+using DAoCLogWatcher.UI.Views;
 using Microsoft.Extensions.DependencyInjection;
 using ScottPlot;
 
@@ -38,6 +40,7 @@ public partial class KillHeatmapTabView: UserControl
 			                           if(this.vm != null)
 			                           {
 				                           this.vm.KillActivityUpdated -= this.OnKillActivityUpdated;
+				                           this.vm.PropertyChanged -= this.OnViewModelPropertyChanged;
 				                           this.vm = null;
 			                           }
 
@@ -54,7 +57,9 @@ public partial class KillHeatmapTabView: UserControl
 				                           }
 
 				                           this.InitKillHeatmapChart();
+				                           ChartHelper.ApplyTheme(newVm.IsDarkTheme, this.KillHeatmapPlot);
 				                           newVm.KillActivityUpdated += this.OnKillActivityUpdated;
+				                           newVm.PropertyChanged += this.OnViewModelPropertyChanged;
 			                           }
 		                           };
 
@@ -73,6 +78,15 @@ public partial class KillHeatmapTabView: UserControl
 
 		this.zoneMapService.InitializePlot(this.KillHeatmapPlot.Plot, this.vm.FrontierMap);
 		this.KillHeatmapPlot.Refresh();
+	}
+
+	private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+	{
+		if(e.PropertyName == nameof(MainWindowViewModel.IsDarkTheme) && this.vm != null)
+		{
+			ChartHelper.ApplyTheme(this.vm.IsDarkTheme, this.KillHeatmapPlot);
+			this.isDirty = true;
+		}
 	}
 
 	private void OnKillActivityUpdated(object? sender, EventArgs e)
