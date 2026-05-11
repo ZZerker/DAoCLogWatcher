@@ -5,6 +5,7 @@ sdk: org.freedesktop.Sdk
 command: DAoCLogWatcher.UI
 
 finish-args:
+  - --share=network
   - --share=ipc
   # ALWAYS EXPOSE X11 (XWAYLAND) SO AVALONIA DOES NOT CRASH
   - --socket=x11
