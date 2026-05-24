@@ -17,7 +17,7 @@ public partial class KillHeatmapTabView: UserControl
 	private MainWindowViewModel? vm;
 	private ZoneMapService? zoneMapService;
 	private WarmapWebSocketService? warmapService;
-	private DispatcherTimer? renderTimer;
+	private readonly DispatcherTimer renderTimer;
 	private bool isDirty;
 
 	public KillHeatmapTabView()
@@ -25,17 +25,24 @@ public partial class KillHeatmapTabView: UserControl
 		this.InitializeComponent();
 
 		this.renderTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1000.0 / 30) };
-		this.renderTimer.Tick += (s, e) =>
+		this.renderTimer.Tick += (_, _) =>
 		                         {
-			                         if(this.isDirty)
-			                         {
-				                         this.isDirty = false;
-				                         this.RenderHeatmap();
-			                         }
+			                         if(!this.isDirty) return;
+			                         this.isDirty = false;
+			                         this.RenderHeatmap();
 		                         };
 		this.renderTimer.Start();
 
-		this.DataContextChanged += (s, e) =>
+		this.PropertyChanged += (_, e) =>
+		                        {
+			                        if(e.Property != IsVisibleProperty) return;
+			                        if(this.IsVisible)
+				                        this.renderTimer.Start();
+			                        else
+				                        this.renderTimer.Stop();
+		                        };
+
+		this.DataContextChanged += (_, _) =>
 		                           {
 			                           if(this.vm != null)
 			                           {
@@ -44,39 +51,36 @@ public partial class KillHeatmapTabView: UserControl
 				                           this.vm = null;
 			                           }
 
-			                           if(this.DataContext is MainWindowViewModel newVm)
-			                           {
-				                           this.vm = newVm;
-				                           var app = (App)Application.Current!;
-				                           this.zoneMapService ??= app.Services.GetRequiredService<ZoneMapService>();
-				                           if(this.warmapService == null)
-				                           {
-					                           this.warmapService = app.Services.GetRequiredService<WarmapWebSocketService>();
-					                           this.warmapService.KeepsUpdated += this.OnKeepsUpdated;
-					                           this.warmapService.FightsUpdated += this.OnFightsUpdated;
-				                           }
+			                           if(this.DataContext is not MainWindowViewModel newVm) return;
 
-				                           this.InitKillHeatmapChart();
-				                           ChartHelper.ApplyTheme(newVm.IsDarkTheme, this.KillHeatmapPlot);
-				                           newVm.KillActivityUpdated += this.OnKillActivityUpdated;
-				                           newVm.PropertyChanged += this.OnViewModelPropertyChanged;
+			                           this.vm = newVm;
+			                           var app = (App)Application.Current!;
+			                           this.zoneMapService ??= app.Services.GetRequiredService<ZoneMapService>();
+			                           if(this.warmapService == null)
+			                           {
+				                           this.warmapService = app.Services.GetRequiredService<WarmapWebSocketService>();
+				                           this.warmapService.KeepsUpdated += this.OnKeepsUpdated;
+				                           this.warmapService.FightsUpdated += this.OnFightsUpdated;
 			                           }
+
+			                           this.InitKillHeatmapChart();
+			                           ChartHelper.ApplyTheme(newVm.IsDarkTheme, this.KillHeatmapPlot);
+			                           newVm.KillActivityUpdated += this.OnKillActivityUpdated;
+			                           newVm.PropertyChanged += this.OnViewModelPropertyChanged;
 		                           };
 
-		this.ShowFightsCheckBox.IsCheckedChanged += (s, e) => this.isDirty = true;
+		this.ShowFightsCheckBox.IsCheckedChanged += (_, _) => this.isDirty = true;
 
 		this.KillHeatmapPlot.PointerMoved += this.OnHeatmapPointerMoved;
-		this.KillHeatmapPlot.PointerExited += (s, e) => this.BurnTooltip.IsVisible = false;
+		this.KillHeatmapPlot.PointerExited += (_, _) => this.BurnTooltip.IsVisible = false;
 	}
 
 	private void InitKillHeatmapChart()
 	{
-		if(this.vm == null || this.zoneMapService == null)
-		{
-			return;
-		}
+		if(this.vm == null || this.zoneMapService == null) return;
 
 		this.zoneMapService.InitializePlot(this.KillHeatmapPlot.Plot, this.vm.FrontierMap);
+		ChartHelper.HideAxes(this.KillHeatmapPlot.Plot);
 		this.KillHeatmapPlot.Refresh();
 	}
 
@@ -89,27 +93,13 @@ public partial class KillHeatmapTabView: UserControl
 		}
 	}
 
-	private void OnKillActivityUpdated(object? sender, EventArgs e)
-	{
-		this.isDirty = true;
-	}
-
-	private void OnKeepsUpdated(object? sender, EventArgs e)
-	{
-		this.isDirty = true;
-	}
-
-	private void OnFightsUpdated(object? sender, EventArgs e)
-	{
-		this.isDirty = true;
-	}
+	private void OnKillActivityUpdated(object? sender, EventArgs e) => this.isDirty = true;
+	private void OnKeepsUpdated(object? sender, EventArgs e) => this.isDirty = true;
+	private void OnFightsUpdated(object? sender, EventArgs e) => this.isDirty = true;
 
 	private void RenderHeatmap()
 	{
-		if(this.vm == null || this.zoneMapService == null)
-		{
-			return;
-		}
+		if(this.vm == null || this.zoneMapService == null) return;
 
 		var liveKeeps = this.warmapService?.GetSnapshot();
 		var fights = this.warmapService?.GetFightsSnapshot();
@@ -126,10 +116,7 @@ public partial class KillHeatmapTabView: UserControl
 
 	private void OnHeatmapPointerMoved(object? sender, PointerEventArgs e)
 	{
-		if(this.zoneMapService == null || this.warmapService == null)
-		{
-			return;
-		}
+		if(this.zoneMapService == null || this.warmapService == null) return;
 
 		var pos = e.GetPosition(this.KillHeatmapPlot);
 		var pixel = new Pixel((float)pos.X, (float)pos.Y);

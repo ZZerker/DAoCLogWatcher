@@ -39,6 +39,100 @@ public class ZoneMapService
 	private readonly SKBitmap?[,] groupBitmaps = new SKBitmap?[4, 4];
 	private List<(string Name, double Px, double Py, bool IsKeep)> burningKeeps = [];
 
+	public sealed record MinimapViewSpec(PixelBounds ZoneBounds, int? ActiveZoneId, double? PlayerPixelX, double? PlayerPixelY, string ZoneName);
+
+	public MinimapViewSpec? GetMinimapViewSpec(string location, FrontierMapData map)
+	{
+		var normalized = NormalizeName(location);
+
+		var matchedZone = map.Zones.FirstOrDefault(z =>
+			z.PixelBounds != null &&
+			string.Equals(NormalizeName(z.Name), normalized, StringComparison.OrdinalIgnoreCase));
+		if(matchedZone != null)
+		{
+			return new MinimapViewSpec(matchedZone.PixelBounds!, matchedZone.ZoneId, null, null, matchedZone.Name);
+		}
+
+		var matchedKeep = map.Keeps.FirstOrDefault(k =>
+			k.Pixel != null &&
+			string.Equals(NormalizeName(k.Name), normalized, StringComparison.OrdinalIgnoreCase));
+		if(matchedKeep == null)
+		{
+			return null;
+		}
+
+		var kx = matchedKeep.Pixel!.X;
+		var ky = matchedKeep.Pixel.Y;
+		var containingZone = map.Zones.FirstOrDefault(z =>
+			z.PixelBounds != null &&
+			kx >= z.PixelBounds.X && kx <= z.PixelBounds.X + z.PixelBounds.Width &&
+			ky >= z.PixelBounds.Y && ky <= z.PixelBounds.Y + z.PixelBounds.Height);
+
+		return containingZone == null
+			? null
+			: new MinimapViewSpec(containingZone.PixelBounds!, containingZone.ZoneId, kx, ky, containingZone.Name);
+	}
+
+	public void InitializeMinimapPlot(Plot plot)
+	{
+		plot.FigureBackground.Color = Color.FromHex("#252525");
+		plot.DataBackground.Color = Color.FromHex("#1E1E1E");
+		plot.Grid.IsVisible = false;
+		plot.Axes.SetLimits(0, 1408, -1536, 0);
+	}
+
+	public void ApplyMinimapOverlay(Plot plot, FrontierMapData map, MinimapViewSpec spec, IReadOnlyDictionary<string, WarmapKeepState>? liveKeeps = null, IReadOnlyList<WarmapActivityEntry>? fights = null, IReadOnlyList<WarmapActivityEntry>? groups = null)
+	{
+		this.EnsureIconsLoaded();
+		plot.Clear();
+
+		if(this.terrain != null)
+		{
+			plot.Add.ImageRect(new Image(this.terrain), new CoordinateRect(0, 1408, -1536, 0));
+		}
+
+		var b = spec.ZoneBounds;
+
+		var zoneRect = plot.Add.Rectangle(b.X, b.X + b.Width, -(b.Y + b.Height), -b.Y);
+		zoneRect.FillColor = Color.FromHex("#000000").WithAlpha(0);
+		zoneRect.LineColor = Color.FromHex("#FFCC00");
+		zoneRect.LineWidth = 2.5f;
+
+		var zoneLbl = plot.Add.Text(spec.ZoneName, b.X + b.Width / 2.0, -(b.Y + b.Height / 2.0));
+		zoneLbl.LabelFontSize = 11;
+		zoneLbl.LabelFontColor = Color.FromHex("#FFFFFF");
+		zoneLbl.LabelBackgroundColor = Color.FromHex("#000000").WithAlpha(0.55);
+		zoneLbl.LabelAlignment = Alignment.MiddleCenter;
+
+		this.DrawKeepsAndTowers(plot, map.Keeps, liveKeeps, null, b);
+
+		if(spec.PlayerPixelX.HasValue && spec.PlayerPixelY.HasValue)
+		{
+			var pm = plot.Add.Marker(spec.PlayerPixelX.Value, -spec.PlayerPixelY.Value, MarkerShape.FilledCircle, 14);
+			pm.Color = Color.FromHex("#FFFF00").WithAlpha(0.9);
+			var plbl = plot.Add.Text("YOU", spec.PlayerPixelX.Value, -spec.PlayerPixelY.Value + 16);
+			plbl.LabelFontSize = 9;
+			plbl.LabelFontColor = Color.FromHex("#FFFF00");
+			plbl.LabelBackgroundColor = Color.FromHex("#000000").WithAlpha(0.6);
+			plbl.LabelAlignment = Alignment.LowerCenter;
+		}
+
+		if(spec.ActiveZoneId.HasValue)
+		{
+			var zoneIdx = this.GetOrBuildZoneIndex(map);
+			if(groups != null)
+			{
+				this.DrawActivityMarkers(plot, groups.Where(g => g.Zone == spec.ActiveZoneId.Value).ToList(), isFight: false, zoneIdx);
+			}
+
+			if(fights != null)
+			{
+				this.DrawActivityMarkers(plot, fights.Where(f => f.Zone == spec.ActiveZoneId.Value).ToList(), isFight: true, zoneIdx);
+			}
+		}
+
+	}
+
 	public void InitializePlot(Plot plot, FrontierMapData map)
 	{
 		this.EnsureIconsLoaded();
@@ -248,40 +342,7 @@ public class ZoneMapService
 
 		// base keeps + name labels (on top of heatmap)
 		var newBurningKeeps = new List<(string Name, double Px, double Py, bool IsKeep)>();
-
-		foreach(var k in map.Keeps.Where(k => k.Pixel != null&&k.Type == "keep"))
-		{
-			WarmapKeepState? live = null;
-			liveKeeps?.TryGetValue(NormalizeName(k.Name), out live);
-			var realm = live != null ? RealmFromInt(live.Realm) : k.DefaultRealm;
-			if(live?.InCombat == true)
-			{
-				newBurningKeeps.Add((k.Name, k.Pixel!.X, k.Pixel.Y, true));
-				this.DrawFlame(plot, k.Pixel!.X, -k.Pixel.Y, isKeep: true);
-			}
-
-			this.DrawKeepIcon(plot, k.Pixel!.X, -k.Pixel.Y, realm);
-			var lbl = plot.Add.Text(ShortKeepName(k.Name), k.Pixel.X, -k.Pixel.Y + 12);
-			lbl.LabelFontSize = 9;
-			lbl.LabelFontColor = Color.FromHex("#FFFFFF");
-			lbl.LabelBackgroundColor = Color.FromHex("#000000").WithAlpha(0.6);
-			lbl.LabelAlignment = Alignment.LowerCenter;
-		}
-
-		foreach(var k in map.Keeps.Where(k => k.Pixel != null&&k.Type == "tower"))
-		{
-			WarmapKeepState? live = null;
-			liveKeeps?.TryGetValue(NormalizeName(k.Name), out live);
-			var realm = live != null ? RealmFromInt(live.Realm) : k.DefaultRealm;
-			if(live?.InCombat == true)
-			{
-				newBurningKeeps.Add((k.Name, k.Pixel!.X, k.Pixel.Y, false));
-				this.DrawFlame(plot, k.Pixel!.X, -k.Pixel.Y, isKeep: false);
-			}
-
-			this.DrawTowerIcon(plot, k.Pixel!.X, -k.Pixel.Y, realm);
-		}
-
+		this.DrawKeepsAndTowers(plot, map.Keeps, liveKeeps, newBurningKeeps);
 		this.burningKeeps = newBurningKeeps;
 
 		foreach(var k in map.Keeps.Where(k => k.Pixel != null&&k.Type == "dock"))
@@ -392,6 +453,45 @@ public class ZoneMapService
 		                         .Where(z => z.PixelBounds != null)
 		                         .ToDictionary(z => z.ZoneId, z => z.PixelBounds!);
 		return this.zonePixelIndex;
+	}
+
+	private void DrawKeepsAndTowers(Plot plot, IEnumerable<FrontierKeep> keeps, IReadOnlyDictionary<string, WarmapKeepState>? liveKeeps, List<(string Name, double Px, double Py, bool IsKeep)>? burning, PixelBounds? clipBounds = null)
+	{
+		foreach(var k in keeps.Where(k => k.Pixel != null && k.Type is "keep" or "tower"))
+		{
+			var kx = k.Pixel!.X;
+			var ky = k.Pixel.Y;
+
+			if(clipBounds != null && (kx < clipBounds.X || kx > clipBounds.X + clipBounds.Width || ky < clipBounds.Y || ky > clipBounds.Y + clipBounds.Height))
+			{
+				continue;
+			}
+
+			WarmapKeepState? live = null;
+			liveKeeps?.TryGetValue(NormalizeName(k.Name), out live);
+			var realm = live != null ? RealmFromInt(live.Realm) : k.DefaultRealm;
+			var isKeep = k.Type == "keep";
+
+			if(live?.InCombat == true)
+			{
+				burning?.Add((k.Name, kx, ky, isKeep));
+				this.DrawFlame(plot, kx, -ky, isKeep);
+			}
+
+			if(isKeep)
+			{
+				this.DrawKeepIcon(plot, kx, -ky, realm);
+				var lbl = plot.Add.Text(ShortKeepName(k.Name), kx, -ky + 12);
+				lbl.LabelFontSize = 9;
+				lbl.LabelFontColor = Color.FromHex("#FFFFFF");
+				lbl.LabelBackgroundColor = Color.FromHex("#000000").WithAlpha(0.6);
+				lbl.LabelAlignment = Alignment.LowerCenter;
+			}
+			else
+			{
+				this.DrawTowerIcon(plot, kx, -ky, realm);
+			}
+		}
 	}
 
 	private void DrawActivityMarkers(Plot plot, IReadOnlyList<WarmapActivityEntry> entries, bool isFight, Dictionary<int, PixelBounds> zoneIndex)

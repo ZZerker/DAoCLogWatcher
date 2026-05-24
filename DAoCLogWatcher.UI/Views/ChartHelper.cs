@@ -94,6 +94,14 @@ internal static class ChartHelper
 		chart.Refresh();
 	}
 
+	public static void HideAxes(Plot plot)
+	{
+		plot.Axes.Bottom.IsVisible = false;
+		plot.Axes.Left.IsVisible = false;
+		plot.Axes.Right.IsVisible = false;
+		plot.Axes.Top.IsVisible = false;
+	}
+
 	public static void UpdateBarChart(AvaPlot chart, IEnumerable<(string Label, double Value)> data, string fillColor, int labelMaxLength = 12)
 	{
 		lock(chart.Plot.Sync)

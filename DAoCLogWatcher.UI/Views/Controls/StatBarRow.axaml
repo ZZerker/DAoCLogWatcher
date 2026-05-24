@@ -1,0 +1,21 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="using:DAoCLogWatcher.UI.Views.Controls"
+             x:Class="DAoCLogWatcher.UI.Views.Controls.StatBarRow"
+             x:DataType="controls:StatBarRow"
+             x:Name="self">
+    <StackPanel Spacing="3" Margin="0,0,0,4">
+        <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Text="{Binding #self.Label}"
+                       Foreground="{DynamicResource AppTextSecondary}"
+                       FontSize="13" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1" Text="{Binding #self.Value}"
+                       Foreground="{Binding #self.BarColor}"
+                       FontWeight="SemiBold" FontSize="12" />
+        </Grid>
+        <ProgressBar Value="{Binding #self.Percentage}" Minimum="0" Maximum="100"
+                     Height="6" CornerRadius="3"
+                     Background="{DynamicResource AppWindowBackground}"
+                     Foreground="{Binding #self.BarColor}" />
+    </StackPanel>
+</UserControl>

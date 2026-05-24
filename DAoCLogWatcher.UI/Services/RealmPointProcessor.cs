@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using DAoCLogWatcher.Core;
 using DAoCLogWatcher.Core.Models;
 using DAoCLogWatcher.UI.Models;
 
@@ -8,15 +9,15 @@ namespace DAoCLogWatcher.UI.Services;
 
 public sealed class RealmPointProcessor: IRealmPointProcessor
 {
-	private readonly MultiKillDetector multiKillDetector;
+	private readonly IMultiKillDetector multiKillDetector;
 	private readonly KillStatTracker killStatTracker = new();
 	private readonly ZoneKillTracker zoneKillTracker = new();
 
-	public RealmPointProcessor(RealmPointSummary summary, RpsChartData chartData)
+	public RealmPointProcessor(RealmPointSummary summary, RpsChartData chartData, IMultiKillDetector? multiKillDetector = null)
 	{
 		this.summary = summary;
 		this.chartData = chartData;
-		this.multiKillDetector = new MultiKillDetector();
+		this.multiKillDetector = multiKillDetector ?? new MultiKillDetector();
 		this.multiKillDetector.MultiKillDetected += this.OnMultiKillDetected;
 		this.zoneKillTracker.Updated += (_, _) => this.ZoneKillsUpdated?.Invoke(this, EventArgs.Empty);
 	}
@@ -48,7 +49,7 @@ public sealed class RealmPointProcessor: IRealmPointProcessor
 		characterChanged = false;
 		killStatsChanged = false;
 
-		this.multiKillDetector.AdvanceTimestamp(GetTimestamp(logLine));
+		this.multiKillDetector.AdvanceTimestamp(logLine.Timestamp);
 
 		if(logLine.DetectedCharacterName != null&&logLine.DetectedCharacterName != this.DetectedCharacterName)
 		{
@@ -57,7 +58,7 @@ public sealed class RealmPointProcessor: IRealmPointProcessor
 			this.killStatTracker.OnCharacterChanged(this.DetectedCharacterName, ref killStatsChanged);
 		}
 
-		if(logLine is KillLogLine { Event: var killEvent })
+		if(logLine is KillLogLine { Event: { IsNpc: false } killEvent })
 		{
 			this.killStatTracker.OnKillEvent(killEvent, this.DetectedCharacterName, ref killStatsChanged);
 			this.zoneKillTracker.Track(killEvent, sessionStartTime);
@@ -80,61 +81,8 @@ public sealed class RealmPointProcessor: IRealmPointProcessor
 		this.summary.FirstEntryTime ??= entryDateTime;
 		this.summary.LastEntryTime = entryDateTime;
 
-		switch(entry.Source)
-		{
-			case RealmPointSource.PlayerKill:
-				this.summary.PlayerKills++;
-				this.summary.PlayerKillsRP += entry.Points;
-				break;
-			case RealmPointSource.CampaignQuest:
-				this.summary.CampaignQuests++;
-				this.summary.CampaignQuestsRP += entry.Points;
-				break;
-			case RealmPointSource.Tick:
-				this.summary.Ticks++;
-				this.summary.TicksRP += entry.Points;
-				break;
-			case RealmPointSource.Siege:
-				this.summary.Siege++;
-				this.summary.SiegeRP += entry.Points;
-				break;
-			case RealmPointSource.AssaultOrder:
-				this.summary.AssaultOrder++;
-				this.summary.AssaultOrderRP += entry.Points;
-				break;
-			case RealmPointSource.SupportActivity:
-				this.summary.SupportActivity++;
-				this.summary.SupportActivityRP += entry.Points;
-				break;
-			case RealmPointSource.RelicCapture:
-				this.summary.RelicCapture++;
-				this.summary.RelicCaptureRP += entry.Points;
-				break;
-			case RealmPointSource.TimedMission:
-				this.summary.TimedMissions++;
-				this.summary.TimedMissionsRP += entry.Points;
-				break;
-			case RealmPointSource.Misc:
-				this.summary.Misc++;
-				this.summary.MiscRP += entry.Points;
-				break;
-			default:
-				throw new ArgumentOutOfRangeException();
-		}
-
-		var sourceLabel = entry.Source switch
-		{
-				RealmPointSource.PlayerKill => "Player Kill",
-				RealmPointSource.CampaignQuest => "Campaign Quest completed",
-				RealmPointSource.Tick => "Battle Tick",
-				RealmPointSource.Siege => "Siege (Tower/Keep Capture)",
-				RealmPointSource.AssaultOrder => "Assault Order",
-				RealmPointSource.SupportActivity => "Support Tick",
-				RealmPointSource.RelicCapture => "Relic Capture",
-				RealmPointSource.TimedMission => "Timed Mission",
-				RealmPointSource.Misc => "Other",
-				_ => throw new UnreachableException()
-		};
+		var (sourceLabel, accumulate) = GetSourceMeta(entry.Source);
+		accumulate(this.summary, entry.Points);
 
 		this.chartData.Add(entryDateTime, this.summary.TotalRealmPoints, entry.Points);
 
@@ -145,7 +93,9 @@ public sealed class RealmPointProcessor: IRealmPointProcessor
 				               Timestamp = entry.Timestamp.ToString("HH:mm:ss"),
 				               Points = entry.Points,
 				               Source = entry.Source.ToString(),
-				               Details = details
+				               Details = details,
+				               VictimName = entry.Victim,
+			               IsDeathblow = entry.IsDeathblow
 		               };
 
 		if(entry.Source == RealmPointSource.PlayerKill)
@@ -174,17 +124,20 @@ public sealed class RealmPointProcessor: IRealmPointProcessor
 		this.DetectedCharacterName = null;
 	}
 
-	private static TimeOnly? GetTimestamp(LogLine logLine)
-	{
-		return logLine switch
+	private static (string Label, Action<RealmPointSummary, int> Accumulate) GetSourceMeta(RealmPointSource source) =>
+		source switch
 		{
-				KillLogLine k => (TimeOnly?)k.Event.Timestamp,
-				RealmPointLogLine r => r.Entry.Timestamp,
-				DamageLogLine d => d.Event.Timestamp,
-				HealLogLine h => h.Event.Timestamp,
-				_ => null
+				RealmPointSource.PlayerKill => ("Player Kill", (s, p) => { s.PlayerKills++; s.PlayerKillsRP += p; }),
+				RealmPointSource.CampaignQuest => ("Campaign Quest completed", (s, p) => { s.CampaignQuests++; s.CampaignQuestsRP += p; }),
+				RealmPointSource.Tick => ("Battle Tick", (s, p) => { s.Ticks++; s.TicksRP += p; }),
+				RealmPointSource.Siege => ("Siege (Tower/Keep Capture)", (s, p) => { s.Siege++; s.SiegeRP += p; }),
+				RealmPointSource.AssaultOrder => ("Assault Order", (s, p) => { s.AssaultOrder++; s.AssaultOrderRP += p; }),
+				RealmPointSource.SupportActivity => ("Support Tick", (s, p) => { s.SupportActivity++; s.SupportActivityRP += p; }),
+				RealmPointSource.RelicCapture => ("Relic Capture", (s, p) => { s.RelicCapture++; s.RelicCaptureRP += p; }),
+				RealmPointSource.TimedMission => ("Timed Mission", (s, p) => { s.TimedMissions++; s.TimedMissionsRP += p; }),
+				RealmPointSource.Misc => ("Other", (s, p) => { s.Misc++; s.MiscRP += p; }),
+				_ => throw new UnreachableException()
 		};
-	}
 
 	private void OnMultiKillDetected(object? sender, MultiKillResult result)
 	{

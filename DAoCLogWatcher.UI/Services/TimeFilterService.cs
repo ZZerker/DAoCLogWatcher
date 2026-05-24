@@ -9,7 +9,7 @@ public partial class TimeFilterService: ObservableObject
 {
 	private const int CUSTOM_FILTER_INDEX = 9;
 
-	[ObservableProperty] private int selectedTimeFilterIndex = 3;
+	[ObservableProperty] private int selectedTimeFilterIndex = 8;
 	[ObservableProperty] private bool isCustomPopupVisible;
 	[ObservableProperty] private decimal? customInputHours = 1;
 	[ObservableProperty] private decimal? customInputMinutes = 0;
@@ -83,6 +83,16 @@ public partial class TimeFilterService: ObservableObject
 		this.IsCustomPopupVisible = false;
 		this.suppressFilterChange = true;
 		this.SelectedTimeFilterIndex = this.previousFilterIndex;
+		this.suppressFilterChange = false;
+	}
+
+	/// <summary>Updates the dropdown selection without firing FilterChanged (used when a watcher
+	/// is already being set up by a different code path, e.g. session-based open).</summary>
+	public void SetIndexSilent(int index)
+	{
+		this.suppressFilterChange = true;
+		this.SelectedTimeFilterIndex = index;
+		this.previousFilterIndex = index;
 		this.suppressFilterChange = false;
 	}
 }

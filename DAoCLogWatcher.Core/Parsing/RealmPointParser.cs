@@ -21,6 +21,13 @@ public sealed partial class RealmPointParser
 	private RealmPointEntry? bufferedEntry;
 	private ParserState state = ParserState.Idle;
 
+	public void Reset()
+	{
+		this.pendingEntry = null;
+		this.bufferedEntry = null;
+		this.state = ParserState.Idle;
+	}
+
 	public bool TryParse(string line, out RealmPointEntry? entry)
 	{
 		// If a previous call produced two entries (e.g. pending flush + the line itself),
@@ -237,6 +244,7 @@ public sealed partial class RealmPointParser
 			return RealmPointSource.SupportActivity;
 		}
 
+		Debug.WriteLine($"[RealmPointParser] Unknown RP reason, classified as Misc: '{reason}'");
 		return RealmPointSource.Misc;
 	}
 

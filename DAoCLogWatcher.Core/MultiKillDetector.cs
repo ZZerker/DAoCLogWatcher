@@ -1,15 +1,8 @@
-using System;
-using DAoCLogWatcher.Core;
-using DAoCLogWatcher.UI.Models;
+using DAoCLogWatcher.Core.Models;
 
-namespace DAoCLogWatcher.UI.Services;
+namespace DAoCLogWatcher.Core;
 
-/// <summary>
-/// Tracks a sliding window of PlayerKill RP entries and fires
-/// <see cref="MultiKillDetected"/> when five or more accumulate before
-/// the window expires.
-/// </summary>
-internal sealed class MultiKillDetector
+public sealed class MultiKillDetector: IMultiKillDetector
 {
 	private int windowRpCount;
 	private int windowRps;
@@ -18,10 +11,6 @@ internal sealed class MultiKillDetector
 
 	public event EventHandler<MultiKillResult>? MultiKillDetected;
 
-	/// <summary>
-	/// Call on every timestamped log line. If the window is open and the
-	/// timestamp has moved past the expiry threshold, the window is finalized.
-	/// </summary>
 	public void AdvanceTimestamp(TimeOnly? currentTs)
 	{
 		if(this.windowRpCount <= 0||!currentTs.HasValue)
@@ -36,10 +25,6 @@ internal sealed class MultiKillDetector
 		}
 	}
 
-	/// <summary>
-	/// Call once a PlayerKill RP entry has been built. Opens or extends the current window.
-	/// <paramref name="markAsMultiKill"/> is invoked on the first entry when the window closes.
-	/// </summary>
 	public void OnPlayerKillRp(TimeOnly entryTimestamp, int points, Action markAsMultiKill)
 	{
 		if(this.windowRpCount == 0)
@@ -54,9 +39,7 @@ internal sealed class MultiKillDetector
 
 	public void Reset()
 	{
-		this.windowRpCount = 0;
-		this.windowRps = 0;
-		this.markFirstEntryAsMultiKill = null;
+		this.ClearWindow();
 	}
 
 	private void FinalizeWindow()
@@ -64,10 +47,14 @@ internal sealed class MultiKillDetector
 		if(this.windowRpCount >= 5)
 		{
 			this.markFirstEntryAsMultiKill?.Invoke();
-
 			this.MultiKillDetected?.Invoke(this, new MultiKillResult(this.windowStart, this.windowRps, this.windowRpCount));
 		}
 
+		this.ClearWindow();
+	}
+
+	private void ClearWindow()
+	{
 		this.windowRpCount = 0;
 		this.windowRps = 0;
 		this.markFirstEntryAsMultiKill = null;

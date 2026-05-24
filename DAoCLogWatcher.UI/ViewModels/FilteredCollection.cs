@@ -10,10 +10,17 @@ public sealed partial class FilteredCollection<T>: ObservableObject
 	private const int CAPACITY = 1000;
 
 	private readonly Func<T, string, bool> matches;
+	private Func<T, bool>? typeFilter;
 
 	public FilteredCollection(Func<T, string, bool> matches)
 	{
 		this.matches = matches;
+	}
+
+	public void SetTypeFilter(Func<T, bool>? filter)
+	{
+		this.typeFilter = filter;
+		this.Refresh();
 	}
 
 	public ObservableCollection<T> Items { get; } = [];
@@ -35,7 +42,7 @@ public sealed partial class FilteredCollection<T>: ObservableObject
 			this.Items.RemoveAt(this.Items.Count - 1);
 		}
 
-		if(this.matches(item, this.FilterText))
+		if(this.matches(item, this.FilterText) && (this.typeFilter == null || this.typeFilter(item)))
 		{
 			this.Filtered.Insert(0, item);
 			if(this.Filtered.Count > CAPACITY)
@@ -56,7 +63,7 @@ public sealed partial class FilteredCollection<T>: ObservableObject
 		this.Filtered.Clear();
 		foreach(var e in this.Items)
 		{
-			if(this.matches(e, this.FilterText))
+			if(this.matches(e, this.FilterText) && (this.typeFilter == null || this.typeFilter(e)))
 			{
 				this.Filtered.Add(e);
 				if(this.Filtered.Count >= CAPACITY)

@@ -395,45 +395,89 @@ public sealed class CombatParserTests
 	// ── Outgoing Heals ────────────────────────────────────────────────────────
 
 	[Fact]
-	public void TryParse_SelfHeal_ReturnsOutgoingHealWithTargetYourself()
+	public void TryParse_SelfHeal_PendingUntilNextLine()
 	{
-		this.parser.TryParse("[21:55:49] You heal yourself for 1060 hit points.", out _, out var heal, out _);
+		// Outgoing heals are held pending to allow the crit line that follows to be merged
+		var result1 = this.parser.TryParse("[21:55:49] You heal yourself for 1060 hit points.", out _, out var heal1, out _);
+		heal1.Should().BeNull("outgoing heal is pending until we know if a crit follows");
 
-		heal.Should().NotBeNull();
-		heal!.IsOutgoing.Should().BeTrue();
-		heal.Target.Should().Be("yourself");
-		heal.HitPoints.Should().Be(1060);
-		heal.Timestamp.Should().Be(new TimeOnly(21, 55, 49));
+		// Next unrelated line flushes it
+		this.parser.TryParse("[21:55:50] Some other line", out _, out var heal2, out _);
+		heal2.Should().NotBeNull();
+		heal2!.IsOutgoing.Should().BeTrue();
+		heal2.Target.Should().Be("yourself");
+		heal2.HitPoints.Should().Be(1060);
+		heal2.CritHitPoints.Should().Be(0);
+		heal2.Timestamp.Should().Be(new TimeOnly(21, 55, 49));
 	}
 
 	[Fact]
-	public void TryParse_HealOther_ReturnsOutgoingHealWithTargetName()
+	public void TryParse_HealOther_PendingUntilNextLine()
 	{
-		this.parser.TryParse("[21:55:49] You heal Pelgath for 1060 hit points!", out _, out var heal, out _);
+		this.parser.TryParse("[21:55:49] You heal Pelgath for 1060 hit points!", out _, out var heal1, out _);
+		heal1.Should().BeNull("pending until crit or next line");
 
-		heal.Should().NotBeNull();
-		heal!.IsOutgoing.Should().BeTrue();
-		heal.Target.Should().Be("Pelgath");
-		heal.HitPoints.Should().Be(1060);
+		this.parser.TryParse("[21:55:50] Some other line", out _, out var heal2, out _);
+		heal2.Should().NotBeNull();
+		heal2!.IsOutgoing.Should().BeTrue();
+		heal2.Target.Should().Be("Pelgath");
+		heal2.HitPoints.Should().Be(1060);
 	}
 
 	[Fact]
-	public void TryParse_OutgoingHeal_WithPendingTaken_ReturnsBothDamageAndHeal()
+	public void TryParse_OutgoingHealFollowedByCrit_EmitsMergedHealOnCritLine()
+	{
+		// Real game order from chat.log:
+		//   [17:07:23] You heal Eibho for 166 hit points!
+		//   [17:07:23] Your heal criticals for an extra 17 amount of hit points! (Crit Chance: 13%)
+		this.parser.TryParse("[17:07:23] You heal Eibho for 166 hit points!", out _, out var heal1, out _);
+		heal1.Should().BeNull("pending — crit may follow");
+
+		var result = this.parser.TryParse("[17:07:23] Your heal criticals for an extra 17 amount of hit points! (Crit Chance: 13%)", out _, out var heal2, out _);
+
+		result.Should().BeTrue();
+		heal2.Should().NotBeNull("crit line should flush the pending heal with crit applied");
+		heal2!.HitPoints.Should().Be(166);
+		heal2.CritHitPoints.Should().Be(17);
+		heal2.TotalHitPoints.Should().Be(183);
+		heal2.IsOutgoing.Should().BeTrue();
+		heal2.Target.Should().Be("Eibho");
+	}
+
+	[Fact]
+	public void TryParse_OutgoingSpreadhealFollowedByCrit_EmitsMergedHeal()
+	{
+		this.parser.TryParse("[20:16:52] You heal Daube for 253 hit points!", out _, out _, out _);
+
+		var result = this.parser.TryParse("[20:16:52] Your spreadheal criticals for an extra 2776 amount of hit points! (Crit Chance: 27%)", out _, out var heal, out _);
+
+		result.Should().BeTrue();
+		heal.Should().NotBeNull();
+		heal!.HitPoints.Should().Be(253);
+		heal.CritHitPoints.Should().Be(2776);
+		heal.TotalHitPoints.Should().Be(3029);
+	}
+
+	[Fact]
+	public void TryParse_OutgoingHeal_WithPendingTaken_DamageFlushedImmediately_HealOnNextLine()
 	{
 		// Enemy hits player — pendingTaken is set
 		this.parser.TryParse("[21:55:48] Pelgath hits you for 200 damage!", out _, out _, out _);
 
-		// Player heals a group member — pendingTaken is flushed as damage AND heal is returned
-		var result = this.parser.TryParse("[21:55:49] You heal Rendis for 500 hit points!", out var damage, out var heal, out _);
+		// Player heals — pendingTaken is flushed as damage; outgoing heal is pending
+		var result1 = this.parser.TryParse("[21:55:49] You heal Rendis for 500 hit points!", out var damage, out var heal1, out _);
 
-		result.Should().BeTrue();
-		damage.Should().NotBeNull("flushed taken hit must be returned");
-		damage!.IsDealt.Should().BeFalse();
-		damage.BaseDamage.Should().Be(200);
-		heal.Should().NotBeNull("outgoing heal must not be dropped when there is a pending taken hit");
-		heal!.IsOutgoing.Should().BeTrue();
-		heal.Target.Should().Be("Rendis");
-		heal.HitPoints.Should().Be(500);
+		result1.Should().BeTrue("flushed taken hit must be returned");
+		damage.Should().NotBeNull();
+		damage!.BaseDamage.Should().Be(200);
+		damage.IsDealt.Should().BeFalse();
+		heal1.Should().BeNull("heal is pending — crit may follow");
+
+		// Next line flushes the pending heal
+		this.parser.TryParse("[21:55:50] unrelated", out _, out var heal2, out _);
+		heal2.Should().NotBeNull("heal must not be dropped");
+		heal2!.Target.Should().Be("Rendis");
+		heal2.HitPoints.Should().Be(500);
 	}
 
 	[Fact]

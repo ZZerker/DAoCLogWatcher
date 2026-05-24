@@ -21,18 +21,18 @@
 
     <Window.Styles>
         <Style Selector="Window.highlight-multikills Border.multikill">
-            <Setter Property="Background" Value="#44FFAA00" />
-            <Setter Property="BorderBrush" Value="#FFAA00" />
-            <Setter Property="BorderThickness" Value="3,2,0,2" />
+            <Setter Property="Background" Value="{DynamicResource AppMultiKillHighlightBg}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AppWarning}" />
+            <Setter Property="BorderThickness" Value="3,0,0,1" />
         </Style>
         <Style Selector="Window.highlight-multikills Border.multikill TextBlock.source-label">
-            <Setter Property="Foreground" Value="#FFFFAA00" />
+            <Setter Property="Foreground" Value="{DynamicResource AppWarning}" />
             <Setter Property="FontWeight" Value="Bold" />
         </Style>
         <Style Selector="Window.highlight-multihits Border.multihit">
-            <Setter Property="Background" Value="#44CC44FF" />
-            <Setter Property="BorderBrush" Value="#CC44FF" />
-            <Setter Property="BorderThickness" Value="3,2,0,2" />
+            <Setter Property="Background" Value="{DynamicResource AppMultiHitHighlightBg}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AppMultiHit}" />
+            <Setter Property="BorderThickness" Value="3,0,0,1" />
         </Style>
     </Window.Styles>
 
@@ -46,30 +46,95 @@
                 <Border Grid.Column="1" Background="{DynamicResource AppPanelBackground}"
                         BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1" CornerRadius="8"
                         Padding="10" Margin="0,0,0,0">
-                    <TabControl>
+                    <TabControl x:Name="MainTabControl">
+                        <TabControl.Styles>
+                            <Style Selector="TabControl">
+                                <Setter Property="TabStripPlacement" Value="Top" />
+                            </Style>
+                            <Style Selector="TabItem">
+                                <Setter Property="Padding" Value="16,10,16,9" />
+                                <Setter Property="Background" Value="Transparent" />
+                                <Setter Property="BorderThickness" Value="0,0,0,2" />
+                                <Setter Property="BorderBrush" Value="Transparent" />
+                                <Setter Property="Cursor" Value="Hand" />
+                                <Setter Property="Template">
+                                    <ControlTemplate>
+                                        <Border Name="PART_LayoutRoot"
+                                                Background="{TemplateBinding Background}"
+                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                Padding="{TemplateBinding Padding}">
+                                            <ContentPresenter Name="PART_ContentPresenter"
+                                                              Content="{TemplateBinding Header}"
+                                                              HorizontalAlignment="Center"
+                                                              VerticalAlignment="Center" />
+                                        </Border>
+                                    </ControlTemplate>
+                                </Setter>
+                            </Style>
+                            <Style Selector="TabItem:selected">
+                                <Setter Property="BorderBrush" Value="{DynamicResource AppAccentCyan}" />
+                            </Style>
+                            <Style Selector="TabItem TextBlock.tab-label">
+                                <Setter Property="Foreground" Value="#FF777777" />
+                                <Setter Property="FontSize" Value="13" />
+                                <Setter Property="FontWeight" Value="Normal" />
+                            </Style>
+                            <Style Selector="TabItem:selected TextBlock.tab-label">
+                                <Setter Property="Foreground" Value="#FFFFFFFF" />
+                                <Setter Property="FontWeight" Value="SemiBold" />
+                            </Style>
+                            <Style Selector="TabItem:pointerover:not(:selected) TextBlock.tab-label">
+                                <Setter Property="Foreground" Value="#FFAAAAAA" />
+                            </Style>
+                            <Style Selector="TabItem TextBlock.tab-sublabel">
+                                <Setter Property="Foreground" Value="#FF777777" />
+                                <Setter Property="FontSize" Value="11" />
+                            </Style>
+                            <Style Selector="TabItem:selected TextBlock.tab-sublabel">
+                                <Setter Property="Foreground" Value="{DynamicResource AppAccentCyan}" />
+                            </Style>
+                        </TabControl.Styles>
 
-                        <TabItem Header="Realm Points" IsVisible="{Binding RealmPointsTab.Value}">
+                        <TabItem IsVisible="{Binding DashboardTab.Value}">
+                            <TabItem.Header>
+                                <TextBlock Classes="tab-label" Text="Dashboard" />
+                            </TabItem.Header>
+                            <tabs:DashboardTabView />
+                        </TabItem>
+
+                        <TabItem IsVisible="{Binding RealmPointsTab.Value}">
+                            <TabItem.Header>
+                                <TextBlock Classes="tab-label" Text="Realm Points" />
+                            </TabItem.Header>
                             <tabs:RealmPointsTabView />
                         </TabItem>
 
-                        <TabItem Header="Combat" IsVisible="{Binding CombatTab.Value}">
+                        <TabItem IsVisible="{Binding CombatTab.Value}">
+                            <TabItem.Header>
+                                <StackPanel Spacing="2">
+                                    <TextBlock Classes="tab-label" Text="Combat" />
+                                    <TextBlock Classes="tab-sublabel" Text="Stats · Log" />
+                                </StackPanel>
+                            </TabItem.Header>
                             <tabs:CombatTabView />
                         </TabItem>
 
-                        <TabItem Header="Heal Log" IsVisible="{Binding HealLogTab.Value}">
+                        <TabItem IsVisible="{Binding HealLogTab.Value}">
+                            <TabItem.Header>
+                                <TextBlock Classes="tab-label" Text="Heals" />
+                            </TabItem.Header>
                             <tabs:HealLogTabView />
                         </TabItem>
 
-                        <TabItem Header="Combat Log" IsVisible="{Binding CombatLogTab.Value}">
-                            <tabs:CombatLogTabView />
-                        </TabItem>
-
-                        <TabItem Header="Kill Zones" IsVisible="{Binding ZoneKillsTab.Value}">
-                            <tabs:KillZonesTabView />
-                        </TabItem>
-
-                        <TabItem Header="Kill Heatmap" IsVisible="{Binding KillHeatmapTab.Value}">
-                            <tabs:KillHeatmapTabView />
+                        <TabItem>
+                            <TabItem.Header>
+                                <StackPanel Spacing="2">
+                                    <TextBlock Classes="tab-label" Text="Map" />
+                                    <TextBlock Classes="tab-sublabel" Text="Zones · Heatmap" />
+                                </StackPanel>
+                            </TabItem.Header>
+                            <tabs:MapTabView />
                         </TabItem>
 
                     </TabControl>
@@ -93,7 +158,7 @@
                 HorizontalAlignment="Right" VerticalAlignment="Bottom"
                 Margin="0,0,30,30"
                 Background="{DynamicResource AppCardBackground}"
-                BorderBrush="#FF28A745" BorderThickness="1"
+                BorderBrush="{DynamicResource AppUpdate}" BorderThickness="1"
                 CornerRadius="8" Padding="16,12"
                 BoxShadow="0 4 20 0 #88000000">
             <StackPanel Spacing="10" Width="260">
@@ -102,19 +167,17 @@
                         <TextBlock Text="Update Available" FontWeight="SemiBold" FontSize="13"
                                    Foreground="{DynamicResource AppTextPrimary}" />
                         <TextBlock Text="{Binding UpdateVersionText}" FontSize="12"
-                                   Foreground="#FF28A745" />
+                                   Foreground="{DynamicResource AppUpdate}" />
                     </StackPanel>
                     <Button Grid.Column="1" Content="✕"
+                            Classes="btn-ghost"
                             Command="{Binding DismissUpdateCommand}"
-                            Background="Transparent" BorderThickness="0"
-                            Foreground="{DynamicResource AppTextMuted}"
-                            Padding="6,2" FontSize="12"
                             VerticalAlignment="Top" />
                 </Grid>
                 <Button Content="Update"
                         Command="{Binding ApplyUpdateAndRestartCommand}"
-                        Background="#FF28A745" Foreground="White"
-                        Padding="10,7" CornerRadius="5" BorderThickness="0"
+                        Classes="btn-primary"
+                        Background="{DynamicResource AppUpdate}"
                         HorizontalAlignment="Stretch" />
             </StackPanel>
         </Border>
@@ -150,15 +213,12 @@
                 <StackPanel Orientation="Horizontal" Spacing="8">
                     <Button Content="Apply"
                             Command="{Binding TimeFilter.ApplyCustomFilterCommand}"
-                            Background="#FF00D9FF" Foreground="#FF1A1A2E"
-                            Padding="14,7" CornerRadius="5" BorderThickness="0"
-                            FontWeight="SemiBold" />
+                            Classes="btn-primary"
+                            Background="{DynamicResource AppAccentCyan}"
+                            Foreground="#1A1A2E" />
                     <Button Content="Cancel"
                             Command="{Binding TimeFilter.CancelCustomFilterCommand}"
-                            Background="Transparent"
-                            Foreground="{DynamicResource AppTextMuted}"
-                            Padding="10,7" CornerRadius="5" BorderThickness="1"
-                            BorderBrush="{DynamicResource AppBorderBrush}" />
+                            Classes="btn-secondary" />
                 </StackPanel>
             </StackPanel>
         </Border>
@@ -168,22 +228,20 @@
                 HorizontalAlignment="Right" VerticalAlignment="Bottom"
                 Margin="0,0,20,20"
                 Background="#DD1E1E2E"
-                BorderBrush="#FF00D9FF" BorderThickness="1"
+                BorderBrush="{DynamicResource AppAccentCyan}" BorderThickness="1"
                 CornerRadius="8" Padding="14,10"
                 BoxShadow="0 4 20 0 #88000000">
             <Grid ColumnDefinitions="*,Auto">
                 <StackPanel Spacing="2">
                     <TextBlock Text="{Binding SendNotification.Sender}"
-                               Foreground="#FF00D9FF" FontWeight="SemiBold" FontSize="13" />
+                               Foreground="{DynamicResource AppAccentCyan}" FontWeight="SemiBold" FontSize="13" />
                     <TextBlock Text="{Binding SendNotification.Message}"
                                Foreground="{DynamicResource AppTextPrimary}" FontSize="12"
                                TextWrapping="Wrap" MaxWidth="300" />
                 </StackPanel>
                 <Button Grid.Column="1" Content="✕"
+                        Classes="btn-ghost"
                         Command="{Binding SendNotification.DismissCommand}"
-                        Background="Transparent" BorderThickness="0"
-                        Foreground="{DynamicResource AppTextMuted}"
-                        Padding="6,2" FontSize="11"
                         VerticalAlignment="Top" Margin="8,0,0,0" />
             </Grid>
         </Border>
@@ -203,10 +261,8 @@
                                Foreground="{DynamicResource AppTextPrimary}"
                                VerticalAlignment="Center" />
                     <Button Grid.Column="1" Content="✕"
+                            Classes="btn-ghost"
                             Command="{Binding CloseSettingsPopupCommand}"
-                            Background="Transparent" BorderThickness="0"
-                            Foreground="{DynamicResource AppTextMuted}"
-                            Padding="6,2" FontSize="12"
                             VerticalAlignment="Top" />
                 </Grid>
                 <Rectangle Fill="{DynamicResource AppBorderBrush}" Height="1" />
@@ -252,6 +308,13 @@
                 <TextBlock Text="TABS" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource AppTextMuted}" />
                 <Grid ColumnDefinitions="*,Auto">
                     <StackPanel VerticalAlignment="Center" Spacing="2">
+                        <TextBlock Text="Dashboard Tab" Foreground="{DynamicResource AppTextPrimary}" FontSize="12" />
+                    </StackPanel>
+                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding DashboardTab.Value}"
+                                  OffContent="" OnContent="" VerticalAlignment="Center" />
+                </Grid>
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel VerticalAlignment="Center" Spacing="2">
                         <TextBlock Text="Realm Points Tab" Foreground="{DynamicResource AppTextPrimary}" FontSize="12" />
                     </StackPanel>
                     <ToggleSwitch Grid.Column="1" IsChecked="{Binding RealmPointsTab.Value}"
@@ -259,37 +322,16 @@
                 </Grid>
                 <Grid ColumnDefinitions="*,Auto">
                     <StackPanel VerticalAlignment="Center" Spacing="2">
-                        <TextBlock Text="Combat Stats Tab" Foreground="{DynamicResource AppTextPrimary}" FontSize="12" />
+                        <TextBlock Text="Combat Tab" Foreground="{DynamicResource AppTextPrimary}" FontSize="12" />
                     </StackPanel>
                     <ToggleSwitch Grid.Column="1" IsChecked="{Binding CombatTab.Value}"
                                   OffContent="" OnContent="" VerticalAlignment="Center" />
                 </Grid>
                 <Grid ColumnDefinitions="*,Auto">
                     <StackPanel VerticalAlignment="Center" Spacing="2">
-                        <TextBlock Text="Heal Log Tab" Foreground="{DynamicResource AppTextPrimary}" FontSize="12" />
+                        <TextBlock Text="Heals Tab" Foreground="{DynamicResource AppTextPrimary}" FontSize="12" />
                     </StackPanel>
                     <ToggleSwitch Grid.Column="1" IsChecked="{Binding HealLogTab.Value}"
-                                  OffContent="" OnContent="" VerticalAlignment="Center" />
-                </Grid>
-                <Grid ColumnDefinitions="*,Auto">
-                    <StackPanel VerticalAlignment="Center" Spacing="2">
-                        <TextBlock Text="Combat Log Tab" Foreground="{DynamicResource AppTextPrimary}" FontSize="12" />
-                    </StackPanel>
-                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding CombatLogTab.Value}"
-                                  OffContent="" OnContent="" VerticalAlignment="Center" />
-                </Grid>
-                <Grid ColumnDefinitions="*,Auto">
-                    <StackPanel VerticalAlignment="Center" Spacing="2">
-                        <TextBlock Text="Kill Zones Tab" Foreground="{DynamicResource AppTextPrimary}" FontSize="12" />
-                    </StackPanel>
-                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding ZoneKillsTab.Value}"
-                                  OffContent="" OnContent="" VerticalAlignment="Center" />
-                </Grid>
-                <Grid ColumnDefinitions="*,Auto">
-                    <StackPanel VerticalAlignment="Center" Spacing="2">
-                        <TextBlock Text="Kill Heatmap Tab" Foreground="{DynamicResource AppTextPrimary}" FontSize="12" />
-                    </StackPanel>
-                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding KillHeatmapTab.Value}"
                                   OffContent="" OnContent="" VerticalAlignment="Center" />
                 </Grid>
                 <Rectangle Fill="{DynamicResource AppBorderBrush}" Height="1" />
@@ -303,17 +345,16 @@
                         </StackPanel>
                         <Button Grid.Column="1"
                                 Content="Browse"
+                                Classes="btn-secondary"
                                 Command="{Binding BrowseChatLogPathCommand}"
                                 CommandParameter="{Binding $parent[Window].StorageProvider}"
-                                Background="#FF3A3A4A" Foreground="{DynamicResource AppTextPrimary}"
-                                Padding="8,4" CornerRadius="4" BorderThickness="0"
-                                FontSize="11" VerticalAlignment="Center" Margin="6,0,0,0" />
+                                Padding="10,5" FontSize="11"
+                                VerticalAlignment="Center" Margin="6,0,0,0" />
                         <Button Grid.Column="2"
                                 Content="✕"
+                                Classes="btn-ghost"
                                 Command="{Binding ClearChatLogPathCommand}"
                                 IsVisible="{Binding CustomChatLogPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                                Background="Transparent" Foreground="{DynamicResource AppTextMuted}"
-                                Padding="6,4" BorderThickness="0"
                                 FontSize="11" VerticalAlignment="Center" Margin="2,0,0,0" />
                     </Grid>
                     <TextBox Text="{Binding CustomChatLogPath}"
@@ -342,11 +383,9 @@
                            VerticalAlignment="Center" />
                 <Button Grid.Column="1"
                         Content="✕"
+                        Classes="btn-ghost"
                         Command="{Binding DismissWatchErrorCommand}"
-                        Background="Transparent"
                         Foreground="White"
-                        BorderThickness="0"
-                        Padding="8,4"
                         Margin="8,0,0,0"
                         FontSize="13" />
             </Grid>

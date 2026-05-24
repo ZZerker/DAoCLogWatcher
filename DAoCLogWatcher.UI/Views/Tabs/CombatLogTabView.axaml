@@ -1,20 +1,51 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:DAoCLogWatcher.UI.ViewModels"
+             xmlns:controls="using:DAoCLogWatcher.UI.Views.Controls"
              x:Class="DAoCLogWatcher.UI.Views.Tabs.CombatLogTabView"
              x:DataType="vm:MainWindowViewModel">
 
     <Grid RowDefinitions="*" Margin="10,10,10,0">
         <DockPanel>
             <StackPanel DockPanel.Dock="Top" Margin="0,0,0,15" Spacing="10">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <controls:StatTile Label="TOTAL DEALT" Value="{Binding CombatSummary.TotalDamageDealt}"
+                                       ValueColor="{DynamicResource AppHeat}" />
+                    <controls:StatTile Label="TOTAL TAKEN" Value="{Binding CombatSummary.TotalDamageTaken}"
+                                       ValueColor="{DynamicResource AppDanger}" />
+                    <controls:StatTile Label="CRIT RATE" Value="{Binding CombatSummary.CritRate, StringFormat='{}{0:F1}%'}"
+                                       ValueColor="{DynamicResource AppCrit}" />
+                    <controls:StatTile Label="HITS" Value="{Binding CombatSummary.HitCount}"
+                                       ValueColor="{DynamicResource AppTextPrimary}" />
+                    <controls:StatTile Label="ABSORBED" Value="{Binding CombatSummary.TotalAbsorbed}"
+                                       ValueColor="{DynamicResource AppTextSecondary}" />
+                </StackPanel>
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="Combat Log" FontSize="22" FontWeight="Bold"
+                    <TextBlock Text="Combat Log" FontSize="14" FontWeight="Bold"
                                Margin="0,0,15,0"
                                Foreground="{DynamicResource AppTextPrimary}" />
                     <TextBlock
                         Text="{Binding CombatLog.Filtered.Count, StringFormat='({0} entries)'}"
                         FontSize="14" VerticalAlignment="Center"
                         Foreground="{DynamicResource AppTextMuted}" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <Button Content="Outgoing"
+                            Classes="btn-toggle"
+                            Classes.active="{Binding CombatLogOutgoing.Value}"
+                            Command="{Binding CombatLogOutgoing.ToggleCommand}" />
+                    <Button Content="Incoming"
+                            Classes="btn-toggle"
+                            Classes.active="{Binding CombatLogIncoming.Value}"
+                            Command="{Binding CombatLogIncoming.ToggleCommand}" />
+                    <Button Content="AoE"
+                            Classes="btn-toggle"
+                            Classes.active="{Binding CombatLogAoe.Value}"
+                            Command="{Binding CombatLogAoe.ToggleCommand}" />
+                    <Button Content="DoT"
+                            Classes="btn-toggle"
+                            Classes.active="{Binding CombatLogDot.Value}"
+                            Command="{Binding CombatLogDot.ToggleCommand}" />
                 </StackPanel>
                 <Grid ColumnDefinitions="*,Auto">
                     <TextBox Grid.Column="0"
@@ -23,11 +54,10 @@
                              FontSize="13" />
                     <Button Grid.Column="1"
                             Content="✕"
+                            Classes="btn-ghost"
                             Command="{Binding CombatLog.ClearFilterCommand}"
                             IsVisible="{Binding CombatLog.FilterText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                            Margin="6,0,0,0"
-                            Padding="8,4"
-                            FontSize="13" />
+                            Margin="6,0,0,0" />
                 </Grid>
             </StackPanel>
 
@@ -40,8 +70,9 @@
                             <Border BorderBrush="{DynamicResource AppRowBorder}"
                                     BorderThickness="0,0,0,1" Padding="10,8"
                                     Background="Transparent"
-                                    Classes.multihit="{Binding IsMultiHit}">
-                                <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,*">
+                                    Classes.multihit="{Binding IsMultiHit}"
+>
+                                <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,*">
                                     <TextBlock Grid.Column="0" Text="{Binding Timestamp}"
                                                Foreground="{DynamicResource AppTextMuted}"
                                                FontFamily="Consolas,Courier New,monospace"
@@ -51,31 +82,64 @@
                                     <Grid Grid.Column="1" MinWidth="75" Margin="0,0,20,0">
                                         <TextBlock Text="AoE" FontSize="13" FontWeight="Bold"
                                                    IsVisible="{Binding IsMultiHit}"
-                                                   Foreground="#FFCC44FF" />
+                                                   Foreground="{DynamicResource AppMultiHit}" />
                                         <TextBlock Text="{Binding DotLabel}" FontSize="13" FontWeight="Bold"
                                                    IsVisible="{Binding IsDotTick}"
-                                                   Foreground="#FFFF9933" />
+                                                   Foreground="{DynamicResource AppDotLabel}" />
                                         <TextBlock Text="Dealt" FontSize="13" FontWeight="Bold"
                                                    IsVisible="{Binding ShowDealtLabel}"
-                                                   Foreground="#FF00D968" />
+                                                   Foreground="{DynamicResource AppPositive}" />
                                         <TextBlock Text="Taken" FontSize="13" FontWeight="Bold"
                                                    IsVisible="{Binding !IsDealt}"
-                                                   Foreground="#FFDC3545" />
+                                                   Foreground="{DynamicResource AppDanger}" />
                                     </Grid>
                                     <TextBlock Grid.Column="2" Text="{Binding TotalDamage}"
                                                FontWeight="Bold"
                                                FontSize="13"
-                                               Margin="0,0,20,0"
+                                               Margin="0,0,10,0"
                                                MinWidth="70"
-                                               Foreground="#FFFF6644" />
-                                    <TextBlock Grid.Column="3" Text="{Binding Source}"
+                                               Foreground="{DynamicResource AppHeat}" />
+                                    <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="4"
+                                                VerticalAlignment="Center" Margin="0,0,10,0">
+                                        <Border Background="#21FFCC44"
+                                                BorderBrush="#7FFFCC44"
+                                                BorderThickness="1"
+                                                CornerRadius="4"
+                                                Padding="6,1"
+                                                IsVisible="{Binding IsCrit}">
+                                            <TextBlock Text="CRIT"
+                                                       FontSize="9"
+                                                       FontWeight="Bold"
+                                                       Foreground="{DynamicResource AppCrit}" />
+                                        </Border>
+                                        <Border Background="#2100D968"
+                                                BorderBrush="#7F00D968"
+                                                BorderThickness="1"
+                                                CornerRadius="4"
+                                                Padding="6,1"
+                                                IsVisible="{Binding IsKillingBlow}">
+                                            <TextBlock Text="KILL"
+                                                       FontSize="9"
+                                                       FontWeight="Bold"
+                                                       Foreground="{DynamicResource AppPositive}" />
+                                        </Border>
+                                    </StackPanel>
+                                    <TextBlock Grid.Column="4" Text="{Binding Source}"
                                                FontSize="13"
                                                Margin="0,0,20,0"
                                                MinWidth="100"
-                                               Foreground="#FF00D9FF" />
-                                    <TextBlock Grid.Column="4" Text="{Binding Opponent}"
+                                               Foreground="{DynamicResource AppAccentCyan}" />
+                                    <controls:PlayerNameControl Grid.Column="5"
+                                                              PlayerName="{Binding Opponent}"
+                                                              NameForeground="{DynamicResource AppTextSecondary}"
+                                                              NameFontSize="13"
+                                                              IsVisible="{Binding IsPlayer}" />
+                                    <TextBlock Grid.Column="5"
+                                               Text="{Binding Opponent}"
+                                               FontSize="13"
                                                Foreground="{DynamicResource AppTextSecondary}"
-                                               FontSize="13" />
+                                               IsVisible="{Binding !IsPlayer}"
+                                               VerticalAlignment="Center" />
                                 </Grid>
                             </Border>
                         </DataTemplate>

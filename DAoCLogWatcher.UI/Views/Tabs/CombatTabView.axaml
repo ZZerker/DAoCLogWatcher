@@ -1,155 +1,150 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:DAoCLogWatcher.UI.ViewModels"
-             xmlns:scott="using:ScottPlot.Avalonia"
+             xmlns:models="using:DAoCLogWatcher.UI.Models"
+             xmlns:controls="using:DAoCLogWatcher.UI.Views.Controls"
+             xmlns:tabs="using:DAoCLogWatcher.UI.Views.Tabs"
              x:Class="DAoCLogWatcher.UI.Views.Tabs.CombatTabView"
              x:DataType="vm:MainWindowViewModel">
 
-    <ScrollViewer Margin="10,10,10,0" HorizontalScrollBarVisibility="Disabled">
-        <StackPanel Spacing="18">
-
-            <Border Background="{DynamicResource AppCardBackground}" CornerRadius="6" Padding="15">
-                <StackPanel Spacing="10">
-                    <TextBlock Text="DAMAGE DEALT" FontWeight="SemiBold" FontSize="11"
-                               Foreground="{DynamicResource AppTextMuted}" />
-                    <StackPanel Orientation="Horizontal" Spacing="30">
-                        <StackPanel Spacing="2">
-                            <TextBlock Text="TOTAL" FontSize="10" FontWeight="SemiBold"
-                                       Foreground="{DynamicResource AppTextMuted}" />
-                            <TextBlock Text="{Binding CombatSummary.TotalDamageDealt}"
-                                       FontSize="28" FontWeight="Bold" Foreground="#FFFF6644" />
-                        </StackPanel>
-                        <StackPanel Spacing="2">
-                            <TextBlock Text="HITS" FontSize="10" FontWeight="SemiBold"
-                                       Foreground="{DynamicResource AppTextMuted}" />
-                            <TextBlock Text="{Binding CombatSummary.HitCount}" FontSize="28"
-                                       FontWeight="Bold"
-                                       Foreground="{DynamicResource AppTextPrimary}" />
-                        </StackPanel>
-                        <StackPanel Spacing="2">
-                            <TextBlock Text="AVG / HIT" FontSize="10" FontWeight="SemiBold"
-                                       Foreground="{DynamicResource AppTextMuted}" />
-                            <TextBlock Text="{Binding CombatSummary.AvgDamagePerHit}"
-                                       FontSize="28" FontWeight="Bold"
-                                       Foreground="{DynamicResource AppTextPrimary}" />
-                        </StackPanel>
-                        <StackPanel Spacing="2">
-                            <TextBlock Text="CRITS" FontSize="10" FontWeight="SemiBold"
-                                       Foreground="{DynamicResource AppTextMuted}" />
-                            <TextBlock Text="{Binding CombatSummary.CritCount}" FontSize="28"
-                                       FontWeight="Bold" Foreground="#FFFFCC44" />
-                        </StackPanel>
-                        <StackPanel Spacing="2">
-                            <TextBlock Text="CRIT RATE" FontSize="10" FontWeight="SemiBold"
-                                       Foreground="{DynamicResource AppTextMuted}" />
-                            <TextBlock
-                                Text="{Binding CombatSummary.CritRate, StringFormat='{}{0:F1}%'}"
-                                FontSize="28" FontWeight="Bold" Foreground="#FFFFCC44" />
-                        </StackPanel>
-                        <StackPanel Spacing="2">
-                            <TextBlock Text="ABSORBED" FontSize="10" FontWeight="SemiBold"
-                                       Foreground="{DynamicResource AppTextMuted}" />
-                            <TextBlock Text="{Binding CombatSummary.TotalAbsorbed}"
-                                       FontSize="28" FontWeight="Bold"
-                                       Foreground="{DynamicResource AppTextMuted}" />
-                        </StackPanel>
+    <DockPanel>
+        <Border DockPanel.Dock="Top"
+                Background="{DynamicResource AppSubTabBarBg}"
+                BorderThickness="0,1,0,1"
+                BorderBrush="{DynamicResource AppRowBorder}"
+                Padding="12,8">
+            <Grid ColumnDefinitions="Auto,*">
+                <Border Grid.Column="0"
+                        Background="{DynamicResource AppCardBackground}"
+                        BorderBrush="{DynamicResource AppBorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="6"
+                        Padding="2">
+                    <StackPanel Orientation="Horizontal" Spacing="2">
+                        <RadioButton Content="Stats"
+                                     GroupName="CombatSub"
+                                     IsChecked="{Binding IsCombatSubStats}"
+                                     Classes="segment-btn" />
+                        <RadioButton Content="Log"
+                                     GroupName="CombatSub"
+                                     IsChecked="{Binding IsCombatSubLog}"
+                                     Classes="segment-btn" />
                     </StackPanel>
-                    <StackPanel Orientation="Horizontal" Spacing="30">
-                        <StackPanel Spacing="2">
-                            <TextBlock Text="MELEE MISS" FontSize="10" FontWeight="SemiBold"
-                                       Foreground="{DynamicResource AppTextMuted}" />
-                            <TextBlock
-                                Text="{Binding CombatSummary.MeleeMissRate, StringFormat='{}{0:F1}%'}"
-                                FontSize="22" FontWeight="Bold"
-                                Foreground="{DynamicResource AppTextPrimary}" />
-                        </StackPanel>
-                        <StackPanel Spacing="2">
-                            <TextBlock Text="SPELL RESIST" FontSize="10" FontWeight="SemiBold"
-                                       Foreground="{DynamicResource AppTextMuted}" />
-                            <TextBlock
-                                Text="{Binding CombatSummary.SpellResistRate, StringFormat='{}{0:F1}%'}"
-                                FontSize="22" FontWeight="Bold"
-                                Foreground="{DynamicResource AppTextPrimary}" />
-                        </StackPanel>
+                </Border>
+                <TextBlock Grid.Column="1"
+                           Text="{Binding CombatSubDescription}"
+                           FontSize="12"
+                           Foreground="{DynamicResource AppTextDim}"
+                           VerticalAlignment="Center"
+                           Margin="12,0,0,0" />
+            </Grid>
+        </Border>
+
+        <Grid>
+            <!-- Stats sub-view -->
+            <ScrollViewer IsVisible="{Binding IsCombatSubStats}"
+                          Margin="10,10,10,0"
+                          HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Spacing="18">
+
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <controls:StatTile Label="TOTAL DEALT" Value="{Binding CombatSummary.TotalDamageDealt}"
+                                           ValueColor="{DynamicResource AppHeat}" />
+                        <controls:StatTile Label="TOTAL TAKEN" Value="{Binding CombatSummary.TotalDamageTaken}"
+                                           ValueColor="{DynamicResource AppDanger}" />
+                        <controls:StatTile Label="CRIT RATE" Value="{Binding CombatSummary.CritRate, StringFormat='{}{0:F1}%'}"
+                                           ValueColor="{DynamicResource AppCrit}" />
+                        <controls:StatTile Label="HITS" Value="{Binding CombatSummary.HitCount}"
+                                           ValueColor="{DynamicResource AppTextPrimary}" />
+                        <controls:StatTile Label="ABSORBED" Value="{Binding CombatSummary.TotalAbsorbed}"
+                                           ValueColor="{DynamicResource AppTextSecondary}" />
                     </StackPanel>
-                    <Grid>
-                        <TextBlock Text="AVG DAMAGE BY ATTACK TYPE" FontWeight="SemiBold"
-                                   FontSize="11" Foreground="{DynamicResource AppTextMuted}"
-                                   VerticalAlignment="Center" />
-                        <Button Content="{Binding AvgDmgChart.Icon}"
-                                Command="{Binding AvgDmgChart.ToggleCommand}"
-                                HorizontalAlignment="Right" Background="Transparent"
-                                Foreground="{DynamicResource AppTextMuted}" Padding="6,2"
-                                BorderThickness="0" FontSize="14" />
-                    </Grid>
-                    <scott:AvaPlot x:Name="AvgDmgBySpellChart" Height="200"
-                                   IsVisible="{Binding AvgDmgChart.Value}" />
-                </StackPanel>
-            </Border>
 
-            <Border Background="{DynamicResource AppCardBackground}" CornerRadius="6" Padding="15">
-                <StackPanel Spacing="10">
-                    <TextBlock Text="DAMAGE TAKEN" FontWeight="SemiBold" FontSize="11"
-                               Foreground="{DynamicResource AppTextMuted}" />
-                    <TextBlock Text="{Binding CombatSummary.TotalDamageTaken}" FontSize="28"
-                               FontWeight="Bold" Foreground="#FFDC3545" />
-                    <Grid>
-                        <TextBlock Text="BY ATTACKER" FontWeight="SemiBold" FontSize="11"
-                                   Foreground="{DynamicResource AppTextMuted}"
-                                   VerticalAlignment="Center" />
-                        <Button Content="{Binding DmgByAttackerChart.Icon}"
-                                Command="{Binding DmgByAttackerChart.ToggleCommand}"
-                                HorizontalAlignment="Right" Background="Transparent"
-                                Foreground="{DynamicResource AppTextMuted}" Padding="6,2"
-                                BorderThickness="0" FontSize="14" />
-                    </Grid>
-                    <scott:AvaPlot x:Name="DmgByTargetChart" Height="200"
-                                   IsVisible="{Binding DmgByAttackerChart.Value}" />
-                </StackPanel>
-            </Border>
+                    <Border Background="{DynamicResource AppCardBackground}"
+                            BorderBrush="{DynamicResource AppRowBorder}" BorderThickness="1"
+                            CornerRadius="8" Padding="16">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Damage Dealt" FontWeight="Bold" FontSize="14"
+                                       Foreground="{DynamicResource AppTextPrimary}" />
+                            <StackPanel Orientation="Horizontal" Spacing="30">
+                                <controls:StatNumber Label="TOTAL" Value="{Binding CombatSummary.TotalDamageDealt}"
+                                                     ValueColor="{DynamicResource AppHeat}" />
+                                <controls:StatNumber Label="HITS" Value="{Binding CombatSummary.HitCount}"
+                                                     ValueColor="{DynamicResource AppTextPrimary}" />
+                                <controls:StatNumber Label="AVG / HIT" Value="{Binding CombatSummary.AvgDamagePerHit}"
+                                                     ValueColor="{DynamicResource AppTextPrimary}" />
+                                <controls:StatNumber Label="CRITS" Value="{Binding CombatSummary.CritCount}"
+                                                     ValueColor="{DynamicResource AppCrit}" />
+                                <controls:StatNumber Label="CRIT RATE" Value="{Binding CombatSummary.CritRate, StringFormat='{}{0:F1}%'}"
+                                                     ValueColor="{DynamicResource AppCrit}" />
+                                <controls:StatNumber Label="ABSORBED" Value="{Binding CombatSummary.TotalAbsorbed}"
+                                                     ValueColor="{DynamicResource AppTextSecondary}" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="30">
+                                <controls:StatNumber Label="MELEE MISS" Value="{Binding CombatSummary.MeleeMissRate, StringFormat='{}{0:F1}%'}"
+                                                     ValueColor="{DynamicResource AppTextPrimary}" ValueFontSize="22" />
+                                <controls:StatNumber Label="SPELL RESIST" Value="{Binding CombatSummary.SpellResistRate, StringFormat='{}{0:F1}%'}"
+                                                     ValueColor="{DynamicResource AppTextPrimary}" ValueFontSize="22" />
+                            </StackPanel>
+                            <Grid>
+                                <TextBlock Text="Damage by Attack Type" FontWeight="Bold"
+                                           FontSize="14" Foreground="{DynamicResource AppTextPrimary}"
+                                           VerticalAlignment="Center" />
+                                <Button Content="{Binding AvgDmgChart.Icon}"
+                                        Command="{Binding AvgDmgChart.ToggleCommand}"
+                                        Classes="btn-ghost"
+                                        HorizontalAlignment="Right" FontSize="14" />
+                            </Grid>
+                            <ItemsControl ItemsSource="{Binding AttackTypeStats}"
+                                          IsVisible="{Binding AvgDmgChart.Value}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="models:AttackTypeRow">
+                                        <controls:AttackTypeBarRow Label="{Binding Name}"
+                                                                   AvgDamage="{Binding AvgDamage}"
+                                                                   HitCount="{Binding HitCount}"
+                                                                   CritCount="{Binding CritCount}"
+                                                                   Percentage="{Binding Percentage}" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
 
-            <Border Background="{DynamicResource AppCardBackground}" CornerRadius="6" Padding="15">
-                <StackPanel Spacing="10">
-                    <TextBlock Text="HEALS RECEIVED" FontWeight="SemiBold" FontSize="11"
-                               Foreground="{DynamicResource AppTextMuted}" />
-                    <TextBlock Text="{Binding CombatSummary.TotalHealsReceived}" FontSize="28"
-                               FontWeight="Bold" Foreground="#FF00D968" />
-                    <Grid>
-                        <TextBlock Text="BY HEALER" FontWeight="SemiBold" FontSize="11"
-                                   Foreground="{DynamicResource AppTextMuted}"
-                                   VerticalAlignment="Center" />
-                        <Button Content="{Binding HealsByHealerChart.Icon}"
-                                Command="{Binding HealsByHealerChart.ToggleCommand}"
-                                HorizontalAlignment="Right" Background="Transparent"
-                                Foreground="{DynamicResource AppTextMuted}" Padding="6,2"
-                                BorderThickness="0" FontSize="14" />
-                    </Grid>
-                    <scott:AvaPlot x:Name="HealsByHealerChartCombat" Height="200"
-                                   IsVisible="{Binding HealsByHealerChart.Value}" />
-                </StackPanel>
-            </Border>
+                    <controls:BarChartCard Title="Damage Taken"
+                                           TotalValue="{Binding CombatSummary.TotalDamageTaken}"
+                                           TotalValueColor="{DynamicResource AppDanger}"
+                                           ChartTitle="By Attacker"
+                                           ToggleIcon="{Binding DmgByAttackerChart.Icon}"
+                                           ToggleCommand="{Binding DmgByAttackerChart.ToggleCommand}"
+                                           IsChartVisible="{Binding DmgByAttackerChart.Value}"
+                                           ItemsSource="{Binding DamageTakenByAttackerStats}"
+                                           BarColor="{DynamicResource AppDanger}" />
 
-            <Border Background="{DynamicResource AppCardBackground}" CornerRadius="6" Padding="15">
-                <StackPanel Spacing="10">
-                    <TextBlock Text="HEALS DONE" FontWeight="SemiBold" FontSize="11"
-                               Foreground="{DynamicResource AppTextMuted}" />
-                    <TextBlock Text="{Binding CombatSummary.TotalHealingDone}" FontSize="28"
-                               FontWeight="Bold" Foreground="#FF00D968" />
-                    <Grid>
-                        <TextBlock Text="BY TARGET" FontWeight="SemiBold" FontSize="11"
-                                   Foreground="{DynamicResource AppTextMuted}"
-                                   VerticalAlignment="Center" />
-                        <Button Content="{Binding HealsByTargetChart.Icon}"
-                                Command="{Binding HealsByTargetChart.ToggleCommand}"
-                                HorizontalAlignment="Right" Background="Transparent"
-                                Foreground="{DynamicResource AppTextMuted}" Padding="6,2"
-                                BorderThickness="0" FontSize="14" />
-                    </Grid>
-                    <scott:AvaPlot x:Name="HealsByTargetChartCombat" Height="200"
-                                   IsVisible="{Binding HealsByTargetChart.Value}" />
-                </StackPanel>
-            </Border>
+                    <controls:BarChartCard Title="Heals Received"
+                                           TotalValue="{Binding CombatSummary.TotalHealsReceived}"
+                                           TotalValueColor="{DynamicResource AppPositive}"
+                                           ChartTitle="By Healer"
+                                           ToggleIcon="{Binding HealsByHealerChart.Icon}"
+                                           ToggleCommand="{Binding HealsByHealerChart.ToggleCommand}"
+                                           IsChartVisible="{Binding HealsByHealerChart.Value}"
+                                           ItemsSource="{Binding HealsByHealerStats}"
+                                           BarColor="{DynamicResource AppPositive}" />
 
-        </StackPanel>
-    </ScrollViewer>
+                    <controls:BarChartCard Title="Heals Done"
+                                           TotalValue="{Binding CombatSummary.TotalHealingDone}"
+                                           TotalValueColor="{DynamicResource AppPositive}"
+                                           ChartTitle="By Target"
+                                           ToggleIcon="{Binding HealsByTargetChart.Icon}"
+                                           ToggleCommand="{Binding HealsByTargetChart.ToggleCommand}"
+                                           IsChartVisible="{Binding HealsByTargetChart.Value}"
+                                           ItemsSource="{Binding HealsByTargetStats}"
+                                           BarColor="{DynamicResource AppPositive}" />
+
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- Log sub-view -->
+            <tabs:CombatLogTabView IsVisible="{Binding IsCombatSubLog}" />
+        </Grid>
+    </DockPanel>
 </UserControl>

@@ -1,80 +1,205 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:DAoCLogWatcher.UI.ViewModels"
+             xmlns:models="using:DAoCLogWatcher.UI.Models"
              x:Class="DAoCLogWatcher.UI.Views.Controls.AppToolbar"
              x:DataType="vm:MainWindowViewModel">
 
-    <Border Background="{DynamicResource AppPanelBackground}" Padding="15" Margin="0,0,0,10">
+    <Border Background="{DynamicResource AppPanelBackground}" Padding="10" Margin="0,0,0,10">
         <Grid ColumnDefinitions="*,Auto">
-            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" ClipToBounds="True">
-                <Button Content="Open DAoC Log"
-                        Command="{Binding OpenDaocLogCommand}"
-                        Background="#FF007ACC"
-                        Foreground="White"
-                        Padding="12,8"
-                        CornerRadius="6"
-                        BorderThickness="0" />
-                <Button Content="Open Log File"
-                        Command="{Binding OpenFileCommand}"
+            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" ClipToBounds="True"
+                        VerticalAlignment="Center" HorizontalAlignment="Left">
+
+                <!-- Browse Sessions split button -->
+                <Grid x:Name="BrowseSessionsSplitGrid" ColumnDefinitions="Auto,1,Auto" VerticalAlignment="Center">
+                    <FlyoutBase.AttachedFlyout>
+                        <Flyout Placement="BottomEdgeAlignedLeft">
+                            <Flyout.FlyoutPresenterTheme>
+                                <ControlTheme TargetType="FlyoutPresenter">
+                                    <Setter Property="Background" Value="{DynamicResource AppCardBackground}" />
+                                    <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}" />
+                                    <Setter Property="BorderThickness" Value="1" />
+                                    <Setter Property="Padding" Value="4" />
+                                    <Setter Property="CornerRadius" Value="0,0,6,6" />
+                                    <Setter Property="MinWidth" Value="230" />
+                                </ControlTheme>
+                            </Flyout.FlyoutPresenterTheme>
+                            <StackPanel>
+                                <TextBlock Text="RECENT SESSIONS"
+                                           FontSize="10" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource AppTextMuted}"
+                                           Margin="8,6,8,4" />
+                                <ItemsControl ItemsSource="{Binding RecentSessions}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="models:RecentSessionEntry">
+                                            <Button Command="{Binding OpenCommand}"
+                                                    Classes="btn-ghost"
+                                                    Foreground="{DynamicResource AppTextPrimary}"
+                                                    HorizontalAlignment="Stretch"
+                                                    HorizontalContentAlignment="Left"
+                                                    Padding="8,6">
+                                                <StackPanel Spacing="1">
+                                                    <TextBlock Text="{Binding Label}" FontSize="12" />
+                                                    <TextBlock Text="{Binding Sublabel}"
+                                                               FontSize="10"
+                                                               Foreground="{DynamicResource AppTextMuted}" />
+                                                </StackPanel>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <Rectangle Fill="{DynamicResource AppBorderBrush}" Height="1" Margin="4,4" />
+                                <Button Content="Last session"
+                                        Click="OnLastSessionClick"
+                                        Classes="btn-ghost"
+                                        HorizontalAlignment="Stretch"
+                                        HorizontalContentAlignment="Left"
+                                        Padding="8,6" />
+                                <Button Content="All sessions…"
+                                        Click="OnAllSessionsClick"
+                                        Classes="btn-ghost"
+                                        HorizontalAlignment="Stretch"
+                                        HorizontalContentAlignment="Left"
+                                        Padding="8,6" />
+                            </StackPanel>
+                        </Flyout>
+                    </FlyoutBase.AttachedFlyout>
+                    <Button Grid.Column="0"
+                            Content="Browse Sessions"
+                            Command="{Binding OpenSessionPickerCommand}"
+                            CommandParameter="{Binding $parent[Window]}"
+                            Classes="btn-primary"
+                            CornerRadius="6,0,0,6" />
+                    <Rectangle Grid.Column="1" Fill="#40FFFFFF" />
+                    <Button Grid.Column="2"
+                            Classes="btn-split-chevron"
+                            ToolTip.Tip="Recent sessions"
+                            Click="OnBrowseSessionsChevronClick">
+                        <Path Fill="White" Width="10" Height="10" Stretch="Uniform"
+                              Data="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z" />
+                    </Button>
+                </Grid>
+
+                <Grid x:Name="OpenLogSplitGrid" ColumnDefinitions="Auto,1,Auto" VerticalAlignment="Center">
+                    <FlyoutBase.AttachedFlyout>
+                        <Flyout Placement="BottomEdgeAlignedLeft">
+                            <Flyout.FlyoutPresenterTheme>
+                                <ControlTheme TargetType="FlyoutPresenter">
+                                    <Setter Property="Background" Value="{DynamicResource AppCardBackground}" />
+                                    <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}" />
+                                    <Setter Property="BorderThickness" Value="1" />
+                                    <Setter Property="Padding" Value="4" />
+                                    <Setter Property="CornerRadius" Value="0,0,6,6" />
+                                    <Setter Property="MinWidth" Value="190" />
+                                </ControlTheme>
+                            </Flyout.FlyoutPresenterTheme>
+                            <StackPanel>
+                                    <Button Content="Auto-detect log file"
+                                            Command="{Binding OpenDaocLogCommand}"
+                                            Classes="btn-ghost"
+                                            Foreground="{DynamicResource AppTextPrimary}"
+                                            HorizontalAlignment="Stretch"
+                                            HorizontalContentAlignment="Left"
+                                            Padding="8,6" />
+                                    <Button Content="Open log file…"
+                                            Click="OnOpenFileFromFlyout"
+                                            Classes="btn-ghost"
+                                            Foreground="{DynamicResource AppTextPrimary}"
+                                            HorizontalAlignment="Stretch"
+                                            HorizontalContentAlignment="Left"
+                                            Padding="8,6" />
+                            </StackPanel>
+                        </Flyout>
+                    </FlyoutBase.AttachedFlyout>
+                    <Button Grid.Column="0"
+                            Content="Open DAoC Log"
+                            Command="{Binding OpenDaocLogCommand}"
+                            Classes="btn-primary"
+                            CornerRadius="6,0,0,6" />
+                    <Rectangle Grid.Column="1" Fill="#40FFFFFF" />
+                    <Button Grid.Column="2"
+                            Classes="btn-split-chevron"
+                            ToolTip.Tip="Log file options"
+                            Click="OnOpenLogChevronClick">
+                        <Path Fill="White" Width="10" Height="10" Stretch="Uniform"
+                              Data="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z" />
+                    </Button>
+                </Grid>
+                <Button Command="{Binding OpenFileCommand}"
                         CommandParameter="{Binding $parent[Window].StorageProvider}"
-                        Background="#FF007ACC"
-                        Foreground="White"
-                        Padding="12,8"
-                        CornerRadius="6"
-                        BorderThickness="0" />
-                <Button Content="Browse Sessions"
-                        Command="{Binding OpenSessionPickerCommand}"
-                        CommandParameter="{Binding $parent[Window]}"
-                        Background="#FF007ACC"
-                        Foreground="White"
-                        Padding="12,8"
-                        CornerRadius="6"
-                        BorderThickness="0" />
-                <Button Content="Stop Watching"
-                        Command="{Binding StopWatchingCommand}"
-                        IsEnabled="{Binding IsWatching}"
-                        Background="#FFDC3545"
-                        Foreground="White"
-                        Padding="12,8"
-                        CornerRadius="6"
-                        BorderThickness="0" />
-                <Button Content="📷"
-                        Click="OnScreenshotButtonClick"
-                        ToolTip.Tip="Copy screenshot to clipboard"
-                        Background="#FF555566"
-                        Foreground="White"
-                        Padding="12,8"
-                        CornerRadius="6"
-                        BorderThickness="0" />
-                <Button Content="{Binding ThemeIcon}"
-                        Command="{Binding ToggleThemeCommand}"
-                        Background="#FF555566"
-                        Foreground="White"
-                        Padding="12,8"
-                        CornerRadius="6"
-                        BorderThickness="0" />
-                <Button Click="OnDiscordButtonClick"
-                        ToolTip.Tip="Join the DAoC Log Watcher Discord"
-                        Background="#FF5865F2"
-                        Foreground="White"
-                        Padding="10,8"
-                        CornerRadius="6"
-                        BorderThickness="0">
+                        ToolTip.Tip="Open log file…"
+                        Classes="btn-icon">
                     <Viewbox Width="16" Height="16">
                         <Canvas Width="24" Height="24">
-                            <Path Fill="White">
-                                <Path.Data>
-                                    <PathGeometry FillRule="EvenOdd" Figures="M20.317 4.492c-1.53-.69-3.17-1.2-4.885-1.49a.075.075 0 0 0-.079.036c-.21.369-.444.85-.608 1.23a18.566 18.566 0 0 0-5.487 0 12.36 12.36 0 0 0-.617-1.23.077.077 0 0 0-.079-.036c-1.714.29-3.354.8-4.885 1.491a.07.07 0 0 0-.032.027C.533 9.093-.32 13.555.099 17.961a.08.08 0 0 0 .031.055 20.03 20.03 0 0 0 5.993 2.98.078.078 0 0 0 .084-.026c.462-.62.874-1.275 1.226-1.963.021-.04.001-.088-.041-.104a13.201 13.201 0 0 1-1.872-.878.075.075 0 0 1-.008-.125c.126-.093.252-.19.372-.287a.075.075 0 0 1 .078-.01c3.927 1.764 8.18 1.764 12.061 0a.075.075 0 0 1 .079.009c.12.098.245.195.372.288a.075.075 0 0 1-.006.125 13.201 13.201 0 0 1-1.873.877.075.075 0 0 0-.041.105c.36.687.772 1.341 1.225 1.962a.077.077 0 0 0 .084.028 19.963 19.963 0 0 0 6.002-2.981.076.076 0 0 0 .032-.054c.5-5.094-.838-9.52-3.549-13.442a.06.06 0 0 0-.031-.03zM8.02 15.278c-1.182 0-2.157-1.069-2.157-2.38 0-1.312.956-2.38 2.157-2.38 1.21 0 2.176 1.077 2.157 2.38 0 1.312-.956 2.38-2.157 2.38zm7.975 0c-1.183 0-2.157-1.069-2.157-2.38 0-1.312.955-2.38 2.157-2.38 1.21 0 2.176 1.077 2.157 2.38 0 1.312-.946 2.38-2.157 2.38z" />
-                                </Path.Data>
-                            </Path>
+                            <Path Fill="White"
+                                  Data="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
                         </Canvas>
                     </Viewbox>
                 </Button>
+
+                <!-- Separator -->
+                <Border Width="1" Height="26" Background="{DynamicResource AppBorderBrush}"
+                        Margin="4,0" VerticalAlignment="Center" />
+
+                <!-- Session indicator -->
+                <Border Background="{DynamicResource AppCardBackground}"
+                        BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1"
+                        CornerRadius="6" Padding="12,7" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Ellipse Width="8" Height="8" VerticalAlignment="Center"
+                                 Fill="{DynamicResource AppAccentCyan}"
+                                 IsVisible="{Binding IsWatching}" />
+                        <Ellipse Width="8" Height="8" VerticalAlignment="Center"
+                                 Fill="{DynamicResource AppTextMuted}"
+                                 IsVisible="{Binding !IsWatching}" />
+                        <TextBlock Text="Live" FontSize="12" FontWeight="SemiBold"
+                                   Foreground="White" VerticalAlignment="Center"
+                                   IsVisible="{Binding IsWatching}" />
+                        <TextBlock Text="Stopped" FontSize="12" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource AppTextMuted}" VerticalAlignment="Center"
+                                   IsVisible="{Binding !IsWatching}" />
+                        <TextBlock Text="·" Foreground="{DynamicResource AppTextDim}" FontSize="12"
+                                   VerticalAlignment="Center"
+                                   IsVisible="{Binding CurrentFileName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                        <TextBlock Text="{Binding CurrentFileName}" FontSize="11"
+                                   Foreground="{DynamicResource AppTextMuted}" VerticalAlignment="Center"
+                                   FontFamily="Consolas,Courier New,monospace"
+                                   IsVisible="{Binding CurrentFileName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                        <TextBlock Text="·" Foreground="{DynamicResource AppTextDim}" FontSize="12"
+                                   VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding Summary.SessionStartText}" FontSize="12"
+                                   Foreground="{DynamicResource AppTextSecondary}" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding Summary.SessionDurationText}" FontSize="12"
+                                   Foreground="{DynamicResource AppTextDim}" VerticalAlignment="Center"
+                                   IsVisible="{Binding Summary.SessionDurationText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                    </StackPanel>
+                </Border>
+
+                <Button Command="{Binding StopWatchingCommand}"
+                        IsEnabled="{Binding IsWatching}"
+                        ToolTip.Tip="Stop watching"
+                        Classes="btn-icon brand"
+                        Background="{DynamicResource AppStopBg}"
+                        BorderBrush="{DynamicResource AppStopBorder}"
+                        BorderThickness="1"
+                        VerticalAlignment="Center">
+                    <Button.Styles>
+                        <Style Selector="Button:disabled">
+                            <Setter Property="Background" Value="{DynamicResource AppStopBg}" />
+                            <Setter Property="BorderBrush" Value="{DynamicResource AppStopBorder}" />
+                            <Setter Property="Opacity" Value="0.45" />
+                        </Style>
+                    </Button.Styles>
+                    <Rectangle Width="11" Height="11" RadiusX="2" RadiusY="2"
+                               Fill="{DynamicResource AppDanger}" />
+                </Button>
+
+                <!-- Time filter ComboBox -->
                 <ComboBox SelectedIndex="{Binding TimeFilter.SelectedTimeFilterIndex}"
                           VerticalAlignment="Center"
-                          Margin="20,0,0,0"
-                          MinWidth="120">
-                    <ComboBoxItem Content="All time" />
+                          Margin="10,0,0,0"
+                          MinWidth="140">
+                    <ComboBoxItem Content="Current session" />
                     <ComboBoxItem Content="Last 1 week" />
                     <ComboBoxItem Content="Last 48h" />
                     <ComboBoxItem Content="Last 24h" />
@@ -85,38 +210,57 @@
                     <ComboBoxItem Content="Last 1h" />
                     <ComboBoxItem Content="Custom…" />
                 </ComboBox>
-                <TextBlock Text="{Binding CurrentFilePath}"
-                           Foreground="{DynamicResource AppTextMuted}"
-                           FontSize="12"
-                           VerticalAlignment="Center"
-                           Margin="10,0,0,0" />
+
+                <!-- Parsing indicator -->
                 <TextBlock Text="Parsing..."
                            FontSize="12"
-                           Foreground="#FF00D9FF"
+                           Foreground="{DynamicResource AppAccentCyan}"
                            VerticalAlignment="Center"
+                           Margin="10,0,0,0"
                            IsVisible="{Binding IsParsing}" />
                 <ProgressBar IsIndeterminate="True"
                              Height="4"
                              Width="120"
                              VerticalAlignment="Center"
-                             Foreground="#FF00D9FF"
+                             Foreground="{DynamicResource AppAccentCyan}"
                              IsVisible="{Binding IsParsing}" />
             </StackPanel>
-            <Button Grid.Column="1"
-                    Command="{Binding ToggleSettingsPopupCommand}"
-                    ToolTip.Tip="Settings"
-                    Background="#FF555566"
-                    Foreground="White"
-                    Padding="10,8"
-                    CornerRadius="6"
-                    BorderThickness="0"
-                    Margin="10,0,0,0"
-                    VerticalAlignment="Center">
-                <Viewbox Width="16" Height="16">
-                    <Path Fill="White"
-                          Data="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.57,12.97L2.46,14.63C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.68 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z" />
-                </Viewbox>
-            </Button>
+
+            <!-- Right cluster: utility buttons -->
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6"
+                        VerticalAlignment="Center" Margin="10,0,0,0">
+                <Button Content="📷"
+                        Click="OnScreenshotButtonClick"
+                        ToolTip.Tip="Copy screenshot to clipboard"
+                        Classes="btn-icon" />
+                <Button Content="{Binding ThemeIcon}"
+                        Command="{Binding ToggleThemeCommand}"
+                        ToolTip.Tip="{Binding ThemeTooltip}"
+                        FontSize="16"
+                        Classes="btn-icon" />
+                <Button Click="OnDiscordButtonClick"
+                        ToolTip.Tip="Join the DAoC Log Watcher Discord"
+                        Classes="btn-icon brand"
+                        Background="{DynamicResource AppDiscordBrand}">
+                    <Viewbox Width="16" Height="16">
+                        <Canvas Width="24" Height="24">
+                            <Path Fill="White">
+                                <Path.Data>
+                                    <PathGeometry FillRule="EvenOdd" Figures="M20.317 4.492c-1.53-.69-3.17-1.2-4.885-1.49a.075.075 0 0 0-.079.036c-.21.369-.444.85-.608 1.23a18.566 18.566 0 0 0-5.487 0 12.36 12.36 0 0 0-.617-1.23.077.077 0 0 0-.079-.036c-1.714.29-3.354.8-4.885 1.491a.07.07 0 0 0-.032.027C.533 9.093-.32 13.555.099 17.961a.08.08 0 0 0 .031.055 20.03 20.03 0 0 0 5.993 2.98.078.078 0 0 0 .084-.026c.462-.62.874-1.275 1.226-1.963.021-.04.001-.088-.041-.104a13.201 13.201 0 0 1-1.872-.878.075.075 0 0 1-.008-.125c.126-.093.252-.19.372-.287a.075.075 0 0 1 .078-.01c3.927 1.764 8.18 1.764 12.061 0a.075.075 0 0 1 .079.009c.12.098.245.195.372.288a.075.075 0 0 1-.006.125 13.201 13.201 0 0 1-1.873.877.075.075 0 0 0-.041.105c.36.687.772 1.341 1.225 1.962a.077.077 0 0 0 .084.028 19.963 19.963 0 0 0 6.002-2.981.076.076 0 0 0 .032-.054c.5-5.094-.838-9.52-3.549-13.442a.06.06 0 0 0-.031-.03zM8.02 15.278c-1.182 0-2.157-1.069-2.157-2.38 0-1.312.956-2.38 2.157-2.38 1.21 0 2.176 1.077 2.157 2.38 0 1.312-.956 2.38-2.157 2.38zm7.975 0c-1.183 0-2.157-1.069-2.157-2.38 0-1.312.955-2.38 2.157-2.38 1.21 0 2.176 1.077 2.157 2.38 0 1.312-.946 2.38-2.157 2.38z" />
+                                </Path.Data>
+                            </Path>
+                        </Canvas>
+                    </Viewbox>
+                </Button>
+                <Button Command="{Binding ToggleSettingsPopupCommand}"
+                        ToolTip.Tip="Settings"
+                        Classes="btn-icon">
+                    <Viewbox Width="16" Height="16">
+                        <Path Fill="White"
+                              Data="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.57,12.97L2.46,14.63C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.68 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z" />
+                    </Viewbox>
+                </Button>
+            </StackPanel>
         </Grid>
     </Border>
 </UserControl>

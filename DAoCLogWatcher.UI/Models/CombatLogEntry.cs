@@ -10,6 +10,8 @@ public partial class CombatLogEntry: ObservableObject
 
 	public required bool IsDealt { get; init; }
 
+	public bool IsPlayer { get; init; } = true;
+
 	public string? SpellName { get; init; }
 
 	public string? StyleName { get; init; }
@@ -30,6 +32,8 @@ public partial class CombatLogEntry: ObservableObject
 	[ObservableProperty] private int totalDamage;
 
 	[ObservableProperty] private bool isCrit;
+
+	[ObservableProperty] private bool isKillingBlow;
 
 	public string Source => this.IsWeaponAttack?this.StyleName ?? "Melee":this.SpellName ?? "Other";
 

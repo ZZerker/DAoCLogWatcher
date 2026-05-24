@@ -14,4 +14,9 @@ public sealed record HealEvent
 
 	/// <summary>Who you healed; "yourself" for self-heals (outgoing heals only).</summary>
 	public string? Target { get; init; }
+
+	/// <summary>Additional crit healing, 0 when not a critical heal.</summary>
+	public int CritHitPoints { get; init; }
+
+	public int TotalHitPoints => this.HitPoints + this.CritHitPoints;
 }

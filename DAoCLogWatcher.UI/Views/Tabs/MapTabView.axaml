@@ -1,0 +1,46 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:DAoCLogWatcher.UI.ViewModels"
+             xmlns:tabs="using:DAoCLogWatcher.UI.Views.Tabs"
+             x:Class="DAoCLogWatcher.UI.Views.Tabs.MapTabView"
+             x:DataType="vm:MainWindowViewModel">
+
+    <DockPanel>
+        <Border DockPanel.Dock="Top"
+                Background="{DynamicResource AppSubTabBarBg}"
+                BorderThickness="0,1,0,1"
+                BorderBrush="{DynamicResource AppRowBorder}"
+                Padding="12,8">
+            <Grid ColumnDefinitions="Auto,*">
+                <Border Grid.Column="0"
+                        Background="{DynamicResource AppCardBackground}"
+                        BorderBrush="{DynamicResource AppBorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="6"
+                        Padding="2">
+                    <StackPanel Orientation="Horizontal" Spacing="2">
+                        <RadioButton Content="Zones"
+                                     GroupName="MapSub"
+                                     IsChecked="{Binding IsMapSubZones}"
+                                     Classes="segment-btn" />
+                        <RadioButton Content="Heatmap"
+                                     GroupName="MapSub"
+                                     IsChecked="{Binding IsMapSubHeatmap}"
+                                     Classes="segment-btn" />
+                    </StackPanel>
+                </Border>
+                <TextBlock Grid.Column="1"
+                           Text="{Binding MapSubDescription}"
+                           FontSize="12"
+                           Foreground="{DynamicResource AppTextDim}"
+                           VerticalAlignment="Center"
+                           Margin="12,0,0,0" />
+            </Grid>
+        </Border>
+
+        <Grid>
+            <tabs:KillZonesTabView IsVisible="{Binding IsMapSubZones}" />
+            <tabs:KillHeatmapTabView IsVisible="{Binding IsMapSubHeatmap}" />
+        </Grid>
+    </DockPanel>
+</UserControl>

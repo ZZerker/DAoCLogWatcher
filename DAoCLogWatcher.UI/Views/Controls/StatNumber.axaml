@@ -1,0 +1,13 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="using:DAoCLogWatcher.UI.Views.Controls"
+             x:Class="DAoCLogWatcher.UI.Views.Controls.StatNumber"
+             x:DataType="controls:StatNumber"
+             x:Name="self">
+    <StackPanel Spacing="2">
+        <TextBlock Text="{Binding #self.Label}" FontSize="10" FontWeight="SemiBold"
+                   Foreground="{DynamicResource AppTextMuted}" />
+        <TextBlock Text="{Binding #self.Value}" FontSize="{Binding #self.ValueFontSize}"
+                   FontWeight="Bold" Foreground="{Binding #self.ValueColor}" />
+    </StackPanel>
+</UserControl>

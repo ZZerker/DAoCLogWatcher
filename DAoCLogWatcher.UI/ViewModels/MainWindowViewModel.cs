@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Platform.Storage;
@@ -11,6 +12,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DAoCLogWatcher.Core;
 using DAoCLogWatcher.Core.Models;
+using DAoCLogWatcher.UI.Helpers;
 using DAoCLogWatcher.UI.Models;
 using DAoCLogWatcher.UI.Services;
 using DAoCLogWatcher.UI.Views;
@@ -23,8 +25,8 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 	private const int SEND_NOTIFICATION_MAX_AGE_SECONDS = 60;
 	private const int COMBAT_CHART_DEBOUNCE_MS = 250;
 
-	private System.Timers.Timer? parsingDebounceTimer;
-	private System.Timers.Timer? combatChartDebounceTimer;
+	private readonly System.Timers.Timer parsingDebounceTimer;
+	private readonly System.Timers.Timer combatChartDebounceTimer;
 
 	public event EventHandler? CombatChartsUpdateNeeded;
 
@@ -40,6 +42,87 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 	private readonly WatchController watchController;
 
 	[ObservableProperty] private string? currentFilePath;
+
+	public string? CurrentFileName => string.IsNullOrEmpty(this.CurrentFilePath) ? null : Path.GetFileName(this.CurrentFilePath);
+
+	partial void OnCurrentFilePathChanged(string? value)
+	{
+		this.OnPropertyChanged(nameof(this.CurrentFileName));
+		_ = this.LoadRecentSessionsFromPathAsync(value);
+	}
+
+	public ObservableCollection<RecentSessionEntry> RecentSessions { get; } = new();
+
+	private CancellationTokenSource? sessionLoadCts;
+
+	[RelayCommand]
+	private Task LoadRecentSessions() => this.LoadRecentSessionsFromPathAsync(this.CurrentFilePath ?? this.GetLogPath());
+
+	private async Task LoadRecentSessionsFromPathAsync(string? path)
+	{
+		if(string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+		{
+			return;
+		}
+
+		this.sessionLoadCts?.Cancel();
+		this.sessionLoadCts = new CancellationTokenSource();
+		var ct = this.sessionLoadCts.Token;
+
+		var sessions = await Task.Run(() => LogSessionScanner.Scan(path));
+		if(ct.IsCancellationRequested)
+		{
+			return;
+		}
+
+		this.RecentSessions.Clear();
+		foreach(var s in sessions.Take(3))
+		{
+			var label = s.CharacterName != null ? $"{s.StartTime:MMM d, HH:mm} — {s.CharacterName}" : s.StartTime.ToString("MMM d, HH:mm");
+			this.RecentSessions.Add(new RecentSessionEntry
+			                        {
+					                        Label = label,
+					                        Sublabel = s.DurationFormatted,
+					                        OpenCommand = new AsyncRelayCommand(() => this.OpenRecentSessionCoreAsync(path, s))
+			                        });
+		}
+	}
+
+	[RelayCommand]
+	private async Task OpenLastSession()
+	{
+		var path = this.CurrentFilePath ?? this.GetLogPath();
+		if(string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+		{
+			return;
+		}
+
+		var sessions = await Task.Run(() => LogSessionScanner.Scan(path));
+		var last = sessions.FirstOrDefault();
+		if(last == null)
+		{
+			return;
+		}
+
+		this.CurrentFilePath = path;
+		await this.StartWatchingFromSession(last);
+	}
+
+	private async Task OpenRecentSessionCoreAsync(string path, LogSession session)
+	{
+		this.CurrentFilePath = path;
+		await this.StartWatchingFromSession(session);
+	}
+
+	private string? GetLogPath()
+	{
+		if(!string.IsNullOrWhiteSpace(this.CustomChatLogPath) && File.Exists(this.CustomChatLogPath))
+		{
+			return this.CustomChatLogPath;
+		}
+
+		return this.daocLogPathService.FindDaocLogPath();
+	}
 
 	public TimeFilterService TimeFilter { get; } = new();
 
@@ -122,11 +205,13 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 
 	[ObservableProperty] private bool isDarkTheme = true;
 
-	public string ThemeIcon => this.IsDarkTheme?"☀ Light":"🌙 Dark";
+	public string ThemeIcon => this.IsDarkTheme?"☀":"🌙";
+	public string ThemeTooltip => this.IsDarkTheme?"Switch to light theme":"Switch to dark theme";
 
 	partial void OnIsDarkThemeChanged(bool value)
 	{
 		this.OnPropertyChanged(nameof(this.ThemeIcon));
+		this.OnPropertyChanged(nameof(this.ThemeTooltip));
 	}
 
 	[RelayCommand]
@@ -154,11 +239,7 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 
 	public ToggleState CumulativeRpChart { get; } = new();
 
-	public ToggleState AbsoluteNumbers { get; } = new();
-
-	public ToggleState AbsoluteRps { get; } = new();
-
-	public ToggleState Percentages { get; } = new();
+	public ToggleState RpSourceBreakdown { get; } = new();
 
 	public ToggleState AvgDmgChart { get; } = new();
 
@@ -170,18 +251,285 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 
 	// Tab visibility toggles are initialized in the constructor since their initial
 	// values come from persisted AppSettings.
+	public ToggleState DashboardTab { get; private set; } = null!;
+
 	public ToggleState RealmPointsTab { get; private set; } = null!;
 
 	public ToggleState CombatTab { get; private set; } = null!;
 
-	public ToggleState ZoneKillsTab { get; private set; } = null!;
-
 	public ToggleState HealLogTab { get; private set; } = null!;
 
-	public ToggleState CombatLogTab { get; private set; } = null!;
+	private bool _isCombatSubStats = true;
 
+	public bool IsCombatSubStats
+	{
+		get => _isCombatSubStats;
+		set
+		{
+			if (SetProperty(ref _isCombatSubStats, value))
+			{
+				OnPropertyChanged(nameof(IsCombatSubLog));
+				OnPropertyChanged(nameof(CombatSubDescription));
+			}
+		}
+	}
 
-	public ToggleState KillHeatmapTab { get; private set; } = null!;
+	public bool IsCombatSubLog
+	{
+		get => !_isCombatSubStats;
+		set { if (value != IsCombatSubLog) IsCombatSubStats = !value; }
+	}
+
+	public string CombatSubDescription => _isCombatSubStats
+		? "Damage dealt & taken — rates, attack breakdown, top opponents"
+		: "Raw per-hit combat event stream — outgoing, incoming, misses, procs";
+
+	private bool _isMapSubZones;
+
+	public bool IsMapSubZones
+	{
+		get => _isMapSubZones;
+		set
+		{
+			if (SetProperty(ref _isMapSubZones, value))
+			{
+				OnPropertyChanged(nameof(IsMapSubHeatmap));
+				OnPropertyChanged(nameof(MapSubDescription));
+			}
+		}
+	}
+
+	public bool IsMapSubHeatmap
+	{
+		get => !_isMapSubZones;
+		set { if (value != IsMapSubHeatmap) IsMapSubZones = !value; }
+	}
+
+	public string MapSubDescription => _isMapSubZones
+		? "Per-zone kill / death / RP breakdown, ranked by activity"
+		: "Kill density overlay on the frontier map — live keep & fight positions";
+
+	[ObservableProperty] private bool isDashboardCustomizeVisible;
+
+	[RelayCommand]
+	private void ToggleDashboardCustomize() => this.IsDashboardCustomizeVisible = !this.IsDashboardCustomizeVisible;
+
+	public ObservableCollection<DashboardWidgetViewModel> DashboardWidgets { get; } = new();
+
+	private static readonly (DashboardWidgetId Id, string Label, DashboardWidgetSize DefaultSize)[] DefaultWidgetDefs =
+	[
+		(DashboardWidgetId.TotalRp, "Total RP", DashboardWidgetSize.Small),
+		(DashboardWidgetId.RpPerHour, "RP per Hour", DashboardWidgetSize.Small),
+		(DashboardWidgetId.Session, "Session", DashboardWidgetSize.Small),
+		(DashboardWidgetId.PlayerKills, "Player Kills", DashboardWidgetSize.Small),
+		(DashboardWidgetId.KdRatio, "K/D Ratio", DashboardWidgetSize.Small),
+		(DashboardWidgetId.Deaths, "Deaths", DashboardWidgetSize.Small),
+		(DashboardWidgetId.BestMultiKill, "Best Multi-Kill", DashboardWidgetSize.Small),
+		(DashboardWidgetId.HottestZone, "Hottest Zone", DashboardWidgetSize.Small),
+		(DashboardWidgetId.RpSources, "RP Sources", DashboardWidgetSize.Medium),
+		(DashboardWidgetId.DamageOutput, "Damage Output", DashboardWidgetSize.Large),
+		(DashboardWidgetId.TopTargets, "Top Targets", DashboardWidgetSize.Medium),
+		(DashboardWidgetId.TopSpells, "Top Spells", DashboardWidgetSize.Medium),
+		(DashboardWidgetId.TopHealers, "Top Healers", DashboardWidgetSize.Medium),
+		(DashboardWidgetId.DamageTaken, "Damage Taken By", DashboardWidgetSize.Medium),
+		(DashboardWidgetId.HealsDone, "Heals Done To", DashboardWidgetSize.Medium),
+		(DashboardWidgetId.ZoneActivity, "Zone Activity", DashboardWidgetSize.Large),
+		(DashboardWidgetId.RpLog, "RP Log", DashboardWidgetSize.Medium),
+		(DashboardWidgetId.HealLog, "Heal Log", DashboardWidgetSize.Medium),
+		(DashboardWidgetId.CombatLog, "Combat Log", DashboardWidgetSize.Medium),
+		(DashboardWidgetId.Minimap, "Zone Minimap", DashboardWidgetSize.Medium),
+	];
+
+	public ObservableCollection<string> DashboardProfileNames { get; } = new();
+
+	[ObservableProperty] private string? selectedDashboardProfile;
+	[ObservableProperty] private bool isAddingDashboardProfile;
+	[ObservableProperty] private string newDashboardProfileName = string.Empty;
+
+	private bool suppressProfileLoad;
+
+	private void InitializeDashboardWidgets()
+	{
+		this.RebuildDashboardWidgets(this.settings.DashboardWidgets);
+
+		foreach(var name in this.settings.DashboardProfiles.Keys.OrderBy(n => n, StringComparer.OrdinalIgnoreCase))
+		{
+			this.DashboardProfileNames.Add(name);
+		}
+
+		this.suppressProfileLoad = true;
+		this.SelectedDashboardProfile = this.settings.ActiveDashboardProfile is { } active && this.settings.DashboardProfiles.ContainsKey(active)
+				? active
+				: null;
+		this.suppressProfileLoad = false;
+	}
+
+	private void RebuildDashboardWidgets(IReadOnlyList<DashboardWidgetConfig> configs)
+	{
+		var allDefaults = DefaultWidgetDefs.ToDictionary(t => t.Id);
+		var savedById = new Dictionary<DashboardWidgetId, DashboardWidgetConfig>();
+		foreach(var c in configs)
+		{
+			if(allDefaults.ContainsKey(c.Id))
+			{
+				savedById[c.Id] = c;
+			}
+		}
+
+		var orderedIds = configs.Select(c => c.Id)
+		                        .Where(allDefaults.ContainsKey)
+		                        .Concat(allDefaults.Keys.Except(savedById.Keys));
+
+		this.DashboardWidgets.Clear();
+		foreach(var id in orderedIds)
+		{
+			var (_, label, defaultSize) = allDefaults[id];
+			var config = savedById.TryGetValue(id, out var c) ? c : new DashboardWidgetConfig(id, true, defaultSize);
+			this.DashboardWidgets.Add(new DashboardWidgetViewModel(
+				id, label, config.IsVisible, config.Size,
+				this.MoveDashboardWidgetUp,
+				this.MoveDashboardWidgetDown,
+				this.OnDashboardWidgetChanged));
+		}
+	}
+
+	partial void OnSelectedDashboardProfileChanged(string? value)
+	{
+		this.SaveDashboardProfileCommand.NotifyCanExecuteChanged();
+		this.DeleteDashboardProfileCommand.NotifyCanExecuteChanged();
+
+		if(this.suppressProfileLoad)
+		{
+			return;
+		}
+
+		if(value != null && this.settings.DashboardProfiles.TryGetValue(value, out var configs))
+		{
+			this.RebuildDashboardWidgets(configs);
+			this.settings.DashboardWidgets = this.SnapshotCurrentWidgets();
+		}
+
+		this.settings.ActiveDashboardProfile = value;
+		this.settingsService.Save(this.settings);
+	}
+
+	[RelayCommand(CanExecute = nameof(CanSaveDashboardProfile))]
+	private void SaveDashboardProfile()
+	{
+		if(this.SelectedDashboardProfile is not { } name)
+		{
+			return;
+		}
+
+		this.settings.DashboardProfiles[name] = this.SnapshotCurrentWidgets();
+		this.settingsService.Save(this.settings);
+	}
+
+	private bool CanSaveDashboardProfile() => this.SelectedDashboardProfile != null;
+
+	[RelayCommand]
+	private void BeginSaveAsDashboardProfile()
+	{
+		this.NewDashboardProfileName = string.Empty;
+		this.IsAddingDashboardProfile = true;
+	}
+
+	[RelayCommand]
+	private void CancelSaveAsDashboardProfile()
+	{
+		this.IsAddingDashboardProfile = false;
+		this.NewDashboardProfileName = string.Empty;
+	}
+
+	[RelayCommand(CanExecute = nameof(CanConfirmSaveAsDashboardProfile))]
+	private void ConfirmSaveAsDashboardProfile()
+	{
+		var name = this.NewDashboardProfileName.Trim();
+		if(string.IsNullOrEmpty(name))
+		{
+			return;
+		}
+
+		var isNew = !this.settings.DashboardProfiles.ContainsKey(name);
+		this.settings.DashboardProfiles[name] = this.SnapshotCurrentWidgets();
+		this.settings.ActiveDashboardProfile = name;
+		this.settingsService.Save(this.settings);
+
+		if(isNew)
+		{
+			var insertAt = 0;
+			while(insertAt < this.DashboardProfileNames.Count
+			      && StringComparer.OrdinalIgnoreCase.Compare(this.DashboardProfileNames[insertAt], name) < 0)
+			{
+				insertAt++;
+			}
+			this.DashboardProfileNames.Insert(insertAt, name);
+		}
+
+		this.suppressProfileLoad = true;
+		this.SelectedDashboardProfile = name;
+		this.suppressProfileLoad = false;
+
+		this.IsAddingDashboardProfile = false;
+		this.NewDashboardProfileName = string.Empty;
+	}
+
+	private bool CanConfirmSaveAsDashboardProfile() => !string.IsNullOrWhiteSpace(this.NewDashboardProfileName);
+
+	partial void OnNewDashboardProfileNameChanged(string value) => this.ConfirmSaveAsDashboardProfileCommand.NotifyCanExecuteChanged();
+
+	[RelayCommand(CanExecute = nameof(CanDeleteDashboardProfile))]
+	private void DeleteDashboardProfile()
+	{
+		if(this.SelectedDashboardProfile is not { } name)
+		{
+			return;
+		}
+
+		this.settings.DashboardProfiles.Remove(name);
+		this.DashboardProfileNames.Remove(name);
+		this.settings.ActiveDashboardProfile = null;
+		this.settingsService.Save(this.settings);
+
+		this.suppressProfileLoad = true;
+		this.SelectedDashboardProfile = null;
+		this.suppressProfileLoad = false;
+	}
+
+	private bool CanDeleteDashboardProfile() => this.SelectedDashboardProfile != null;
+
+	private List<DashboardWidgetConfig> SnapshotCurrentWidgets() =>
+			this.DashboardWidgets.Select(w => new DashboardWidgetConfig(w.Id, w.IsVisible, w.Size)).ToList();
+
+	private void MoveDashboardWidgetUp(DashboardWidgetViewModel widget)
+	{
+		var idx = this.DashboardWidgets.IndexOf(widget);
+		if(idx <= 0) return;
+		this.DashboardWidgets.Move(idx, idx - 1);
+		this.SaveDashboardWidgets();
+	}
+
+	private void MoveDashboardWidgetDown(DashboardWidgetViewModel widget)
+	{
+		var idx = this.DashboardWidgets.IndexOf(widget);
+		if(idx < 0 || idx >= this.DashboardWidgets.Count - 1) return;
+		this.DashboardWidgets.Move(idx, idx + 1);
+		this.SaveDashboardWidgets();
+	}
+
+	private void OnDashboardWidgetChanged(DashboardWidgetViewModel widget) => this.SaveDashboardWidgets();
+
+	private void SaveDashboardWidgets()
+	{
+		this.settings.DashboardWidgets = this.SnapshotCurrentWidgets();
+		this.settingsService.Save(this.settings);
+	}
+
+	public ObservableCollection<HealStatEntry> DashboardTopTargets { get; } = new();
+	public ObservableCollection<HealStatEntry> DashboardTopSpells { get; } = new();
+	public ObservableCollection<HealStatEntry> DashboardTopHealers { get; } = new();
+	public ObservableCollection<HealStatEntry> DashboardTopDamageTaken { get; } = [];
+	public ObservableCollection<HealStatEntry> DashboardTopHealsDone { get; } = [];
 
 	public FrontierMapData FrontierMap { get; private set; } = null!;
 
@@ -226,6 +574,8 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 	[ObservableProperty] private TimeWindowOption selectedZoneKillWindow = null!;
 
 	[ObservableProperty] private int recentZoneKillCount;
+
+	[ObservableProperty] private ZoneKillSummary? hottestZone;
 
 	public ObservableCollection<KillActivityPoint> KillActivityPoints { get; } = new();
 
@@ -273,6 +623,11 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 	[ObservableProperty] private int kills;
 	[ObservableProperty] private int deaths;
 	[ObservableProperty] private int bestMultiKill;
+	[ObservableProperty] private string? currentMapLocation;
+
+	public event EventHandler? MinimapLocationChanged;
+
+	partial void OnCurrentMapLocationChanged(string? value) => this.MinimapLocationChanged?.Invoke(this, EventArgs.Empty);
 
 	public double KdRatio => this.Deaths > 0?(double)this.Kills / this.Deaths:this.Kills;
 
@@ -300,6 +655,22 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 			                                                               e.DirectionLabel.Contains(f, StringComparison.OrdinalIgnoreCase));
 
 	public FilteredCollection<CombatLogEntry> CombatLog { get; } = new(static (e, f) => string.IsNullOrWhiteSpace(f)||e.Opponent.Contains(f, StringComparison.OrdinalIgnoreCase)||e.Source.Contains(f, StringComparison.OrdinalIgnoreCase));
+
+	public ObservableCollection<HealStatEntry> HealsByHealerStats { get; } = new();
+
+	public ObservableCollection<HealStatEntry> HealsByTargetStats { get; } = new();
+
+	public ObservableCollection<HealStatEntry> DamageTakenByAttackerStats { get; } = new();
+
+	public ObservableCollection<AttackTypeRow> AttackTypeStats { get; } = new();
+
+	public ToggleState CombatLogOutgoing { get; private set; } = null!;
+
+	public ToggleState CombatLogIncoming { get; private set; } = null!;
+
+	public ToggleState CombatLogAoe { get; private set; } = null!;
+
+	public ToggleState CombatLogDot { get; private set; } = null!;
 
 	public RealmPointSummary Summary { get; }
 
@@ -338,6 +709,12 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 		this.highlightMultiHits = this.settings.HighlightMultiHits;
 		this.customChatLogPath = this.settings.CustomChatLogPath;
 		this.showSendNotifications = this.settings.ShowSendNotifications;
+		this.DashboardTab = new ToggleState(this.settings.ShowDashboardTab,
+		                                    v =>
+		                                    {
+			                                    this.settings.ShowDashboardTab = v;
+			                                    this.settingsService.Save(this.settings);
+		                                    });
 		this.RealmPointsTab = new ToggleState(this.settings.ShowRealmPointsTab,
 		                                      v =>
 		                                      {
@@ -350,30 +727,17 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 			                                 this.settings.ShowCombatTab = v;
 			                                 this.settingsService.Save(this.settings);
 		                                 });
-		this.ZoneKillsTab = new ToggleState(this.settings.ShowZoneKillsTab,
-		                                    v =>
-		                                    {
-			                                    this.settings.ShowZoneKillsTab = v;
-			                                    this.settingsService.Save(this.settings);
-		                                    });
 		this.HealLogTab = new ToggleState(this.settings.ShowHealLogTab,
 		                                  v =>
 		                                  {
 			                                  this.settings.ShowHealLogTab = v;
 			                                  this.settingsService.Save(this.settings);
 		                                  });
-		this.CombatLogTab = new ToggleState(this.settings.ShowCombatLogTab,
-		                                    v =>
-		                                    {
-			                                    this.settings.ShowCombatLogTab = v;
-			                                    this.settingsService.Save(this.settings);
-		                                    });
-		this.KillHeatmapTab = new ToggleState(this.settings.ShowKillHeatmapTab,
-		                                      v =>
-		                                      {
-			                                      this.settings.ShowKillHeatmapTab = v;
-			                                      this.settingsService.Save(this.settings);
-		                                      });
+		this.InitializeDashboardWidgets();
+		this.CombatLogOutgoing = new ToggleState(true, _ => this.RefreshCombatLogFilter());
+		this.CombatLogIncoming = new ToggleState(true, _ => this.RefreshCombatLogFilter());
+		this.CombatLogAoe = new ToggleState(true, _ => this.RefreshCombatLogFilter());
+		this.CombatLogDot = new ToggleState(true, _ => this.RefreshCombatLogFilter());
 		this.FrontierMap = frontierMapService.Load();
 		this.SelectedZoneKillWindow = this.ZoneKillWindowOptions.FirstOrDefault(option => option.Value.TotalMinutes == this.settings.ZoneKillWindowMinutes) ?? this.ZoneKillWindowOptions[1];
 		this.processor.EntryProcessed += this.OnEntryProcessed;
@@ -385,14 +749,33 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 		this.CombatSummary.PropertyChanged += this.OnCombatSummaryPropertyChanged;
 		this.TimeFilter.FilterChanged += this.OnTimeFilterChanged;
 		this.watchSession.ErrorOccurred += this.OnWatchSessionError;
-		_ = this.CheckForUpdatesAsync();
+		this.parsingDebounceTimer = new System.Timers.Timer(PARSING_DEBOUNCE_INTERVAL_MS) { AutoReset = false };
+		this.parsingDebounceTimer.Elapsed += (_, _) => Dispatcher.UIThread.InvokeAsync(() => this.IsParsing = false);
+		this.combatChartDebounceTimer = new System.Timers.Timer(COMBAT_CHART_DEBOUNCE_MS) { AutoReset = false };
+		this.combatChartDebounceTimer.Elapsed += (_, _) =>
+		{
+			this.CombatChartsUpdateNeeded?.Invoke(this, EventArgs.Empty);
+			Dispatcher.UIThread.InvokeAsync((Action)this.RefreshHealStats);
+			Dispatcher.UIThread.InvokeAsync((Action)this.RefreshAttackTypeStats);
+		};
+		this.FireAndForget(this.LoadRecentSessions());
+		this.FireAndForget(this.CheckForUpdatesAsync());
+	}
+
+	private void FireAndForget(Task task)
+	{
+		task.ContinueWith(t =>
+			Dispatcher.UIThread.InvokeAsync(() => this.WatchError = t.Exception!.Flatten().InnerExceptions[0].Message),
+			CancellationToken.None,
+			TaskContinuationOptions.OnlyOnFaulted,
+			TaskScheduler.Default);
 	}
 
 	private void OnTimeFilterChanged(object? sender, EventArgs e)
 	{
 		if(this.IsWatching)
 		{
-			_ = this.RestartAsync();
+			this.FireAndForget(this.RestartAsync());
 		}
 	}
 
@@ -406,15 +789,6 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 		if(e.PropertyName is not ("TotalHealsReceived" or "TotalDamageDealt" or "TotalDamageTaken" or "TotalHealingDone"))
 		{
 			return;
-		}
-
-		if(this.combatChartDebounceTimer == null)
-		{
-			this.combatChartDebounceTimer = new System.Timers.Timer(COMBAT_CHART_DEBOUNCE_MS)
-			                                {
-					                                AutoReset = false
-			                                };
-			this.combatChartDebounceTimer.Elapsed += (_, _) => this.CombatChartsUpdateNeeded?.Invoke(this, EventArgs.Empty);
 		}
 
 		this.combatChartDebounceTimer.Stop();
@@ -436,17 +810,8 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 	[RelayCommand]
 	private async Task OpenDaocLog()
 	{
-		string? path = null;
-		if(!string.IsNullOrWhiteSpace(this.CustomChatLogPath)&&File.Exists(this.CustomChatLogPath))
-		{
-			path = this.CustomChatLogPath;
-		}
-		else
-		{
-			path = this.daocLogPathService.FindDaocLogPath();
-		}
-
-		if(path != null&&File.Exists(path))
+		var path = this.GetLogPath();
+		if(path != null && File.Exists(path))
 		{
 			this.CurrentFilePath = path;
 			await this.StartWatching();
@@ -494,17 +859,8 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 			return;
 		}
 
-		string? path = null;
-		if(!string.IsNullOrWhiteSpace(this.CustomChatLogPath)&&File.Exists(this.CustomChatLogPath))
-		{
-			path = this.CustomChatLogPath;
-		}
-		else
-		{
-			path = this.daocLogPathService.FindDaocLogPath();
-		}
-
-		if(path == null||!File.Exists(path))
+		var path = this.GetLogPath();
+		if(path == null || !File.Exists(path))
 		{
 			return;
 		}
@@ -539,6 +895,7 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 		}
 
 		this.Summary.SessionStartTime = session.StartTime;
+		this.TimeFilter.SetIndexSilent(0);
 		var endPos = session.EndTime.HasValue?session.EndFilePosition:-1;
 		var watcher = this.logWatcherFactory.Create(this.CurrentFilePath, session.FilePosition, false, endPosition: endPos);
 		await this.RunWatchLoop(watcher);
@@ -561,6 +918,11 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 		{
 			this.Kills = this.processor.Kills;
 			this.Deaths = this.processor.Deaths;
+		}
+
+		if(logLine is RegionLogLine { Event: var region })
+		{
+			this.CurrentMapLocation = region.Location;
 		}
 
 		if(logLine is SendLogLine { Event: var send }&&this.ShowSendNotifications)
@@ -586,15 +948,6 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 		if(!this.IsParsing)
 		{
 			this.IsParsing = true;
-		}
-
-		if(this.parsingDebounceTimer == null)
-		{
-			this.parsingDebounceTimer = new System.Timers.Timer(PARSING_DEBOUNCE_INTERVAL_MS)
-			                            {
-					                            AutoReset = false
-			                            };
-			this.parsingDebounceTimer.Elapsed += (s, e) => Dispatcher.UIThread.InvokeAsync(() => this.IsParsing = false);
 		}
 
 		this.parsingDebounceTimer.Stop();
@@ -648,11 +1001,12 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 					                   Zone = kv.Key,
 					                   KillCount = kv.Value,
 					                   Percentage = totalCount == 0?0.0:(double)kv.Value / totalCount * 100.0,
-					                   HeatColor = GetZoneHeatColor(heatRatio)
+					                   HeatColor = ColorUtil.GetZoneHeatColor(heatRatio)
 			                   });
 		}
 
 		this.RecentZoneKillCount = totalCount;
+		this.HottestZone = this.ZoneKills.Count > 0 ? this.ZoneKills[0] : null;
 		this.UpdateKillActivity();
 	}
 
@@ -665,72 +1019,6 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 		}
 
 		this.KillActivityUpdated?.Invoke(this, EventArgs.Empty);
-	}
-
-	private static string GetZoneHeatColor(double ratio)
-	{
-		// Use a smooth green->yellow->red gradient based on hue.
-		// 0.0 -> green (120°), 0.5 -> yellow (60°), 1.0 -> red (0°).
-		ratio = Math.Clamp(ratio, 0.0, 1.0);
-		var hue = 120.0 - 120.0 * ratio;
-		return HslToHex(hue, 0.95, 0.55);
-	}
-
-	private static string HslToHex(double hue, double saturation, double lightness)
-	{
-		hue %= 360.0;
-		if(hue < 0)
-		{
-			hue += 360.0;
-		}
-
-		var c = (1.0 - Math.Abs(2.0 * lightness - 1.0)) * saturation;
-		var x = c * (1.0 - Math.Abs(hue / 60.0 % 2.0 - 1.0));
-		var m = lightness - c / 2.0;
-
-		double r1, g1, b1;
-		if(hue < 60)
-		{
-			r1 = c;
-			g1 = x;
-			b1 = 0;
-		}
-		else if(hue < 120)
-		{
-			r1 = x;
-			g1 = c;
-			b1 = 0;
-		}
-		else if(hue < 180)
-		{
-			r1 = 0;
-			g1 = c;
-			b1 = x;
-		}
-		else if(hue < 240)
-		{
-			r1 = 0;
-			g1 = x;
-			b1 = c;
-		}
-		else if(hue < 300)
-		{
-			r1 = x;
-			g1 = 0;
-			b1 = c;
-		}
-		else
-		{
-			r1 = c;
-			g1 = 0;
-			b1 = x;
-		}
-
-		var r = (int)Math.Round((r1 + m) * 255.0);
-		var g = (int)Math.Round((g1 + m) * 255.0);
-		var b = (int)Math.Round((b1 + m) * 255.0);
-
-		return $"#{r:X2}{g:X2}{b:X2}";
 	}
 
 	[RelayCommand]
@@ -769,13 +1057,14 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 
 	private void CleanupWatchState()
 	{
-		this.parsingDebounceTimer?.Stop();
-		this.parsingDebounceTimer?.Dispose();
-		this.parsingDebounceTimer = null;
+		this.parsingDebounceTimer.Stop();
+		this.combatChartDebounceTimer.Stop();
 		this.IsParsing = false;
 		this.IsWatching = false;
 		this.Summary.IsLive = false;
 		this.Summary.RefreshRpsPerHour();
+		this.RefreshHealStats();
+		this.RefreshAttackTypeStats();
 	}
 
 	[RelayCommand]
@@ -786,17 +1075,102 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 		this.ResetAllState();
 	}
 
+	private void RefreshHealStats()
+	{
+		RefreshStatCollection(this.HealsByHealerStats, this.CombatSummary.HealsByHealer);
+		RefreshStatCollection(this.HealsByTargetStats, this.CombatSummary.HealsByTarget);
+		RefreshStatCollection(this.DamageTakenByAttackerStats, this.CombatSummary.DamageTakenByAttacker);
+		this.RefreshDashboardTopStats();
+	}
+
+	private void RefreshDashboardTopStats()
+	{
+		RefreshStatCollection(this.DashboardTopTargets, this.CombatSummary.DamageByTarget, 3);
+
+		var spellTotalsById = this.CombatSummary.DamageBySpell.ToDictionary(kv => kv.Key, kv => kv.Value.TotalDamage);
+		RefreshStatCollection(this.DashboardTopSpells, spellTotalsById, 3);
+
+		RefreshStatCollection(this.DashboardTopHealers, this.CombatSummary.HealsByHealer, 5);
+		RefreshStatCollection(this.DashboardTopDamageTaken, this.CombatSummary.DamageTakenByAttacker, 5);
+		RefreshStatCollection(this.DashboardTopHealsDone, this.CombatSummary.HealsByTarget, 5);
+	}
+
+	private void RefreshAttackTypeStats()
+	{
+		this.AttackTypeStats.Clear();
+		var source = this.CombatSummary.DamageBySpell;
+
+		var rows = source
+		           .Where(kv => kv.Value.HitCount > 0)
+		           .Select(kv => (kv.Key, kv.Value.HitCount, kv.Value.CritCount, Avg: kv.Value.TotalDamage / kv.Value.HitCount))
+		           .OrderByDescending(r => r.Avg)
+		           .ToList();
+
+		if(rows.Count == 0)
+		{
+			return;
+		}
+
+		var maxAvg = rows[0].Avg;
+
+		foreach(var r in rows)
+		{
+			this.AttackTypeStats.Add(new AttackTypeRow
+			                         {
+					                         Name = r.Key,
+					                         AvgDamage = r.Avg,
+					                         HitCount = r.HitCount,
+					                         CritCount = r.CritCount,
+					                         Percentage = (double)r.Avg / maxAvg * 100.0
+			                         });
+		}
+	}
+
+	private void RefreshCombatLogFilter()
+	{
+		this.CombatLog.SetTypeFilter(e =>
+			(this.CombatLogOutgoing.Value && e.ShowDealtLabel) ||
+			(this.CombatLogIncoming.Value && !e.IsDealt) ||
+			(this.CombatLogAoe.Value && e.IsMultiHit) ||
+			(this.CombatLogDot.Value && e.IsDotTick));
+	}
+
+	private static void RefreshStatCollection(ObservableCollection<HealStatEntry> collection, Dictionary<string, int> source, int count = int.MaxValue)
+	{
+		collection.Clear();
+		var total = source.Values.Sum();
+		if(total == 0)
+		{
+			return;
+		}
+
+		foreach(var kv in source.OrderByDescending(kv => kv.Value).Take(count))
+		{
+			collection.Add(new HealStatEntry { Name = kv.Key, Total = kv.Value, Percentage = (double)kv.Value / total * 100.0 });
+		}
+	}
+
 	private void ResetAllState()
 	{
 		this.Summary.Reset();
 		this.RpLog.Clear();
 		this.HealLog.Clear();
 		this.CombatLog.Clear();
+		this.HealsByHealerStats.Clear();
+		this.HealsByTargetStats.Clear();
+		this.DamageTakenByAttackerStats.Clear();
+		this.AttackTypeStats.Clear();
 		this.ChartData.Reset();
 		this.CombatSummary.Reset();
 		this.processor.Reset();
 		this.combatProcessor.Reset();
+		this.DashboardTopTargets.Clear();
+		this.DashboardTopSpells.Clear();
+		this.DashboardTopHealers.Clear();
+		this.DashboardTopDamageTaken.Clear();
+		this.DashboardTopHealsDone.Clear();
 		this.ZoneKills.Clear();
+		this.HottestZone = null;
 		this.KillActivityPoints.Clear();
 		this.RecentZoneKillCount = 0;
 		this.DetectedCharacterName = null;
@@ -836,10 +1210,12 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 		this.TimeFilter.FilterChanged -= this.OnTimeFilterChanged;
 		this.watchSession.ErrorOccurred -= this.OnWatchSessionError;
 		this.watchController.Stop();
-		this.parsingDebounceTimer?.Stop();
-		this.parsingDebounceTimer?.Dispose();
-		this.combatChartDebounceTimer?.Stop();
-		this.combatChartDebounceTimer?.Dispose();
+		this.parsingDebounceTimer.Stop();
+		this.parsingDebounceTimer.Dispose();
+		this.combatChartDebounceTimer.Stop();
+		this.combatChartDebounceTimer.Dispose();
+		this.sessionLoadCts?.Cancel();
+		this.sessionLoadCts?.Dispose();
 		this.SendNotification.Dispose();
 		GC.SuppressFinalize(this);
 	}

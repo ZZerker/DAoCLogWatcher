@@ -12,14 +12,11 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 	private const int BUFFER_SIZE = 4096;
 	private const int POLL_DELAY_MILLISECONDS = 500;
 	private const int LOG_REOPEN_THRESHOLD_SECONDS = 30;
-	private const int KILL_RP_CORRELATION_WINDOW_SECONDS = 30;
 	private const string DATE_FORMAT = "ddd MMM d HH:mm:ss yyyy";
 
 	private static readonly Regex ChatLogOpenedRegex = GenerateChatLogOpenedRegex();
 	private static readonly Regex ChatLogClosedRegex = GenerateChatLogClosedRegex();
 	private static readonly Regex StatsCharacterRegex = GenerateStatsCharacterRegex();
-	private static readonly Regex KillLineRegex = GenerateKillLineRegex();
-	private static readonly Regex SendLineRegex = GenerateSendLineRegex();
 
 	private readonly string logFilePath;
 	private readonly double maxHistoryHours;
@@ -31,11 +28,7 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 	private readonly Dictionary<string, int> characterNameCounts = new();
 	private bool lastTimestampedLineWasInWindow = true;
 	private readonly long endPosition;
-
-	// Session-scoped state — initialised at the start of each WatchAsync call.
-	private RealmPointParser? sessionParser;
-	private CombatParser? sessionCombatParser;
-	private KillEvent? lastKillEvent;
+	private readonly LogLineParser lineParser = new();
 
 	public LogWatcher(string logFilePath, long startPosition = 0, bool enableTimeFiltering = false, double filterHours = 24, long endPosition = -1)
 	{
@@ -76,9 +69,7 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 			throw new FileNotFoundException($"Log file not found: {this.logFilePath}");
 		}
 
-		this.sessionParser = new RealmPointParser();
-		this.sessionCombatParser = new CombatParser();
-		this.lastKillEvent = null;
+		this.lineParser.Reset();
 
 		this.fileStream = new FileStream(this.logFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 0, true);
 
@@ -142,7 +133,7 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 					var heal = this.ApplyTimeFilter(parsed.HealEvent, e => e.Timestamp);
 					var miss = this.ApplyTimeFilter(parsed.MissEvent, e => e.Timestamp);
 
-					var logLine = CreateLogLine(line, CorrelateKillWithRp(entry, this.lastKillEvent), damage, heal, miss, parsed.KillEvent, parsed.SendEvent);
+					var logLine = CreateLogLine(line, entry, damage, heal, miss, parsed.KillEvent, parsed.SendEvent, parsed.RegionEvent);
 					logLine = logLine with
 					          {
 							          DetectedCharacterName = parsed.CharacterName
@@ -188,26 +179,7 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 		return this.ShouldProcessTimestamp(getTimestamp(evt))?evt:null;
 	}
 
-	private static RealmPointEntry? CorrelateKillWithRp(RealmPointEntry? entry, KillEvent? lastKillEvent)
-	{
-		if(entry == null||entry.Source != RealmPointSource.PlayerKill||lastKillEvent == null)
-		{
-			return entry;
-		}
-
-		var diffSeconds = TimeHelper.ShortestArcSeconds(entry.Timestamp, lastKillEvent.Timestamp);
-		if(diffSeconds <= KILL_RP_CORRELATION_WINDOW_SECONDS)
-		{
-			return entry with
-			       {
-					       Victim = lastKillEvent.Victim
-			       };
-		}
-
-		return entry;
-	}
-
-	private static LogLine CreateLogLine(string line, RealmPointEntry? entry, DamageEvent? damageEvent, HealEvent? healEvent, MissEvent? missEvent, KillEvent? killEvent, SendEvent? sendEvent)
+	private static LogLine CreateLogLine(string line, RealmPointEntry? entry, DamageEvent? damageEvent, HealEvent? healEvent, MissEvent? missEvent, KillEvent? killEvent, SendEvent? sendEvent, RegionEvent? regionEvent)
 	{
 		if(entry != null)
 		{
@@ -237,6 +209,11 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 		if(sendEvent != null)
 		{
 			return new SendLogLine(line, sendEvent);
+		}
+
+		if(regionEvent != null)
+		{
+			return new RegionLogLine(line, regionEvent);
 		}
 
 		return new UnknownLogLine(line);
@@ -304,14 +281,8 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 
 	// ── Per-line processing ──────────────────────────────────────────────
 
-	private readonly record struct ParsedLine(bool ShouldYield, RealmPointEntry? Entry, DamageEvent? DamageEvent, HealEvent? HealEvent, MissEvent? MissEvent, KillEvent? KillEvent, SendEvent? SendEvent, string? CharacterName);
+	private readonly record struct ParsedLine(bool ShouldYield, RealmPointEntry? Entry, DamageEvent? DamageEvent, HealEvent? HealEvent, MissEvent? MissEvent, KillEvent? KillEvent, SendEvent? SendEvent, RegionEvent? RegionEvent, string? CharacterName);
 
-	/// <summary>
-	/// Feeds one line through all parsers and detection helpers.
-	/// Updates session state (lastKillEvent, lastTimestampedLineWasInWindow, CurrentCharacterName).
-	/// The caller decides whether to yield — only lines where <see cref="ParsedLine.ShouldYield"/>
-	/// is true and the line is non-empty should be emitted.
-	/// </summary>
 	private ParsedLine ProcessOneLine(string line)
 	{
 		this.ProcessLogClosedMarker(line);
@@ -335,22 +306,11 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 			detectedName = null;
 		}
 
-		// Always feed both parsers to keep state machines consistent.
-		this.sessionParser!.TryParse(line, out var entry);
-		this.sessionCombatParser!.TryParse(line, out var damageEvent, out var healEvent, out var missEvent);
-
-		// Detect kill events unconditionally — the kill line may be outside the time
-		// filter window while the correlated RP entry is inside it.
-		var killEvent = TryDetectKillEvent(line);
-		if(killEvent != null)
-		{
-			this.lastKillEvent = killEvent;
-		}
-
-		var sendEvent = TryDetectSendEvent(line);
-
+		// Always feed all parsers to keep state machines consistent — kill lines can fall
+		// outside the time filter while the correlated RP entry is inside it.
+		var parsed = this.lineParser.Parse(line, this.CurrentCharacterName);
 		var characterName = detectedName != null?this.CurrentCharacterName:null;
-		return new ParsedLine(shouldYield, entry, damageEvent, healEvent, missEvent, killEvent, sendEvent, characterName);
+		return new ParsedLine(shouldYield, parsed.Entry, parsed.DamageEvent, parsed.HealEvent, parsed.MissEvent, parsed.KillEvent, parsed.SendEvent, parsed.RegionEvent, characterName);
 	}
 
 	// ── Session markers ──────────────────────────────────────────────────
@@ -474,52 +434,4 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 	[GeneratedRegex(@"^Statistics for (?<name>\w+) this Session:$", RegexOptions.CultureInvariant)]
 	private static partial Regex GenerateStatsCharacterRegex();
 
-	private static KillEvent? TryDetectKillEvent(string line)
-	{
-		var match = KillLineRegex.Match(line);
-		if(!match.Success)
-		{
-			return null;
-		}
-
-		if(!TimeOnly.TryParseExact(match.Groups["timestamp"].Value, "HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out var timestamp))
-		{
-			return null;
-		}
-
-		return new KillEvent
-		       {
-				       Timestamp = timestamp,
-				       Victim = match.Groups["victim"].Value,
-				       Killer = match.Groups["killer"].Value,
-				       Zone = match.Groups["zone"].Value
-		       };
-	}
-
-	[GeneratedRegex(@"^\[(?<timestamp>\d{2}:\d{2}:\d{2})\] (?<victim>\w+) was just killed by (?<killer>\w+) in (?<zone>.+)\.$", RegexOptions.Compiled|RegexOptions.CultureInvariant)]
-	private static partial Regex GenerateKillLineRegex();
-
-	private static SendEvent? TryDetectSendEvent(string line)
-	{
-		var match = SendLineRegex.Match(line);
-		if(!match.Success)
-		{
-			return null;
-		}
-
-		if(!TimeOnly.TryParseExact(match.Groups["timestamp"].Value, "HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out var timestamp))
-		{
-			return null;
-		}
-
-		return new SendEvent
-		       {
-				       Timestamp = timestamp,
-				       Sender = match.Groups["sender"].Value,
-				       Message = match.Groups["message"].Value
-		       };
-	}
-
-	[GeneratedRegex(@"^\[(?<timestamp>\d{2}:\d{2}:\d{2})\] @@(?<sender>\w+) sends, ""(?<message>.+)""$", RegexOptions.Compiled|RegexOptions.CultureInvariant)]
-	private static partial Regex GenerateSendLineRegex();
 }

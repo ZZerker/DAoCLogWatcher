@@ -1,0 +1,27 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="using:DAoCLogWatcher.UI.Views.Controls"
+             x:Class="DAoCLogWatcher.UI.Views.Controls.AttackTypeBarRow"
+             x:DataType="controls:AttackTypeBarRow"
+             x:Name="self">
+    <StackPanel Spacing="3" Margin="0,0,0,6">
+        <Grid ColumnDefinitions="*,Auto,Auto,Auto">
+            <TextBlock Text="{Binding #self.Label}"
+                       Foreground="{DynamicResource AppTextSecondary}"
+                       FontSize="13" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1" Text="{Binding #self.AvgDamage}"
+                       Foreground="{DynamicResource AppHeat}"
+                       FontWeight="SemiBold" FontSize="12" Margin="8,0,0,0" />
+            <TextBlock Grid.Column="2" Text="{Binding #self.HitCount, StringFormat='×{0}'}"
+                       Foreground="{DynamicResource AppTextMuted}"
+                       FontSize="12" Margin="8,0,0,0" />
+            <TextBlock Grid.Column="3" Text="{Binding #self.CritCount, StringFormat='crit {0}'}"
+                       Foreground="{DynamicResource AppCrit}"
+                       FontSize="12" Margin="8,0,0,0" />
+        </Grid>
+        <ProgressBar Value="{Binding #self.Percentage}" Minimum="0" Maximum="100"
+                     Height="6" CornerRadius="3"
+                     Background="{DynamicResource AppWindowBackground}"
+                     Foreground="{DynamicResource AppHeat}" />
+    </StackPanel>
+</UserControl>

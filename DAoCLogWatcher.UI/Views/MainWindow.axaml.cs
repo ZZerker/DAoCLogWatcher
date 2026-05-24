@@ -70,6 +70,7 @@ public partial class MainWindow: Window
 		base.OnOpened(e);
 
 		this.ApplyDarkTitleBar();
+		this.SelectFirstVisibleTab();
 
 		// Move to a secondary screen if one is available — DAoC typically runs full-screen
 		// on the primary monitor, so prefer any non-primary screen for the log watcher.
@@ -92,9 +93,22 @@ public partial class MainWindow: Window
 
 			if(this.DataContext is ViewModels.MainWindowViewModel newVm)
 			{
-				newVm.AbsoluteNumbers.Value = false;
-				newVm.AbsoluteRps.Value = false;
+				newVm.RpSourceBreakdown.Value = false;
 			}
+		}
+	}
+
+	private void SelectFirstVisibleTab()
+	{
+		if(this.MainTabControl.SelectedItem is not TabItem selected || selected.IsVisible)
+		{
+			return;
+		}
+
+		var first = this.MainTabControl.Items.OfType<TabItem>().FirstOrDefault(t => t.IsVisible);
+		if(first != null)
+		{
+			this.MainTabControl.SelectedItem = first;
 		}
 	}
 

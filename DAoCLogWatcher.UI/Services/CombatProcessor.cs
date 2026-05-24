@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Avalonia.Threading;
 using DAoCLogWatcher.Core;
 using DAoCLogWatcher.Core.Models;
 using DAoCLogWatcher.UI.Models;
@@ -26,6 +27,7 @@ public sealed class CombatProcessor(CombatSummary summary, SpellRegistry? dotReg
 	private double dotStackWindowSeconds;
 	private TimeOnly dotStackWindowLastTick;
 	private readonly Dictionary<string, CombatLogEntry> dotStackEntries = new();
+	private readonly Dictionary<string, CombatLogEntry> lastDealtByOpponent = new();
 
 	// Sliding window: closes when no new hit of the same spell arrives within 4 seconds
 	// of the previous hit. Using the last hit (not the window start) avoids premature
@@ -41,13 +43,7 @@ public sealed class CombatProcessor(CombatSummary summary, SpellRegistry? dotReg
 	{
 		// Flush time-based windows (AoE multi-hit and DoT stacks) when a new timestamped
 		// event arrives far enough after the last window hit.
-		var currentTs = logLine switch
-		{
-				DamageLogLine d => (TimeOnly?)d.Event.Timestamp,
-				HealLogLine h => h.Event.Timestamp,
-				MissLogLine m => m.Event.Timestamp,
-				_ => null
-		};
+		var currentTs = logLine.Timestamp;
 		if(currentTs.HasValue)
 		{
 			if(this.multiHitSpell != null)
@@ -81,6 +77,13 @@ public sealed class CombatProcessor(CombatSummary summary, SpellRegistry? dotReg
 		{
 			this.ProcessMiss(miss);
 		}
+		else if(logLine is KillLogLine { Event: var kill })
+		{
+			if(this.lastDealtByOpponent.Remove(kill.Victim, out var entry))
+			{
+				entry.IsKillingBlow = true;
+			}
+		}
 	}
 
 	public void Reset()
@@ -96,6 +99,7 @@ public sealed class CombatProcessor(CombatSummary summary, SpellRegistry? dotReg
 		this.dotStackWindowSeconds = 0;
 		this.dotStackWindowLastTick = default;
 		this.dotStackEntries.Clear();
+		this.lastDealtByOpponent.Clear();
 	}
 
 	private void ProcessDamage(DamageEvent damage)
@@ -123,7 +127,7 @@ public sealed class CombatProcessor(CombatSummary summary, SpellRegistry? dotReg
 
 			var spellKey = damage.IsWeaponAttack?damage.StyleName ?? "Melee":damage.SpellName ?? "Other";
 			summary.DamageBySpell.TryGetValue(spellKey, out var existingSpell);
-			summary.DamageBySpell[spellKey] = (existingSpell.TotalDamage + damage.TotalDamage, existingSpell.HitCount + 1);
+			summary.DamageBySpell[spellKey] = (existingSpell.TotalDamage + damage.TotalDamage, existingSpell.HitCount + 1, existingSpell.CritCount + (damage.CritDamage > 0 ? 1 : 0));
 		}
 		else
 		{
@@ -146,19 +150,25 @@ public sealed class CombatProcessor(CombatSummary summary, SpellRegistry? dotReg
 		}
 		else
 		{
-			this.DamageLogged?.Invoke(this,
-			                          new CombatLogEntry
-			                          {
-					                          Timestamp = damage.Timestamp.ToString("HH:mm:ss"),
-					                          Opponent = damage.Opponent,
-					                          TotalDamage = damage.TotalDamage,
-					                          IsDealt = damage.IsDealt,
-					                          IsCrit = damage.CritDamage > 0,
-					                          SpellName = damage.SpellName,
-					                          StyleName = damage.StyleName,
-					                          IsWeaponAttack = damage.IsWeaponAttack,
-					                          IsDotTick = damage.IsDotTick
-			                          });
+			var entry = new CombatLogEntry
+			            {
+					            Timestamp = damage.Timestamp.ToString("HH:mm:ss"),
+					            Opponent = damage.Opponent,
+					            TotalDamage = damage.TotalDamage,
+					            IsDealt = damage.IsDealt,
+					            IsCrit = damage.CritDamage > 0,
+					            SpellName = damage.SpellName,
+					            StyleName = damage.StyleName,
+					            IsWeaponAttack = damage.IsWeaponAttack,
+					            IsDotTick = damage.IsDotTick,
+					            IsPlayer = !NpcFilter.IsNpc(damage.Opponent)
+			            };
+			if(damage.IsDealt)
+			{
+				this.lastDealtByOpponent[damage.Opponent] = entry;
+			}
+
+			this.DamageLogged?.Invoke(this, entry);
 		}
 	}
 
@@ -166,13 +176,20 @@ public sealed class CombatProcessor(CombatSummary summary, SpellRegistry? dotReg
 	{
 		if(heal.IsOutgoing)
 		{
-			summary.TotalHealingDone += heal.HitPoints;
-			summary.HealsByTarget.Accumulate(heal.Target ?? "Unknown", heal.HitPoints);
+			summary.TotalHealingDone += heal.TotalHitPoints;
+			summary.HealDoneCount++;
+			summary.HealsByTarget.Accumulate(heal.Target ?? "Unknown", heal.TotalHitPoints);
+			summary.UniqueHealTargetCount = summary.HealsByTarget.Count;
 		}
 		else
 		{
-			summary.TotalHealsReceived += heal.HitPoints;
-			summary.HealsByHealer.Accumulate(heal.Healer ?? "Unknown", heal.HitPoints);
+			summary.TotalHealsReceived += heal.TotalHitPoints;
+			summary.HealsByHealer.Accumulate(heal.Healer ?? "Unknown", heal.TotalHitPoints);
+		}
+
+		if(heal.CritHitPoints > 0)
+		{
+			summary.HealCritCount++;
 		}
 
 		this.HealLogged?.Invoke(this,
@@ -180,6 +197,7 @@ public sealed class CombatProcessor(CombatSummary summary, SpellRegistry? dotReg
 		                        {
 				                        Timestamp = heal.Timestamp.ToString("HH:mm:ss"),
 				                        HitPoints = heal.HitPoints,
+				                        CritHitPoints = heal.CritHitPoints,
 				                        IsOutgoing = heal.IsOutgoing,
 				                        Who = heal.IsOutgoing?heal.Target:heal.Healer
 		                        });
@@ -268,16 +286,22 @@ public sealed class CombatProcessor(CombatSummary summary, SpellRegistry? dotReg
 				HitCount = 1
 			};
 			this.dotStackEntries[target] = entry;
+			this.lastDealtByOpponent[target] = entry;
 			this.DamageLogged?.Invoke(this, entry);
 		}
 		else
 		{
-			entry.TotalDamage += damage.TotalDamage;
-			entry.HitCount++;
-			if(damage.CritDamage > 0)
+			var totalDamage = damage.TotalDamage;
+			var isCrit = damage.CritDamage > 0;
+			Dispatcher.UIThread.Post(() =>
 			{
-				entry.IsCrit = true;
-			}
+				entry.TotalDamage += totalDamage;
+				entry.HitCount++;
+				if(isCrit)
+				{
+					entry.IsCrit = true;
+				}
+			}, DispatcherPriority.Background);
 		}
 
 		this.dotStackWindowLastTick = damage.Timestamp;
@@ -285,6 +309,11 @@ public sealed class CombatProcessor(CombatSummary summary, SpellRegistry? dotReg
 
 	private void CloseDotStack()
 	{
+		foreach(var key in this.dotStackEntries.Keys)
+		{
+			this.lastDealtByOpponent.Remove(key);
+		}
+
 		this.dotStackSpell = null;
 		this.dotStackEntries.Clear();
 	}

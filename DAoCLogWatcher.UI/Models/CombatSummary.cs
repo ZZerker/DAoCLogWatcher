@@ -28,7 +28,15 @@ public partial class CombatSummary: ObservableObject
 
 	[ObservableProperty] private int spellResistCount;
 
+	[ObservableProperty] private int healCritCount;
+
+	[ObservableProperty] private int healDoneCount;
+
+	[ObservableProperty] private int uniqueHealTargetCount;
+
 	public double CritRate => this.HitCount == 0?0.0:(double)this.CritCount / this.HitCount * 100.0;
+
+	public double HealCritRate => this.HealDoneCount == 0?0.0:(double)this.HealCritCount / this.HealDoneCount * 100.0;
 
 	public int AvgDamagePerHit => this.HitCount == 0?0:this.TotalDamageDealt / this.HitCount;
 
@@ -77,6 +85,16 @@ public partial class CombatSummary: ObservableObject
 		this.OnPropertyChanged(nameof(this.SpellResistRate));
 	}
 
+	partial void OnHealDoneCountChanged(int value)
+	{
+		this.OnPropertyChanged(nameof(this.HealCritRate));
+	}
+
+	partial void OnHealCritCountChanged(int value)
+	{
+		this.OnPropertyChanged(nameof(this.HealCritRate));
+	}
+
 	/// <summary>Total damage dealt per enemy (key = target name).</summary>
 	public Dictionary<string, int> DamageByTarget { get; } = new();
 
@@ -87,9 +105,9 @@ public partial class CombatSummary: ObservableObject
 	public Dictionary<string, int> HealsByTarget { get; } = new();
 
 	/// <summary>
-	/// Per attack type: key = spell name or "Melee", value = (TotalDamage, HitCount).
+	/// Per attack type: key = spell name or "Melee", value = (TotalDamage, HitCount, CritCount).
 	/// </summary>
-	public Dictionary<string, (int TotalDamage, int HitCount)> DamageBySpell { get; } = new();
+	public Dictionary<string, (int TotalDamage, int HitCount, int CritCount)> DamageBySpell { get; } = new();
 
 	/// <summary>Total damage received per attacker (key = attacker name).</summary>
 	public Dictionary<string, int> DamageTakenByAttacker { get; } = new();
@@ -109,6 +127,9 @@ public partial class CombatSummary: ObservableObject
 		this.SpellHitCount = 0;
 		this.MeleeMissCount = 0;
 		this.SpellResistCount = 0;
+		this.HealCritCount = 0;
+		this.HealDoneCount = 0;
+		this.UniqueHealTargetCount = 0;
 		this.DamageByTarget.Clear();
 		this.HealsByHealer.Clear();
 		this.HealsByTarget.Clear();

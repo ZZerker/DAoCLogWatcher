@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -93,6 +94,7 @@ public static partial class LogSessionScanner
 		{
 			if(!DateTime.TryParseExact(openMatch.Groups["date"].Value, DATE_FORMAT, CultureInfo.InvariantCulture, DateTimeStyles.None, out var openedAt))
 			{
+				Debug.WriteLine($"[SessionScanner] Unrecognized open date: '{openMatch.Groups["date"].Value}'");
 				return;
 			}
 
@@ -117,6 +119,10 @@ public static partial class LogSessionScanner
 			if(DateTime.TryParseExact(closeMatch.Groups["date"].Value, DATE_FORMAT, CultureInfo.InvariantCulture, DateTimeStyles.None, out var closedAt))
 			{
 				current.EndTime = closedAt;
+			}
+			else
+			{
+				Debug.WriteLine($"[SessionScanner] Unrecognized close date: '{closeMatch.Groups["date"].Value}'");
 			}
 
 			return;

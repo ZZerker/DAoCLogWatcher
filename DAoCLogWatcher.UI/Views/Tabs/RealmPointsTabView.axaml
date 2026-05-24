@@ -2,12 +2,13 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:DAoCLogWatcher.UI.ViewModels"
              xmlns:scott="using:ScottPlot.Avalonia"
+             xmlns:controls="using:DAoCLogWatcher.UI.Views.Controls"
              x:Class="DAoCLogWatcher.UI.Views.Tabs.RealmPointsTabView"
              x:DataType="vm:MainWindowViewModel">
 
     <Grid RowDefinitions="*,Auto" Margin="10,10,10,0">
         <DockPanel Grid.Row="0">
-            <StackPanel DockPanel.Dock="Top" Margin="0,0,0,15" Spacing="10">
+            <StackPanel DockPanel.Dock="Top" Margin="0,0,0,12" Spacing="10">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="Realm Point Log" FontSize="22" FontWeight="Bold"
                                Margin="0,0,15,0" Foreground="{DynamicResource AppTextPrimary}" />
@@ -23,12 +24,20 @@
                              FontSize="13" />
                     <Button Grid.Column="1"
                             Content="✕"
+                            Classes="btn-ghost"
                             Command="{Binding RpLog.ClearFilterCommand}"
                             IsVisible="{Binding RpLog.FilterText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                            Margin="6,0,0,0"
-                            Padding="8,4"
-                            FontSize="13" />
+                            Margin="6,0,0,0" />
                 </Grid>
+            </StackPanel>
+
+            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,12">
+                <controls:StatTile Label="TOTAL RP" Value="{Binding Summary.TotalRealmPoints}"
+                                   ValueColor="{DynamicResource AppAccentCyan}" />
+                <controls:StatTile Label="RP/HOUR" Value="{Binding Summary.RpsPerHour, StringFormat='{}{0:F0}'}"
+                                   ValueColor="{DynamicResource AppAccentPurple}" />
+                <controls:StatTile Label="KILLS" Value="{Binding Kills}"
+                                   ValueColor="{DynamicResource AppPositive}" />
             </StackPanel>
 
             <ScrollViewer Background="{DynamicResource AppCardBackground}" CornerRadius="6"
@@ -39,9 +48,8 @@
                         <DataTemplate>
                             <Border BorderBrush="{DynamicResource AppRowBorder}"
                                     BorderThickness="0,0,0,1" Padding="10,8"
-                                    Background="Transparent"
                                     Classes.multikill="{Binding IsMultiKill}">
-                                <Grid ColumnDefinitions="Auto,Auto,Auto,*">
+                                <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,*">
                                     <TextBlock Grid.Column="0" Text="{Binding Timestamp}"
                                                Foreground="{DynamicResource AppTextMuted}"
                                                FontFamily="Consolas,Courier New,monospace"
@@ -50,21 +58,51 @@
                                                MinWidth="80" />
                                     <TextBlock Grid.Column="1"
                                                Text="{Binding Points, StringFormat='+{0} RP'}"
-                                               Foreground="#FF00D968"
+                                               Foreground="{DynamicResource AppPositive}"
                                                FontWeight="Bold"
                                                FontSize="13"
                                                Margin="0,0,20,0"
                                                MinWidth="90" />
-                                    <TextBlock Grid.Column="2" Classes="source-label"
+                                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4"
+                                                VerticalAlignment="Center" Margin="0,0,10,0">
+                                        <Border Background="#2100C853"
+                                                BorderBrush="#7F00C853"
+                                                BorderThickness="1"
+                                                CornerRadius="4"
+                                                Padding="6,1"
+                                                IsVisible="{Binding IsDeathblow}">
+                                            <TextBlock Text="KILL"
+                                                       FontSize="9"
+                                                       FontWeight="Bold"
+                                                       Foreground="{DynamicResource AppPositive}" />
+                                        </Border>
+                                        <Border Background="#21FF6600"
+                                                BorderBrush="#7FFF6600"
+                                                BorderThickness="1"
+                                                CornerRadius="4"
+                                                Padding="6,1"
+                                                IsVisible="{Binding IsMultiKill}">
+                                            <TextBlock Text="MULTI"
+                                                       FontSize="9"
+                                                       FontWeight="Bold"
+                                                       Foreground="{DynamicResource AppMultiKill}" />
+                                        </Border>
+                                    </StackPanel>
+                                    <TextBlock Grid.Column="3" Classes="source-label"
                                                Text="{Binding Source}"
-                                               Foreground="#FF00D9FF"
+                                               Foreground="{DynamicResource AppAccentCyan}"
                                                FontSize="13"
                                                Margin="0,0,20,0"
                                                MinWidth="150" />
-                                    <TextBlock Grid.Column="3" Text="{Binding Details}"
+                                    <controls:PlayerNameControl Grid.Column="4"
+                                                                PlayerName="{Binding VictimName}"
+                                                                NameForeground="{DynamicResource AppTextSecondary}"
+                                                                NameFontSize="13" />
+                                    <TextBlock Grid.Column="4" Text="{Binding Details}"
                                                Foreground="{DynamicResource AppTextSecondary}"
                                                FontSize="13"
-                                               TextWrapping="Wrap" />
+                                               TextWrapping="Wrap"
+                                               IsVisible="{Binding VictimName, Converter={x:Static StringConverters.IsNullOrEmpty}}" />
                                 </Grid>
                             </Border>
                         </DataTemplate>
@@ -73,20 +111,20 @@
             </ScrollViewer>
         </DockPanel>
 
-        <Border Grid.Row="1" Background="{DynamicResource AppCardBackground}" CornerRadius="6"
-                Padding="15" Margin="0,15,0,0">
+        <Border Grid.Row="1" Background="{DynamicResource AppCardBackground}"
+                BorderBrush="{DynamicResource AppRowBorder}" BorderThickness="1"
+                CornerRadius="8" Padding="16" Margin="0,15,0,0">
             <StackPanel Spacing="8">
 
                 <Grid>
-                    <TextBlock Text="RP/h – Rolling 1-Hour Window" FontSize="16"
-                               FontWeight="SemiBold"
+                    <TextBlock Text="RP/h – Rolling 1-Hour Window" FontSize="14"
+                               FontWeight="Bold"
                                Foreground="{DynamicResource AppTextPrimary}"
                                VerticalAlignment="Center" />
                     <Button Content="{Binding RpsChart.Icon}"
                             Command="{Binding RpsChart.ToggleCommand}"
-                            HorizontalAlignment="Right" Background="Transparent"
-                            Foreground="{DynamicResource AppTextMuted}" Padding="6,2"
-                            BorderThickness="0" FontSize="14" />
+                            Classes="btn-ghost"
+                            HorizontalAlignment="Right" FontSize="14" />
                 </Grid>
                 <scott:AvaPlot x:Name="RpsHourlyChart" Height="180"
                                IsVisible="{Binding RpsChart.Value}" />
@@ -95,15 +133,14 @@
                         Margin="0,4,0,4" />
 
                 <Grid>
-                    <TextBlock Text="Realm Points Over Time" FontSize="16"
-                               FontWeight="SemiBold"
+                    <TextBlock Text="Realm Points Over Time" FontSize="14"
+                               FontWeight="Bold"
                                Foreground="{DynamicResource AppTextPrimary}"
                                VerticalAlignment="Center" />
                     <Button Content="{Binding CumulativeRpChart.Icon}"
                             Command="{Binding CumulativeRpChart.ToggleCommand}"
-                            HorizontalAlignment="Right" Background="Transparent"
-                            Foreground="{DynamicResource AppTextMuted}" Padding="6,2"
-                            BorderThickness="0" FontSize="14" />
+                            Classes="btn-ghost"
+                            HorizontalAlignment="Right" FontSize="14" />
                 </Grid>
                 <scott:AvaPlot x:Name="RpChart" Height="180"
                                IsVisible="{Binding CumulativeRpChart.Value}" />

@@ -18,6 +18,8 @@ public sealed partial class CombatParser
 
 	private PendingDamage? pendingDealt;
 	private PendingDamage? pendingTaken;
+	private HealEvent? pendingOutgoingHeal;
+	private int pendingHealCrit;
 	private string? pendingSpellName;
 	private TimeOnly pendingSpellTimestamp;
 	private string? confirmedDamageSpellName;
@@ -25,6 +27,21 @@ public sealed partial class CombatParser
 	private TimeOnly pendingBowShotTimestamp;
 	private string? pendingStyleName;
 	private TimeOnly pendingStyleTimestamp;
+
+	public void Reset()
+	{
+		this.pendingDealt = null;
+		this.pendingTaken = null;
+		this.pendingOutgoingHeal = null;
+		this.pendingHealCrit = 0;
+		this.pendingSpellName = null;
+		this.pendingSpellTimestamp = default;
+		this.confirmedDamageSpellName = null;
+		this.pendingBowShotName = null;
+		this.pendingBowShotTimestamp = default;
+		this.pendingStyleName = null;
+		this.pendingStyleTimestamp = default;
+	}
 
 	/// <summary>
 	/// Attempts to parse a line. Returns true when an event is ready.
@@ -56,40 +73,57 @@ public sealed partial class CombatParser
 			this.pendingSpellName = null;
 		}
 
+		// Heal crit must be checked BEFORE flushing pendingOutgoingHeal: the game emits
+		// the heal line first, then the crit on the very next line.
+		if(this.TryMatchHealCrit(line, out heal))
+		{
+			damage = this.FlushPendingDealtOrFallback(flushedTaken);
+			return heal != null || damage != null;
+		}
+
+		// Not a heal crit — flush any outgoing heal that was waiting for one
+		var flushedHeal = this.FlushPendingOutgoingHeal();
+
 		if(this.TryMatchSpellCast(line))
 		{
 			damage = this.FlushPendingDealtOrFallback(flushedTaken);
-			return damage != null;
+			heal = flushedHeal;
+			return damage != null || heal != null;
 		}
 
 		if(this.TryMatchBowShot(line))
 		{
 			damage = this.FlushPendingDealtOrFallback(flushedTaken);
-			return damage != null;
+			heal = flushedHeal;
+			return damage != null || heal != null;
 		}
 
 		if(this.TryMatchStylePerformed(line))
 		{
 			damage = this.FlushPendingDealtOrFallback(flushedTaken);
-			return damage != null;
+			heal = flushedHeal;
+			return damage != null || heal != null;
 		}
 
 		if(this.TryMatchStylePrepare(line))
 		{
 			damage = this.FlushPendingDealtOrFallback(flushedTaken);
-			return damage != null;
+			heal = flushedHeal;
+			return damage != null || heal != null;
 		}
 
 		if(this.TryMatchStyleChainFallback(line))
 		{
 			damage = this.FlushPendingDealtOrFallback(flushedTaken);
-			return damage != null;
+			heal = flushedHeal;
+			return damage != null || heal != null;
 		}
 
 		if(this.TryMatchStyleFailed(line))
 		{
 			damage = this.FlushPendingDealtOrFallback(flushedTaken);
-			return damage != null;
+			heal = flushedHeal;
+			return damage != null || heal != null;
 		}
 
 		if(this.TryMatchIncomingHeal(line, out heal))
@@ -98,50 +132,45 @@ public sealed partial class CombatParser
 			return true;
 		}
 
-		if(this.TryMatchOutgoingHeal(line, out heal))
+		if(this.TryMatchOutgoingHeal(line))
 		{
 			damage = this.FlushPendingDealtOrFallback(flushedTaken);
-			return true;
+			heal = flushedHeal;
+			return damage != null || heal != null;
 		}
 
-		if(this.TryMatchWeaponAttack(line, out var weaponPending))
+		if(this.TryMatchAnyDealtHit(line, out var dealtPending))
 		{
-			damage = this.SwapPendingDealt(weaponPending, flushedTaken);
-			return damage != null;
-		}
-
-		if(this.TryMatchDealtSpellHit(line, out var spellPending))
-		{
-			damage = this.SwapPendingDealt(spellPending, flushedTaken);
-			return damage != null;
-		}
-
-		if(this.TryMatchDealtDotHit(line, out var dotPending))
-		{
-			damage = this.SwapPendingDealt(dotPending, flushedTaken);
-			return damage != null;
+			damage = this.SwapPendingDealt(dealtPending, flushedTaken);
+			heal = flushedHeal;
+			return damage != null || heal != null;
 		}
 
 		if(this.TryMatchDealtCrit(line, out damage))
 		{
-			return true;
+			heal = flushedHeal;
+			return damage != null || heal != null;
 		}
 
 		if(this.TryMatchTakenHit(line, out var takenPending))
 		{
 			damage = this.SetTakenPending(takenPending, flushedTaken);
-			return damage != null;
+			heal = flushedHeal;
+			return damage != null || heal != null;
 		}
 
 		if(this.TryMatchMeleeMiss(line, out miss)||this.TryMatchBlock(line, out miss)||this.TryMatchSpellResist(line, out miss))
 		{
 			damage = this.FlushForMiss(flushedTaken);
+			heal = flushedHeal;
 			return true;
 		}
 
 		// No combat match — flush any stale pending
+		this.pendingHealCrit = 0;
 		damage = this.FlushPendingDealtOrFallback(flushedTaken);
-		return damage != null;
+		heal = flushedHeal;
+		return damage != null || heal != null;
 	}
 
 	/// <summary>Flush any pending events (call at end of session/reset).</summary>
@@ -256,6 +285,11 @@ public sealed partial class CombatParser
 		return true;
 	}
 
+	private bool TryMatchAnyDealtHit(string line, out PendingDamage pending) =>
+		this.TryMatchWeaponAttack(line, out pending) ||
+		this.TryMatchDealtSpellHit(line, out pending) ||
+		this.TryMatchDealtDotHit(line, out pending);
+
 	private string? ResolveStyleName(TimeOnly hitTimestamp)
 	{
 		if(this.pendingStyleName == null)
@@ -265,6 +299,29 @@ public sealed partial class CombatParser
 
 		var diff = TimeHelper.ShortestArcSeconds(hitTimestamp, this.pendingStyleTimestamp);
 		return diff <= 6.0?this.pendingStyleName:null;
+	}
+
+	private bool TryMatchHealCrit(string line, out HealEvent? heal)
+	{
+		heal = null;
+		var match = HealCritRegex().Match(line);
+		if(!match.Success)
+		{
+			return false;
+		}
+
+		var crit = int.Parse(match.Groups["crit"].Value, CultureInfo.InvariantCulture);
+		if(this.pendingOutgoingHeal != null)
+		{
+			heal = this.pendingOutgoingHeal with { CritHitPoints = crit };
+			this.pendingOutgoingHeal = null;
+		}
+		else
+		{
+			this.pendingHealCrit = crit;
+		}
+
+		return true;
 	}
 
 	private bool TryMatchIncomingHeal(string line, out HealEvent? heal)
@@ -285,23 +342,37 @@ public sealed partial class CombatParser
 		return true;
 	}
 
-	private bool TryMatchOutgoingHeal(string line, out HealEvent? heal)
+	private bool TryMatchOutgoingHeal(string line)
 	{
-		heal = null;
 		var match = OutgoingHealRegex().Match(line);
 		if(!match.Success||!ExtractTimestamp(match, out var ts))
 		{
 			return false;
 		}
 
-		heal = new HealEvent
-		       {
-				       Timestamp = ts,
-				       Target = match.Groups["target"].Value,
-				       HitPoints = int.Parse(match.Groups["hp"].Value, CultureInfo.InvariantCulture),
-				       IsOutgoing = true
-		       };
+		var crit = this.pendingHealCrit;
+		this.pendingHealCrit = 0;
+		this.pendingOutgoingHeal = new HealEvent
+		                           {
+				                           Timestamp = ts,
+				                           Target = match.Groups["target"].Value,
+				                           HitPoints = int.Parse(match.Groups["hp"].Value, CultureInfo.InvariantCulture),
+				                           IsOutgoing = true,
+				                           CritHitPoints = crit
+		                           };
 		return true;
+	}
+
+	private HealEvent? FlushPendingOutgoingHeal()
+	{
+		if(this.pendingOutgoingHeal == null)
+		{
+			return null;
+		}
+
+		var h = this.pendingOutgoingHeal;
+		this.pendingOutgoingHeal = null;
+		return h;
 	}
 
 	private bool TryMatchWeaponAttack(string line, out PendingDamage pending)
@@ -613,6 +684,10 @@ public sealed partial class CombatParser
 	// [HH:mm:ss] You heal {target} for {N} hit points!   (others  — ends with !)
 	[GeneratedRegex(@"^\[(?<ts>\d{2}:\d{2}:\d{2})\] You heal (?<target>.+?) for (?<hp>\d+) hit points[.!]$", RegexOptions.Compiled|RegexOptions.CultureInvariant)]
 	private static partial Regex OutgoingHealRegex();
+
+	// [HH:mm:ss] Your {spell} criticals for an extra {N} amount of hit points! (Crit Chance: X%)
+	[GeneratedRegex(@"^\[(?<ts>\d{2}:\d{2}:\d{2})\] Your (?<spell>.+?) criticals for an extra (?<crit>\d+) amount of hit points! \(Crit Chance: [\d.]+%\)$", RegexOptions.Compiled|RegexOptions.CultureInvariant)]
+	private static partial Regex HealCritRegex();
 
 	// [HH:mm:ss] You miss! (Miss Chance: X%)
 	[GeneratedRegex(@"^\[(?<ts>\d{2}:\d{2}:\d{2})\] You miss! \(Miss Chance: [\d.]+%\)$", RegexOptions.Compiled|RegexOptions.CultureInvariant)]

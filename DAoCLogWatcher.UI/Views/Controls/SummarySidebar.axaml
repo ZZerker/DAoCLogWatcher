@@ -1,6 +1,8 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:DAoCLogWatcher.UI.ViewModels"
+             xmlns:scott="using:ScottPlot.Avalonia"
+             xmlns:controls="using:DAoCLogWatcher.UI.Controls"
              x:Class="DAoCLogWatcher.UI.Views.Controls.SummarySidebar"
              x:DataType="vm:MainWindowViewModel">
 
@@ -12,9 +14,8 @@
                 <TextBlock Text="Summary" FontSize="22" FontWeight="Bold"
                            Foreground="{DynamicResource AppTextPrimary}" VerticalAlignment="Center" />
                 <Button Content="{Binding SidebarToggleIcon}" Command="{Binding ToggleSidebarCommand}"
-                        HorizontalAlignment="Right" Background="Transparent"
-                        Foreground="{DynamicResource AppTextMuted}" Padding="6,2" BorderThickness="0"
-                        FontSize="14" />
+                        Classes="btn-ghost"
+                        HorizontalAlignment="Right" FontSize="14" />
             </Grid>
 
             <Border Background="{DynamicResource AppCardBackground}" CornerRadius="6" Padding="15"
@@ -23,32 +24,56 @@
                     <TextBlock Text="CHARACTER" FontWeight="SemiBold" FontSize="11"
                                Foreground="{DynamicResource AppTextMuted}" />
                     <TextBlock Text="{Binding DetectedCharacterName}" FontSize="20" FontWeight="Bold"
-                               Foreground="#FF00D9FF" />
+                               Foreground="{DynamicResource AppAccentCyan}" />
                     <StackPanel Orientation="Horizontal" Spacing="16">
                         <StackPanel Spacing="2">
                             <TextBlock Text="KILLS" FontSize="10" FontWeight="SemiBold"
                                        Foreground="{DynamicResource AppTextMuted}" />
                             <TextBlock Text="{Binding Kills}" FontSize="16" FontWeight="Bold"
-                                       Foreground="#FF00D968" />
+                                       Foreground="{DynamicResource AppPositive}" />
                         </StackPanel>
                         <StackPanel Spacing="2">
                             <TextBlock Text="DEATHS" FontSize="10" FontWeight="SemiBold"
                                        Foreground="{DynamicResource AppTextMuted}" />
                             <TextBlock Text="{Binding Deaths}" FontSize="16" FontWeight="Bold"
-                                       Foreground="#FFDC3545" />
+                                       Foreground="{DynamicResource AppDanger}" />
                         </StackPanel>
                         <StackPanel Spacing="2">
                             <TextBlock Text="K/D" FontSize="10" FontWeight="SemiBold"
                                        Foreground="{DynamicResource AppTextMuted}" />
                             <TextBlock Text="{Binding KdRatio, StringFormat='{}{0:F2}'}" FontSize="16"
-                                       FontWeight="Bold" Foreground="#FFFFAA00" />
+                                       FontWeight="Bold" Foreground="{DynamicResource AppWarning}" />
                         </StackPanel>
                         <StackPanel Spacing="2" IsVisible="{Binding HasBestMultiKill}">
                             <TextBlock Text="BEST MK" FontSize="10" FontWeight="SemiBold"
                                        Foreground="{DynamicResource AppTextMuted}" />
                             <TextBlock Text="{Binding BestMultiKill, StringFormat='{}{0}x'}" FontSize="16"
-                                       FontWeight="Bold" Foreground="#FFFF6600" />
+                                       FontWeight="Bold" Foreground="{DynamicResource AppMultiKill}" />
                         </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <Border Background="{DynamicResource AppCardBackground}" CornerRadius="6" Padding="15"
+                    IsVisible="{Binding HottestZone, Converter={x:Static ObjectConverters.IsNotNull}}">
+                <StackPanel Spacing="6">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock Text="HOTTEST ZONE" FontWeight="SemiBold" FontSize="11"
+                                   Foreground="{DynamicResource AppTextMuted}" />
+                        <TextBlock Text="{Binding SelectedZoneKillWindow.Label, StringFormat='· last {0}'}"
+                                   FontSize="11"
+                                   Foreground="{DynamicResource AppTextDim}" />
+                    </StackPanel>
+                    <TextBlock Text="{Binding HottestZone.Zone}" FontSize="18" FontWeight="Bold"
+                               Foreground="{Binding HottestZone.HeatColor}"
+                               TextTrimming="CharacterEllipsis" />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Text="{Binding HottestZone.KillCount, StringFormat='{}{0} kills'}"
+                                   FontSize="13" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource AppTextSecondary}" />
+                        <TextBlock Text="{Binding HottestZone.Percentage, StringFormat='{}{0:F1}%'}"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource AppTextMuted}" />
                     </StackPanel>
                 </StackPanel>
             </Border>
@@ -59,13 +84,13 @@
                         <TextBlock Text="TOTAL REALM POINTS" FontWeight="SemiBold" FontSize="11"
                                    Foreground="{DynamicResource AppTextMuted}" />
                         <TextBlock Text="{Binding Summary.TotalRealmPoints}" FontSize="32"
-                                   FontWeight="Bold" Foreground="#FF00D9FF" />
+                                   FontWeight="Bold" Foreground="{DynamicResource AppAccentCyan}" />
                     </StackPanel>
                     <StackPanel Spacing="5">
                         <TextBlock Text="RPs PER HOUR" FontWeight="SemiBold" FontSize="10"
                                    Foreground="{DynamicResource AppTextDim}" />
                         <TextBlock Text="{Binding Summary.RpsPerHour, StringFormat='{}{0:F0} RP/h'}"
-                                   FontSize="18" FontWeight="SemiBold" Foreground="#FFAA88FF" />
+                                   FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource AppAccentPurple}" />
                     </StackPanel>
                 </StackPanel>
             </Border>
@@ -73,194 +98,134 @@
             <Border Height="1" Background="{DynamicResource AppBorderBrush}" />
 
             <Grid>
-                <TextBlock Text="ABSOLUTE NUMBERS" FontWeight="SemiBold" FontSize="11"
+                <TextBlock Text="RP SOURCE BREAKDOWN" FontWeight="SemiBold" FontSize="11"
                            Foreground="{DynamicResource AppTextMuted}" VerticalAlignment="Center" />
-                <Button Content="{Binding AbsoluteNumbers.Icon}"
-                        Command="{Binding AbsoluteNumbers.ToggleCommand}"
-                        HorizontalAlignment="Right" Background="Transparent"
-                        Foreground="{DynamicResource AppTextMuted}" Padding="6,2" BorderThickness="0"
-                        FontSize="14" />
+                <Button Content="{Binding RpSourceBreakdown.Icon}"
+                        Command="{Binding RpSourceBreakdown.ToggleCommand}"
+                        Classes="btn-ghost"
+                        HorizontalAlignment="Right" FontSize="14" />
             </Grid>
-            <StackPanel Spacing="6" IsVisible="{Binding AbsoluteNumbers.Value}">
-                <StackPanel Orientation="Horizontal" Spacing="10">
-                    <TextBlock Text="Player Kills:" MinWidth="130"
-                               Foreground="{DynamicResource AppTextSecondary}" />
-                    <TextBlock Text="{Binding Summary.PlayerKills}" FontWeight="Bold"
-                               Foreground="{DynamicResource AppTextPrimary}" />
+            <StackPanel Spacing="8" IsVisible="{Binding RpSourceBreakdown.Value}">
+
+                <StackPanel Spacing="3">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Text="Player Kills" Foreground="{DynamicResource AppTextSecondary}" FontSize="13" VerticalAlignment="Center" />
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                            <TextBlock Text="{Binding Summary.PlayerKillsRP}" Foreground="{DynamicResource AppPositive}" FontWeight="SemiBold" FontSize="12" />
+                            <TextBlock Text="·" Foreground="{DynamicResource AppTextDim}" FontSize="12" />
+                            <TextBlock Text="{Binding Summary.PlayerKillsPercentage, StringFormat='{}{0:F1}%'}" Foreground="{DynamicResource AppWarning}" FontSize="12" />
+                        </StackPanel>
+                    </Grid>
+                    <ProgressBar Value="{Binding Summary.PlayerKillsPercentage}" Minimum="0" Maximum="100" Height="4" Foreground="{DynamicResource AppPositive}" />
                 </StackPanel>
-                <StackPanel Orientation="Horizontal" Spacing="10">
-                    <TextBlock Text="Campaign Quests:" MinWidth="130"
-                               Foreground="{DynamicResource AppTextSecondary}" />
-                    <TextBlock Text="{Binding Summary.CampaignQuests}" FontWeight="Bold"
-                               Foreground="{DynamicResource AppTextPrimary}" />
+
+                <StackPanel Spacing="3">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Text="Campaign Quests" Foreground="{DynamicResource AppTextSecondary}" FontSize="13" VerticalAlignment="Center" />
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                            <TextBlock Text="{Binding Summary.CampaignQuestsRP}" Foreground="{DynamicResource AppPositive}" FontWeight="SemiBold" FontSize="12" />
+                            <TextBlock Text="·" Foreground="{DynamicResource AppTextDim}" FontSize="12" />
+                            <TextBlock Text="{Binding Summary.CampaignQuestsPercentage, StringFormat='{}{0:F1}%'}" Foreground="{DynamicResource AppWarning}" FontSize="12" />
+                        </StackPanel>
+                    </Grid>
+                    <ProgressBar Value="{Binding Summary.CampaignQuestsPercentage}" Minimum="0" Maximum="100" Height="4" Foreground="{DynamicResource AppPositive}" />
                 </StackPanel>
-                <StackPanel Orientation="Horizontal" Spacing="10">
-                    <TextBlock Text="Ticks:" MinWidth="130" Foreground="{DynamicResource AppTextSecondary}" />
-                    <TextBlock Text="{Binding Summary.Ticks}" FontWeight="Bold"
-                               Foreground="{DynamicResource AppTextPrimary}" />
+
+                <StackPanel Spacing="3">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Text="Ticks" Foreground="{DynamicResource AppTextSecondary}" FontSize="13" VerticalAlignment="Center" />
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                            <TextBlock Text="{Binding Summary.TicksRP}" Foreground="{DynamicResource AppPositive}" FontWeight="SemiBold" FontSize="12" />
+                            <TextBlock Text="·" Foreground="{DynamicResource AppTextDim}" FontSize="12" />
+                            <TextBlock Text="{Binding Summary.TicksPercentage, StringFormat='{}{0:F1}%'}" Foreground="{DynamicResource AppWarning}" FontSize="12" />
+                        </StackPanel>
+                    </Grid>
+                    <ProgressBar Value="{Binding Summary.TicksPercentage}" Minimum="0" Maximum="100" Height="4" Foreground="{DynamicResource AppPositive}" />
                 </StackPanel>
-                <StackPanel Orientation="Horizontal" Spacing="10">
-                    <TextBlock Text="Siege:" MinWidth="130" Foreground="{DynamicResource AppTextSecondary}" />
-                    <TextBlock Text="{Binding Summary.Siege}" FontWeight="Bold"
-                               Foreground="{DynamicResource AppTextPrimary}" />
+
+                <StackPanel Spacing="3">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Text="Siege" Foreground="{DynamicResource AppTextSecondary}" FontSize="13" VerticalAlignment="Center" />
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                            <TextBlock Text="{Binding Summary.SiegeRP}" Foreground="{DynamicResource AppPositive}" FontWeight="SemiBold" FontSize="12" />
+                            <TextBlock Text="·" Foreground="{DynamicResource AppTextDim}" FontSize="12" />
+                            <TextBlock Text="{Binding Summary.SiegePercentage, StringFormat='{}{0:F1}%'}" Foreground="{DynamicResource AppWarning}" FontSize="12" />
+                        </StackPanel>
+                    </Grid>
+                    <ProgressBar Value="{Binding Summary.SiegePercentage}" Minimum="0" Maximum="100" Height="4" Foreground="{DynamicResource AppPositive}" />
                 </StackPanel>
-                <StackPanel Orientation="Horizontal" Spacing="10">
-                    <TextBlock Text="Assault Order:" MinWidth="130"
-                               Foreground="{DynamicResource AppTextSecondary}" />
-                    <TextBlock Text="{Binding Summary.AssaultOrder}" FontWeight="Bold"
-                               Foreground="{DynamicResource AppTextPrimary}" />
+
+                <StackPanel Spacing="3">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Text="Assault Order" Foreground="{DynamicResource AppTextSecondary}" FontSize="13" VerticalAlignment="Center" />
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                            <TextBlock Text="{Binding Summary.AssaultOrderRP}" Foreground="{DynamicResource AppPositive}" FontWeight="SemiBold" FontSize="12" />
+                            <TextBlock Text="·" Foreground="{DynamicResource AppTextDim}" FontSize="12" />
+                            <TextBlock Text="{Binding Summary.AssaultOrderPercentage, StringFormat='{}{0:F1}%'}" Foreground="{DynamicResource AppWarning}" FontSize="12" />
+                        </StackPanel>
+                    </Grid>
+                    <ProgressBar Value="{Binding Summary.AssaultOrderPercentage}" Minimum="0" Maximum="100" Height="4" Foreground="{DynamicResource AppPositive}" />
                 </StackPanel>
-                <StackPanel Orientation="Horizontal" Spacing="10">
-                    <TextBlock Text="Support Ticks:" MinWidth="130"
-                               Foreground="{DynamicResource AppTextSecondary}" />
-                    <TextBlock Text="{Binding Summary.SupportActivity}" FontWeight="Bold"
-                               Foreground="{DynamicResource AppTextPrimary}" />
+
+                <StackPanel Spacing="3">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Text="Support Ticks" Foreground="{DynamicResource AppTextSecondary}" FontSize="13" VerticalAlignment="Center" />
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                            <TextBlock Text="{Binding Summary.SupportActivityRP}" Foreground="{DynamicResource AppPositive}" FontWeight="SemiBold" FontSize="12" />
+                            <TextBlock Text="·" Foreground="{DynamicResource AppTextDim}" FontSize="12" />
+                            <TextBlock Text="{Binding Summary.SupportActivityPercentage, StringFormat='{}{0:F1}%'}" Foreground="{DynamicResource AppWarning}" FontSize="12" />
+                        </StackPanel>
+                    </Grid>
+                    <ProgressBar Value="{Binding Summary.SupportActivityPercentage}" Minimum="0" Maximum="100" Height="4" Foreground="{DynamicResource AppPositive}" />
                 </StackPanel>
-                <StackPanel Orientation="Horizontal" Spacing="10">
-                    <TextBlock Text="Relic Capture:" MinWidth="130"
-                               Foreground="{DynamicResource AppTextSecondary}" />
-                    <TextBlock Text="{Binding Summary.RelicCapture}" FontWeight="Bold"
-                               Foreground="{DynamicResource AppTextPrimary}" />
+
+                <StackPanel Spacing="3">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Text="Relic Capture" Foreground="{DynamicResource AppTextSecondary}" FontSize="13" VerticalAlignment="Center" />
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                            <TextBlock Text="{Binding Summary.RelicCaptureRP}" Foreground="{DynamicResource AppPositive}" FontWeight="SemiBold" FontSize="12" />
+                            <TextBlock Text="·" Foreground="{DynamicResource AppTextDim}" FontSize="12" />
+                            <TextBlock Text="{Binding Summary.RelicCapturePercentage, StringFormat='{}{0:F1}%'}" Foreground="{DynamicResource AppWarning}" FontSize="12" />
+                        </StackPanel>
+                    </Grid>
+                    <ProgressBar Value="{Binding Summary.RelicCapturePercentage}" Minimum="0" Maximum="100" Height="4" Foreground="{DynamicResource AppPositive}" />
                 </StackPanel>
-                <StackPanel Orientation="Horizontal" Spacing="10">
-                    <TextBlock Text="Timed Missions:" MinWidth="130"
-                               Foreground="{DynamicResource AppTextSecondary}" />
-                    <TextBlock Text="{Binding Summary.TimedMissions}" FontWeight="Bold"
-                               Foreground="{DynamicResource AppTextPrimary}" />
+
+                <StackPanel Spacing="3">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Text="Timed Missions" Foreground="{DynamicResource AppTextSecondary}" FontSize="13" VerticalAlignment="Center" />
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                            <TextBlock Text="{Binding Summary.TimedMissionsRP}" Foreground="{DynamicResource AppPositive}" FontWeight="SemiBold" FontSize="12" />
+                            <TextBlock Text="·" Foreground="{DynamicResource AppTextDim}" FontSize="12" />
+                            <TextBlock Text="{Binding Summary.TimedMissionsPercentage, StringFormat='{}{0:F1}%'}" Foreground="{DynamicResource AppWarning}" FontSize="12" />
+                        </StackPanel>
+                    </Grid>
+                    <ProgressBar Value="{Binding Summary.TimedMissionsPercentage}" Minimum="0" Maximum="100" Height="4" Foreground="{DynamicResource AppPositive}" />
                 </StackPanel>
-                <StackPanel Orientation="Horizontal" Spacing="10">
-                    <TextBlock Text="Misc:" MinWidth="130" Foreground="{DynamicResource AppTextSecondary}" />
-                    <TextBlock Text="{Binding Summary.Misc}" FontWeight="Bold"
-                               Foreground="{DynamicResource AppTextPrimary}" />
+
+                <StackPanel Spacing="3">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Text="Misc" Foreground="{DynamicResource AppTextSecondary}" FontSize="13" VerticalAlignment="Center" />
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                            <TextBlock Text="{Binding Summary.MiscRP}" Foreground="{DynamicResource AppPositive}" FontWeight="SemiBold" FontSize="12" />
+                            <TextBlock Text="·" Foreground="{DynamicResource AppTextDim}" FontSize="12" />
+                            <TextBlock Text="{Binding Summary.MiscPercentage, StringFormat='{}{0:F1}%'}" Foreground="{DynamicResource AppWarning}" FontSize="12" />
+                        </StackPanel>
+                    </Grid>
+                    <ProgressBar Value="{Binding Summary.MiscPercentage}" Minimum="0" Maximum="100" Height="4" Foreground="{DynamicResource AppPositive}" />
                 </StackPanel>
+
             </StackPanel>
+            <Border Background="{DynamicResource AppCardBackground}" CornerRadius="6" Padding="8,8,8,4">
+                <StackPanel Spacing="6">
+                    <TextBlock Text="FRONTIER MAP" FontWeight="SemiBold" FontSize="11"
+                               Foreground="{DynamicResource AppTextMuted}" />
+                    <controls:AspectRatioPanel Ratio="0.91667">
+                        <scott:AvaPlot x:Name="SidebarMinimap" />
+                    </controls:AspectRatioPanel>
+                </StackPanel>
+            </Border>
 
-            <Border Height="1" Background="{DynamicResource AppBorderBrush}" />
-
-            <Grid>
-                <TextBlock Text="ABSOLUTE RPs" FontWeight="SemiBold" FontSize="11"
-                           Foreground="{DynamicResource AppTextMuted}" VerticalAlignment="Center" />
-                <Button Content="{Binding AbsoluteRps.Icon}"
-                        Command="{Binding AbsoluteRps.ToggleCommand}"
-                        HorizontalAlignment="Right" Background="Transparent"
-                        Foreground="{DynamicResource AppTextMuted}" Padding="6,2" BorderThickness="0"
-                        FontSize="14" />
-            </Grid>
-            <StackPanel Spacing="6" IsVisible="{Binding AbsoluteRps.Value}">
-                <StackPanel Orientation="Horizontal" Spacing="10">
-                    <TextBlock Text="Player Kills:" MinWidth="130"
-                               Foreground="{DynamicResource AppTextSecondary}" />
-                    <TextBlock Text="{Binding Summary.PlayerKillsRP}" FontWeight="Bold"
-                               Foreground="#FF00D968" />
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" Spacing="10">
-                    <TextBlock Text="Campaign Quests:" MinWidth="130"
-                               Foreground="{DynamicResource AppTextSecondary}" />
-                    <TextBlock Text="{Binding Summary.CampaignQuestsRP}" FontWeight="Bold"
-                               Foreground="#FF00D968" />
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" Spacing="10">
-                    <TextBlock Text="Ticks:" MinWidth="130" Foreground="{DynamicResource AppTextSecondary}" />
-                    <TextBlock Text="{Binding Summary.TicksRP}" FontWeight="Bold" Foreground="#FF00D968" />
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" Spacing="10">
-                    <TextBlock Text="Siege:" MinWidth="130" Foreground="{DynamicResource AppTextSecondary}" />
-                    <TextBlock Text="{Binding Summary.SiegeRP}" FontWeight="Bold" Foreground="#FF00D968" />
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" Spacing="10">
-                    <TextBlock Text="Assault Order:" MinWidth="130"
-                               Foreground="{DynamicResource AppTextSecondary}" />
-                    <TextBlock Text="{Binding Summary.AssaultOrderRP}" FontWeight="Bold"
-                               Foreground="#FF00D968" />
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" Spacing="10">
-                    <TextBlock Text="Support Ticks:" MinWidth="130"
-                               Foreground="{DynamicResource AppTextSecondary}" />
-                    <TextBlock Text="{Binding Summary.SupportActivityRP}" FontWeight="Bold"
-                               Foreground="#FF00D968" />
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" Spacing="10">
-                    <TextBlock Text="Relic Capture:" MinWidth="130"
-                               Foreground="{DynamicResource AppTextSecondary}" />
-                    <TextBlock Text="{Binding Summary.RelicCaptureRP}" FontWeight="Bold"
-                               Foreground="#FF00D968" />
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" Spacing="10">
-                    <TextBlock Text="Timed Missions:" MinWidth="130"
-                               Foreground="{DynamicResource AppTextSecondary}" />
-                    <TextBlock Text="{Binding Summary.TimedMissionsRP}" FontWeight="Bold"
-                               Foreground="#FF00D968" />
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" Spacing="10">
-                    <TextBlock Text="Misc:" MinWidth="130" Foreground="{DynamicResource AppTextSecondary}" />
-                    <TextBlock Text="{Binding Summary.MiscRP}" FontWeight="Bold" Foreground="#FF00D968" />
-                </StackPanel>
-            </StackPanel>
-
-            <Border Height="1" Background="{DynamicResource AppBorderBrush}" />
-
-            <Grid>
-                <TextBlock Text="PERCENTAGES" FontWeight="SemiBold" FontSize="11"
-                           Foreground="{DynamicResource AppTextMuted}" VerticalAlignment="Center" />
-                <Button Content="{Binding Percentages.Icon}"
-                        Command="{Binding Percentages.ToggleCommand}"
-                        HorizontalAlignment="Right" Background="Transparent"
-                        Foreground="{DynamicResource AppTextMuted}" Padding="6,2" BorderThickness="0"
-                        FontSize="14" />
-            </Grid>
-            <StackPanel Spacing="6" IsVisible="{Binding Percentages.Value}">
-                <StackPanel Orientation="Horizontal" Spacing="10">
-                    <TextBlock Text="Player Kills:" MinWidth="130"
-                               Foreground="{DynamicResource AppTextSecondary}" />
-                    <TextBlock Text="{Binding Summary.PlayerKillsPercentage, StringFormat='{}{0:F1}%'}"
-                               FontWeight="Bold" Foreground="#FFFFAA00" />
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" Spacing="10">
-                    <TextBlock Text="Campaign Quests:" MinWidth="130"
-                               Foreground="{DynamicResource AppTextSecondary}" />
-                    <TextBlock Text="{Binding Summary.CampaignQuestsPercentage, StringFormat='{}{0:F1}%'}"
-                               FontWeight="Bold" Foreground="#FFFFAA00" />
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" Spacing="10">
-                    <TextBlock Text="Ticks:" MinWidth="130" Foreground="{DynamicResource AppTextSecondary}" />
-                    <TextBlock Text="{Binding Summary.TicksPercentage, StringFormat='{}{0:F1}%'}"
-                               FontWeight="Bold" Foreground="#FFFFAA00" />
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" Spacing="10">
-                    <TextBlock Text="Siege:" MinWidth="130" Foreground="{DynamicResource AppTextSecondary}" />
-                    <TextBlock Text="{Binding Summary.SiegePercentage, StringFormat='{}{0:F1}%'}"
-                               FontWeight="Bold" Foreground="#FFFFAA00" />
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" Spacing="10">
-                    <TextBlock Text="Assault Order:" MinWidth="130"
-                               Foreground="{DynamicResource AppTextSecondary}" />
-                    <TextBlock Text="{Binding Summary.AssaultOrderPercentage, StringFormat='{}{0:F1}%'}"
-                               FontWeight="Bold" Foreground="#FFFFAA00" />
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" Spacing="10">
-                    <TextBlock Text="Support Ticks:" MinWidth="130"
-                               Foreground="{DynamicResource AppTextSecondary}" />
-                    <TextBlock Text="{Binding Summary.SupportActivityPercentage, StringFormat='{}{0:F1}%'}"
-                               FontWeight="Bold" Foreground="#FFFFAA00" />
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" Spacing="10">
-                    <TextBlock Text="Relic Capture:" MinWidth="130"
-                               Foreground="{DynamicResource AppTextSecondary}" />
-                    <TextBlock Text="{Binding Summary.RelicCapturePercentage, StringFormat='{}{0:F1}%'}"
-                               FontWeight="Bold" Foreground="#FFFFAA00" />
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" Spacing="10">
-                    <TextBlock Text="Timed Missions:" MinWidth="130"
-                               Foreground="{DynamicResource AppTextSecondary}" />
-                    <TextBlock Text="{Binding Summary.TimedMissionsPercentage, StringFormat='{}{0:F1}%'}"
-                               FontWeight="Bold" Foreground="#FFFFAA00" />
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" Spacing="10">
-                    <TextBlock Text="Misc:" MinWidth="130" Foreground="{DynamicResource AppTextSecondary}" />
-                    <TextBlock Text="{Binding Summary.MiscPercentage, StringFormat='{}{0:F1}%'}"
-                               FontWeight="Bold" Foreground="#FFFFAA00" />
-                </StackPanel>
-            </StackPanel>
         </StackPanel>
     </Border>
 </UserControl>

@@ -1,0 +1,37 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="using:DAoCLogWatcher.UI.Views.Controls"
+             xmlns:models="using:DAoCLogWatcher.UI.Models"
+             x:Class="DAoCLogWatcher.UI.Views.Controls.BarChartCard"
+             x:DataType="controls:BarChartCard"
+             x:Name="self">
+    <Border Background="{DynamicResource AppCardBackground}"
+            BorderBrush="{DynamicResource AppRowBorder}" BorderThickness="1"
+            CornerRadius="8" Padding="16">
+        <StackPanel Spacing="10">
+            <TextBlock Text="{Binding #self.Title}" FontWeight="Bold" FontSize="14"
+                       Foreground="{DynamicResource AppTextPrimary}" />
+            <controls:StatNumber Label="TOTAL" Value="{Binding #self.TotalValue}"
+                                 ValueColor="{Binding #self.TotalValueColor}" />
+            <Grid>
+                <TextBlock Text="{Binding #self.ChartTitle}" FontWeight="Bold" FontSize="14"
+                           Foreground="{DynamicResource AppTextPrimary}"
+                           VerticalAlignment="Center" />
+                <Button Content="{Binding #self.ToggleIcon}"
+                        Command="{Binding #self.ToggleCommand}"
+                        Classes="btn-ghost"
+                        HorizontalAlignment="Right" FontSize="14" />
+            </Grid>
+            <ItemsControl ItemsSource="{Binding #self.DisplayItems}"
+                          IsVisible="{Binding #self.IsChartVisible}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="models:HealStatEntry">
+                        <controls:StatBarRow Label="{Binding Name}" Value="{Binding Total}"
+                                             Percentage="{Binding Percentage}"
+                                             BarColor="{Binding #self.BarColor}" />
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+    </Border>
+</UserControl>

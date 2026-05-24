@@ -15,4 +15,7 @@ public sealed record RealmPointEntry
 
 	/// <summary>The victim player name for PlayerKill RP entries, correlated from the preceding kill line.</summary>
 	public string? Victim { get; init; }
+
+	/// <summary>True when the current player was the killer (deathblow), false for assist kills.</summary>
+	public bool IsDeathblow { get; init; }
 }

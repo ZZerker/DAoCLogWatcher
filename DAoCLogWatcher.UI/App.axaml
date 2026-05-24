@@ -2,6 +2,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="DAoCLogWatcher.UI.App"
              xmlns:local="using:DAoCLogWatcher.UI"
+             xmlns:models="using:DAoCLogWatcher.UI.Models"
+             xmlns:controls="using:DAoCLogWatcher.UI.Views.Controls"
              Name="io.github.zzerker.DAoCLogWatcher"
              RequestedThemeVariant="Dark">
     <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
@@ -12,6 +14,12 @@
 
     <Application.Resources>
         <ResourceDictionary>
+            <DataTemplate x:Key="HealStatRowTemplate" x:DataType="models:HealStatEntry">
+                <controls:StatBarRow Label="{Binding Name}" Value="{Binding Total}"
+                                     Percentage="{Binding Percentage}"
+                                     BarColor="{DynamicResource AppPositive}" />
+            </DataTemplate>
+
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Dark">
                     <SolidColorBrush x:Key="AppWindowBackground">#1A1A1A</SolidColorBrush>
@@ -23,6 +31,35 @@
                     <SolidColorBrush x:Key="AppTextSecondary">#CCCCCC</SolidColorBrush>
                     <SolidColorBrush x:Key="AppTextMuted">#888888</SolidColorBrush>
                     <SolidColorBrush x:Key="AppTextDim">#666666</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppAccentCyan">#00D9FF</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppAccentPurple">#AA88FF</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppPositive">#00D968</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppDanger">#DC3545</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppWarning">#FFAA00</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppCrit">#FFCC44</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppHeat">#FF6644</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppMultiKill">#FF6600</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppMultiHit">#CC44FF</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppDotLabel">#FF9933</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppUpdate">#28A745</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppPrimaryAction">#007ACC</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppDiscordBrand">#5865F2</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppIconButton">#555566</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppIconButtonHover">#666677</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppPrimaryActionHover">#1A8DD9</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppButtonBg">#33384A</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppButtonBgHover">#3E445A</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppToggleActiveBg">#1F00D9FF</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppGhostHoverBg">#33FFFFFF</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppSubTabBarBg">#161616</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppStopBg">#2A1719</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppStopBorder">#5A2228</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppSplitChevron">#0070BE</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppMultiKillHighlightBg">#44FFAA00</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppMultiHitHighlightBg">#44CC44FF</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppRealmAlb">#FF5555</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppRealmMid">#3FAFFF</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppRealmHib">#55DD77</SolidColorBrush>
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Light">
                     <SolidColorBrush x:Key="AppWindowBackground">#F0F0F0</SolidColorBrush>
@@ -34,6 +71,35 @@
                     <SolidColorBrush x:Key="AppTextSecondary">#444444</SolidColorBrush>
                     <SolidColorBrush x:Key="AppTextMuted">#666666</SolidColorBrush>
                     <SolidColorBrush x:Key="AppTextDim">#999999</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppAccentCyan">#0099CC</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppAccentPurple">#7755CC</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppPositive">#007A40</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppDanger">#B02030</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppWarning">#B07700</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppCrit">#B08800</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppHeat">#CC3311</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppMultiKill">#CC4400</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppMultiHit">#9922CC</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppDotLabel">#CC6600</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppUpdate">#1A7A30</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppPrimaryAction">#005B99</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppDiscordBrand">#5865F2</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppIconButton">#707080</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppIconButtonHover">#5F5F70</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppPrimaryActionHover">#00477A</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppButtonBg">#E3E7F0</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppButtonBgHover">#D3D9E6</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppToggleActiveBg">#1F0099CC</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppGhostHoverBg">#22000000</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppSubTabBarBg">#E5E5E5</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppStopBg">#1A0D0E</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppStopBorder">#3A1215</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppSplitChevron">#005A9E</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppMultiKillHighlightBg">#33FFAA00</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppMultiHitHighlightBg">#33CC44FF</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppRealmAlb">#CC2222</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppRealmMid">#1F8ACC</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppRealmHib">#228844</SolidColorBrush>
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
         </ResourceDictionary>
@@ -42,7 +108,142 @@
     <Application.Styles>
         <FluentTheme />
 
-        <!-- Override DataGrid styling to ensure visibility -->
+<Style Selector="Button.btn-primary">
+            <Setter Property="Background" Value="{DynamicResource AppPrimaryAction}" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Padding" Value="14,8" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="BorderThickness" Value="0" />
+        </Style>
+        <Style Selector="Button.btn-primary:pointerover /template/ ContentPresenter, Button.btn-primary:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AppPrimaryActionHover}" />
+        </Style>
+
+        <Style Selector="Button.btn-secondary">
+            <Setter Property="Background" Value="{DynamicResource AppButtonBg}" />
+            <Setter Property="Foreground" Value="{DynamicResource AppTextPrimary}" />
+            <Setter Property="Padding" Value="12,7" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+        <Style Selector="Button.btn-secondary:pointerover /template/ ContentPresenter, Button.btn-secondary:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AppButtonBgHover}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AppAccentCyan}" />
+        </Style>
+
+        <Style Selector="Button.btn-icon">
+            <Setter Property="Background" Value="{DynamicResource AppIconButton}" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Width" Value="34" />
+            <Setter Property="Height" Value="34" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <!-- .brand opts out of the neutral hover bg so Discord/Stop keep their colored background on hover -->
+        <Style Selector="Button.btn-icon.brand">
+            <Setter Property="Tag" Value="brand" />
+        </Style>
+        <Style Selector="Button.btn-icon:not(.brand):pointerover /template/ ContentPresenter, Button.btn-icon:not(.brand):pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AppIconButtonHover}" />
+        </Style>
+
+        <Style Selector="Button.btn-ghost">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource AppTextSecondary}" />
+            <Setter Property="Padding" Value="8,4" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="BorderThickness" Value="0" />
+        </Style>
+        <Style Selector="Button.btn-ghost:pointerover /template/ ContentPresenter, Button.btn-ghost:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AppGhostHoverBg}" />
+            <Setter Property="TextElement.Foreground" Value="{DynamicResource AppTextPrimary}" />
+        </Style>
+
+        <Style Selector="Button.btn-split-chevron">
+            <Setter Property="Background" Value="{DynamicResource AppSplitChevron}" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Width" Value="28" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="CornerRadius" Value="0,6,6,0" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="VerticalAlignment" Value="Stretch" />
+        </Style>
+
+        <!-- Active changes border + fg + subtle bg tint, not a full bg swap, so adjacent toggles stay visually coherent. -->
+        <Style Selector="Button.btn-toggle">
+            <Setter Property="Background" Value="{DynamicResource AppCardBackground}" />
+            <Setter Property="Foreground" Value="{DynamicResource AppTextSecondary}" />
+            <Setter Property="Padding" Value="12,5" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.btn-toggle:pointerover /template/ ContentPresenter">
+            <Setter Property="TextElement.Foreground" Value="{DynamicResource AppTextPrimary}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AppTextMuted}" />
+        </Style>
+        <Style Selector="Button.btn-toggle.active">
+            <Setter Property="Background" Value="{DynamicResource AppToggleActiveBg}" />
+            <Setter Property="Foreground" Value="{DynamicResource AppAccentCyan}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AppAccentCyan}" />
+            <Setter Property="FontWeight" Value="Bold" />
+        </Style>
+        <Style Selector="Button.btn-toggle.active:pointerover /template/ ContentPresenter">
+            <Setter Property="TextElement.Foreground" Value="{DynamicResource AppAccentCyan}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AppAccentCyan}" />
+        </Style>
+
+        <Style Selector="RadioButton.segment-btn">
+            <Setter Property="Padding" Value="12,5,12,4" />
+            <Setter Property="BorderThickness" Value="0,0,0,2" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="#FF888888" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="Normal" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="MinHeight" Value="0" />
+            <Setter Property="MinWidth" Value="0" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          TextElement.Foreground="{TemplateBinding Foreground}"
+                                          TextElement.FontSize="{TemplateBinding FontSize}"
+                                          TextElement.FontWeight="{TemplateBinding FontWeight}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center" />
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+        <Style Selector="RadioButton.segment-btn:checked">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AppAccentCyan}" />
+            <Setter Property="Foreground" Value="{DynamicResource AppAccentCyan}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+        <Style Selector="RadioButton.segment-btn:pointerover:not(:checked)">
+            <Setter Property="Foreground" Value="#FFCCCCCC" />
+        </Style>
+
         <Style Selector="DataGrid">
             <Setter Property="Background" Value="White" />
             <Setter Property="Foreground" Value="Black" />

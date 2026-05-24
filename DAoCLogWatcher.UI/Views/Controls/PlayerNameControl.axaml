@@ -1,0 +1,39 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="using:DAoCLogWatcher.UI.Views.Controls"
+             x:Class="DAoCLogWatcher.UI.Views.Controls.PlayerNameControl"
+             x:DataType="controls:PlayerNameControl"
+             x:Name="self">
+    <UserControl.Styles>
+        <Style Selector="Button.player-link">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Padding" Value="4,1" />
+            <Setter Property="CornerRadius" Value="3" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+        <Style Selector="Button.player-link /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="CornerRadius" Value="3" />
+        </Style>
+        <Style Selector="Button.player-link:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AppRowBorder}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AppAccentCyan}" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+        <Style Selector="Button.player-link TextBlock">
+            <Setter Property="TextDecorations" Value="Underline" />
+        </Style>
+    </UserControl.Styles>
+    <Button Classes="player-link"
+            VerticalAlignment="Center"
+            IsVisible="{Binding #self.PlayerName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+            ToolTip.Tip="{Binding #self.PlayerName, StringFormat='Look up {0} on Eden Herald'}"
+            Click="OnClick">
+        <TextBlock Text="{Binding #self.PlayerName}"
+                   FontSize="{Binding #self.NameFontSize}"
+                   Foreground="{Binding #self.NameForeground}" />
+    </Button>
+</UserControl>

@@ -11,5 +11,9 @@ public class HealLogEntry
 	/// <summary>Healer name (incoming) or target name (outgoing).</summary>
 	public string? Who { get; init; }
 
+	public int CritHitPoints { get; init; }
+
+	public bool IsCrit => this.CritHitPoints > 0;
+
 	public string DirectionLabel => this.IsOutgoing?"Done":"Received";
 }
