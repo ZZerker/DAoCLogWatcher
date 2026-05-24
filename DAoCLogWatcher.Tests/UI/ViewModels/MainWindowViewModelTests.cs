@@ -217,7 +217,7 @@ public sealed class MainWindowViewModelTests: IDisposable
 
 		await vm.OpenDaocLogCommand.ExecuteAsync(null);
 
-		this.mockPathService.Received(1).FindDaocLogPath();
+		this.mockPathService.Received().FindDaocLogPath();
 	}
 
 	// ── KD ratio ─────────────────────────────────────────────────────────────

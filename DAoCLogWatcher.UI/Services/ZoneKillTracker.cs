@@ -339,7 +339,13 @@ public sealed class ZoneKillTracker
 		}
 
 		var json = JsonSerializer.Serialize(snapshot, JsonOptions);
-		File.WriteAllText(this.zoneExportPath, json);
+		try
+		{
+			File.WriteAllText(this.zoneExportPath, json);
+		}
+		catch(IOException)
+		{
+		}
 	}
 
 	private readonly record struct ZoneKillEntry(DateTime Timestamp, string Zone);

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Avalonia.Threading;
 using DAoCLogWatcher.Core;
 using DAoCLogWatcher.Core.Models;
 using DAoCLogWatcher.UI.Models;
@@ -291,17 +290,12 @@ public sealed class CombatProcessor(CombatSummary summary, SpellRegistry? dotReg
 		}
 		else
 		{
-			var totalDamage = damage.TotalDamage;
-			var isCrit = damage.CritDamage > 0;
-			Dispatcher.UIThread.Post(() =>
+			entry.TotalDamage += damage.TotalDamage;
+			entry.HitCount++;
+			if(damage.CritDamage > 0)
 			{
-				entry.TotalDamage += totalDamage;
-				entry.HitCount++;
-				if(isCrit)
-				{
-					entry.IsCrit = true;
-				}
-			}, DispatcherPriority.Background);
+				entry.IsCrit = true;
+			}
 		}
 
 		this.dotStackWindowLastTick = damage.Timestamp;
