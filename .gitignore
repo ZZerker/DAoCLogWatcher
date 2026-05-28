@@ -27,3 +27,16 @@ x64/
 /.claude
 DAoCLogWatcher.Tests/DAoCLogWatcher.Tests.csproj
 .github/copilot-instructions.md
+
+# JetBrains IDE (Rider, IntelliJ)
+.idea/
+
+# C# Dev Kit language service cache
+*.lscache
+
+# Research / scrape data — not needed at runtime; spells.json and frontier_zones.json are embedded in Core/UI
+/data/
+
+# Local design system references (source of truth lives in Figma)
+/DAoCLogWatcher.Core/TestFiles/DesignSystem/
+/DAoCLogWatcher.Core/TestFiles/*.zip

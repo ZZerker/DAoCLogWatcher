@@ -307,7 +307,7 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 
 	public string MapSubDescription => _isMapSubZones
 		? "Per-zone kill / death / RP breakdown, ranked by activity"
-		: "Kill density overlay on the frontier map — live keep & fight positions";
+		: "Density of all kills reported in the killspam, every fight on the frontier";
 
 	[ObservableProperty] private bool isDashboardCustomizeVisible;
 
