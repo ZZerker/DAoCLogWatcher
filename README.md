@@ -7,8 +7,6 @@
 
 A real-time tracker for **Dark Age of Camelot (Eden)**. Load your `chat.log` and instantly see how many RPs you're earning, where they're coming from, how fast they're rolling in, your kill/death stats, live combat metrics, and a frontier kill heatmap with live keep ownership and fight locations pulled from the warmap — all updated as you play.
 
-> Combat, heal, and damage tracking are in early beta and still being improved. Report issues on the [Issues](https://github.com/ZZerker/DAoCLogWatcher/issues) page or join the [Discord](https://discord.gg/V7Z5y3Ke9v).
-
 ## TL;DR — Getting Started
 
 1. In-game, run **`/chatlog`** to start writing your chat log to disk (only needed once per session)
@@ -21,30 +19,24 @@ A real-time tracker for **Dark Age of Camelot (Eden)**. Load your `chat.log` and
 
 ## Features
 
+### 🎯 Core RP Tracking
 - **Live log tracking** — reads your chat log as the game writes it, no manual refreshing needed
 - **RP breakdown** by source:
   - Player Kills (with victim name when available), Campaign Quests, Battle Ticks
   - Siege (Tower & Keep Captures), Assault Orders
   - Support Activity, Relic Captures, Timed Missions
 - **RP/h meter** — rolling realm points per hour, updated every 5 seconds
-- **Character detection** — type `/stats` in-game and the app identifies your character name and displays it in the sidebar alongside live kills, deaths, and K/D ratio
-- **Charts** — cumulative RP over time and rolling RP/h graph, both collapsible
-- **Session browser** — pick any past play session directly from your `chat.log` by date and time range, instead of guessing time filter windows; selecting the current session keeps the app tailing the file live as usual
-- **Log filters** — filter the Realm Points, Combat Log, and Heal Log tabs by player name, source, spell, or style; results update live as new entries arrive
 - **Time filters** — limit the log to a preset window (1h–1 week) or a custom hours/minutes value
-- **Kill Heatmap** — a live frontier map showing your kill density as a colour-intensity overlay; keep and tower icons are coloured by current realm owner and update as control changes; burning keeps show a flame icon; active fights and group locations streamed from the warmap are displayed as realm-coloured markers on the map
-- **Zone Kills** — shows which frontier zones have had the most kills in the active window, ranked by percentage with a heat-colour indicator; a Global Actisvity chart below plots kill rate over the full session
-- **Live warmap data** — the app connects to the Eden warmap WebSocket and pulls in real-time keep/tower realm ownership, keeps under attack, active fight locations, and roaming group positions; no in-game action needed
-- **Screenshot to clipboard** — capture the full window to your clipboard with one click
-- **Auto-update** — the app checks for new releases on startup and prompts you to install them
-- **Dark & Light theme** — toggle any time
-- **Windows & Linux** supported (Linux via Wine / Lutris / Flatpak)
-- **Secondary monitor support** — the app automatically opens on a secondary monitor if one is present, since DAoC typically runs full-screen on the primary
 
-### 🧪 Beta Features — Combat & Heal Tracking
+### 📊 Dashboard & Visualization
+- **Customizable dashboard** — show/hide each widget, set its size (Small / Medium / Large), and reorder with Move Up / Move Down; save the result as a named layout profile
+  - Supported widgets: RP stats, Combat stats, Kill/death ratio, Best multi-kill, Hottest zone, RP sources, Damage output, Top opponents/spells/healers, Damage taken, Heals done, Zone activity, Logs, Minimap
+  - Save multiple profiles for different characters or playstyles and switch between them from the profile dropdown
+- **Charts** — cumulative RP over time and rolling RP/h graph, both collapsible and interactive
+- **Session browser** — pick any past play session directly from your `chat.log` by date and time range, instead of guessing time filter windows; selecting the current session keeps the app tailing the file live as usual
 
-> **These features are in early beta and still need work.** Numbers may be incomplete or misattributed depending on your class, playstyle, and log line formats the parser hasn't seen yet. If something looks wrong, please share the relevant lines from your `chat.log` on the [Issues](https://github.com/ZZerker/DAoCLogWatcher/issues) page — log examples are always welcome and directly help improve coverage.
-
+### 👤 Character & Combat Tracking
+- **Character detection** — type `/stats` in-game and the app identifies your character name and displays it in the sidebar alongside live kills, deaths, and K/D ratio
 - **Combat tracking** — a dedicated Combat tab shows stats parsed live from your combat log:
   - **Damage dealt** — total, hit count, average per hit, and crit count / crit rate
   - **Damage taken** — total received and breakdown by attacker
@@ -52,13 +44,27 @@ A real-time tracker for **Dark Age of Camelot (Eden)**. Load your `chat.log` and
   - **Outgoing heals** — total HP you healed and breakdown by target
   - **Miss & resist rates** — melee miss rate (misses + blocks) and spell resist rate, tracked separately
   - **Attack type breakdown** — avg damage per weapon / spell / melee style, shown as a bar chart
-- **Melee style attribution** — weapon hits are attributed to the style that triggered them; unexecuted styles produce plain unattributed swings; multi-hit classes carry the style across all hits in a swing sequence
-- **DoT tick tracking** — active DoTs on each target are shown as live-updating stack entries in the combat log; each tick updates the entry in place rather than flooding the log
-- **Data-driven spell detection** — AoE nukes and DoT windows are resolved against Eden spell data, improving attribution accuracy across all classes and specs
-- **Combat log tab** — scrollable per-hit log showing timestamp, direction, damage, source (style, spell, or weapon name), and target
-- **Heal log tab** — scrollable per-heal log showing timestamp, HP, direction, and who was healed
+  - **Melee style attribution** — weapon hits are attributed to the style that triggered them; unexecuted styles produce plain unattributed swings
+- **DoT tracking** — active DoTs on each target are shown as live-updating stack entries in the combat log; each tick updates the entry in place rather than flooding the log
+- **Data-driven spell detection** — AoE nukes and DoT windows are resolved against a built-in spell database, improving attribution accuracy across all classes and specs
+- **Combat & Heal logs** — scrollable per-hit event streams with timestamp, damage/HP, source, and target
 
-> Combat parsing covers weapon attacks, melee styles, spells, crits, heals, misses, blocks, and resists. Results depend on log line formats — edge cases may not yet be handled.
+### 🗺️ Frontier Map & Zone Tracking
+- **Kill Heatmap** — a live frontier map showing your kill density as a colour-intensity overlay; keep and tower icons are coloured by current realm owner and update as control changes; burning keeps show a flame icon; active fights and group locations streamed from the warmap are displayed as realm-coloured markers on the map
+- **Zone activity** — shows which frontier zones have had the most kills in the active window, ranked by percentage with a heat-colour indicator; a Global Activity chart below plots kill rate over the full session
+- **Live warmap data** — the app connects to the Eden warmap WebSocket and pulls in real-time keep/tower realm ownership, keeps under attack, active fight locations, and roaming group positions; no in-game action needed
+
+### 🛠️ UI & Accessibility
+- **Log filters** — filter the Realm Points, Combat Log, and Heal Log tabs by player name, source, spell, or style; results update live as new entries arrive
+- **Screenshot to clipboard** — capture the full window to your clipboard with one click
+- **Dark & Light theme** — toggle any time
+- **Secondary monitor support** — the app automatically opens on a secondary monitor if one is present, since DAoC typically runs full-screen on the primary
+- **Auto-update** — the app checks for new releases on startup and prompts you to install them
+
+### 💻 Cross-Platform
+- **Windows & Linux** supported (Linux via Wine / Lutris / Flatpak)
+- Native path detection for all platforms
+- Flatpak sandbox support with full WebSocket networking
 
 ---
 
@@ -134,6 +140,8 @@ The app detects this and displays your character name in the sidebar with live k
 
 Filters are applied from the moment you open a log — useful when your `chat.log` spans many days and you only care about recent activity. Changing the filter while the app is already watching automatically restarts the session with the new window.
 
+For a specific past play session, use **Browse Sessions** instead of a rolling window — it lets you pick the exact session by date and time range straight from your `chat.log`, rather than guessing how many hours back to filter. Selecting the current session keeps the app tailing the file live as usual.
+
 ---
 
 ## Character Detection & Kill Tracking
@@ -157,6 +165,22 @@ Once detected, your character name appears at the top of the sidebar with:
 
 ---
 
+## Dashboard Profiles
+
+Save and load custom widget layouts for different characters or playstyles:
+
+1. On the Dashboard tab, show/hide each widget, set its size (Small / Medium / Large), and reorder it with Move Up / Move Down
+2. Click **Save Profile** and enter a name (e.g., "Solo Caster", "RvR Grind", "Heal Support")
+3. Switch layouts with the profile dropdown — all widget state is preserved per profile
+4. Click **Save As** to duplicate a profile, or **Delete** to remove it
+5. New widgets added in app updates are appended to existing profiles automatically
+
+Profiles are stored in `AppSettings.json` and persist across app restarts.
+
+The dashboard is brand new, so feedback is very welcome — ideas for widgets, layout improvements, or just your opinion on how it works. Drop a note in [Discord](https://discord.gg/V7Z5y3Ke9v) (for feature ideas and feedback, use Discord; keep [GitHub Issues](https://github.com/ZZerker/DAoCLogWatcher/issues) for actual bugs).
+
+---
+
 ## Log File Location
 
 | Platform | Default path |
@@ -169,13 +193,23 @@ If **Open DAoC Log** can't find the file automatically, use **Open Log File** to
 
 ---
 
-## ⚠️ Known Issues (Beta)
+## Combat & Heal Tracking
+
+Combat parsing covers weapon attacks, melee styles, spells, crits, heals, misses, blocks, and resists. All data is attributed using:
+
+- **Spell data-driven detection** — DoT spells and AoE nukes are resolved against a built-in spell database for maximum accuracy
+- **Two-tier spell attribution** — pending spells (last 4.5s window) vs. confirmed hits ensure multi-hit abilities and DoT ticks are correctly assigned
+- **Comprehensive log coverage** — results depend on log line formats; edge cases are continuously improved based on community log samples
+
+**Report combat parsing issues on the [Issues](https://github.com/ZZerker/DAoCLogWatcher/issues) page** — log examples are always welcome and directly help improve coverage. Join the [Discord](https://discord.gg/V7Z5y3Ke9v) to share logs in real-time.
+
+---
+
+## Known Quirks
 
 | Feature | Status |
 |---|---|
-| Combat & heal tracking | Early beta — spell attribution, damage categorization, and heal tracking may be incomplete or incorrect for some classes and abilities |
-
-Please report unexpected behaviour on the [Issues](https://github.com/ZZerker/DAoCLogWatcher/issues) page or in [Discord](https://discord.gg/V7Z5y3Ke9v). **Log examples are especially helpful** — if a number looks wrong, paste the relevant lines from your `chat.log` and it will be fixed.
+| Combat parsing | Combat and heal tracking depend on log line formats and edge cases may require updates for uncommon classes or abilities — [report issues](https://github.com/ZZerker/DAoCLogWatcher/issues) with log examples |
 
 ---
 
