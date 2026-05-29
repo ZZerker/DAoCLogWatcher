@@ -5,7 +5,7 @@
 ![CI](https://img.shields.io/github/actions/workflow/status/ZZerker/DAoCLogWatcher/ci.yml?branch=main)
 [![Discord](https://img.shields.io/badge/Discord-Join-5865F2?logo=discord&logoColor=white)](https://discord.gg/V7Z5y3Ke9v)
 
-A real-time tracker for **Dark Age of Camelot (Eden)**. Load your `chat.log` and instantly see how many RPs you're earning, where they're coming from, how fast they're rolling in, your kill/death stats, live combat metrics, and a frontier kill heatmap with live keep ownership and fight locations pulled from the warmap — all updated as you play.
+A real-time tracker for **Dark Age of Camelot (Eden)**. Load your `chat.log` and instantly see how many RPs you're earning, where they're coming from, how fast they're rolling in, your kill/death stats, live combat metrics, and a server-wide frontier kill heatmap with live keep ownership and fight locations pulled from the warmap — all updated as you play.
 
 ## TL;DR — Getting Started
 
@@ -50,7 +50,7 @@ A real-time tracker for **Dark Age of Camelot (Eden)**. Load your `chat.log` and
 - **Combat & Heal logs** — scrollable per-hit event streams with timestamp, damage/HP, source, and target
 
 ### 🗺️ Frontier Map & Zone Tracking
-- **Kill Heatmap** — a live frontier map showing your kill density as a colour-intensity overlay; keep and tower icons are coloured by current realm owner and update as control changes; burning keeps show a flame icon; active fights and group locations streamed from the warmap are displayed as realm-coloured markers on the map
+- **Kill Heatmap** — a live frontier map showing server-wide kill density as a colour-intensity overlay; the log picks up every kill message on the server (not just your own), so it reflects where the realm-wide action is; keep and tower icons are coloured by current realm owner and update as control changes; burning keeps show a flame icon; active fights and group locations streamed from the warmap are displayed as realm-coloured markers on the map
 - **Zone activity** — shows which frontier zones have had the most kills in the active window, ranked by percentage with a heat-colour indicator; a Global Activity chart below plots kill rate over the full session
 - **Live warmap data** — the app connects to the Eden warmap WebSocket and pulls in real-time keep/tower realm ownership, keeps under attack, active fight locations, and roaming group positions; no in-game action needed
 
@@ -177,7 +177,7 @@ Save and load custom widget layouts for different characters or playstyles:
 
 Profiles are stored in `AppSettings.json` and persist across app restarts.
 
-The dashboard is brand new, so feedback is very welcome — ideas for widgets, layout improvements, or just your opinion on how it works. Drop a note in [Discord](https://discord.gg/V7Z5y3Ke9v) (for feature ideas and feedback, use Discord; keep [GitHub Issues](https://github.com/ZZerker/DAoCLogWatcher/issues) for actual bugs).
+The dashboard is brand new, so feedback is very welcome — ideas for widgets, layout improvements, or just your opinion on how it works. Drop a note in [Discord](https://discord.gg/V7Z5y3Ke9v).
 
 ---
 
