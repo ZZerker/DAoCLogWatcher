@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Threading.Tasks;
 using Velopack;
 using Velopack.Sources;
@@ -9,7 +10,14 @@ namespace DAoCLogWatcher.UI.Services;
 public sealed class UpdateService: IUpdateService
 {
 	private const string GITHUB_URL = "https://github.com/ZZerker/DAoCLogWatcher";
+
+	private static readonly string LogPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DAoCLogWatcher", "update.log");
+
 	private UpdateInfo? pendingUpdate;
+	private Task? downloadTask;
+	private bool downloadFailed;
+
+	public event EventHandler<string>? ErrorOccurred;
 
 	/// <summary>
 	/// Checks GitHub for a newer release and returns the version label immediately.
@@ -33,36 +41,49 @@ public sealed class UpdateService: IUpdateService
 			}
 
 			// Download in the background — caller gets the banner immediately.
-			_ = Task.Run(async () =>
-			             {
-				             try
-				             {
-					             await mgr.DownloadUpdatesAsync(update);
-					             this.pendingUpdate = update;
-				             }
-				             catch(Exception ex)
-				             {
-					             Debug.WriteLine($"[UpdateService.DownloadUpdatesAsync] {ex.GetType().Name}: {ex.Message}");
-				             }
-			             });
+			// Store the task so ApplyAndRestart can await it if the user clicks before download finishes.
+			this.downloadTask = Task.Run(async () =>
+			                            {
+				                            try
+				                            {
+					                            await mgr.DownloadUpdatesAsync(update);
+					                            this.pendingUpdate = update;
+				                            }
+				                            catch(Exception ex)
+				                            {
+					                            this.downloadFailed = true;
+					                            this.ReportError("download", ex);
+				                            }
+			                            });
 
 			return ($"v{update.TargetFullRelease.Version} available", true);
 		}
 		catch(Exception ex)
 		{
-			Debug.WriteLine($"[UpdateService.CheckForUpdatesAsync] {ex.GetType().Name}: {ex.Message}");
+			this.ReportError("check", ex);
 			return (null, false);
 		}
 	}
 
 	/// <summary>
 	/// Applies the downloaded update and restarts the application.
-	/// No-op if no update has been downloaded.
+	/// Waits for the background download to complete if it is still in progress.
+	/// No-op if no update is available.
 	/// </summary>
-	public void ApplyAndRestart()
+	public async Task ApplyAndRestartAsync()
 	{
+		if(this.downloadTask != null)
+		{
+			await this.downloadTask;
+		}
+
 		if(this.pendingUpdate == null)
 		{
+			if(this.downloadFailed)
+			{
+				this.RaiseError("Update download failed. See update.log for details.");
+			}
+
 			return;
 		}
 
@@ -73,7 +94,30 @@ public sealed class UpdateService: IUpdateService
 		}
 		catch(Exception ex)
 		{
-			Debug.WriteLine($"[UpdateService.ApplyAndRestart] {ex.GetType().Name}: {ex.Message}");
+			this.ReportError("apply", ex);
 		}
+	}
+
+	private void ReportError(string context, Exception ex)
+	{
+		var detail = $"{ex.GetType().Name}: {ex.Message}";
+		Debug.WriteLine($"[UpdateService.{context}] {detail}");
+
+		try
+		{
+			Directory.CreateDirectory(Path.GetDirectoryName(LogPath)!);
+			File.AppendAllText(LogPath, $"{DateTime.Now:u} [{context}] {detail}{Environment.NewLine}{ex}{Environment.NewLine}{Environment.NewLine}");
+		}
+		catch(Exception logEx)
+		{
+			Debug.WriteLine($"[UpdateService.log] {logEx.GetType().Name}: {logEx.Message}");
+		}
+
+		this.RaiseError($"Update {context} failed: {ex.Message}");
+	}
+
+	private void RaiseError(string message)
+	{
+		this.ErrorOccurred?.Invoke(this, message);
 	}
 }

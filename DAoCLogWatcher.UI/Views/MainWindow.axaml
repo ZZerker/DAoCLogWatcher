@@ -174,6 +174,9 @@
                             Command="{Binding DismissUpdateCommand}"
                             VerticalAlignment="Top" />
                 </Grid>
+                <TextBlock Text="{Binding UpdateError}" FontSize="11" TextWrapping="Wrap"
+                           Foreground="{DynamicResource AppDanger}"
+                           IsVisible="{Binding UpdateError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                 <Button Content="Update"
                         Command="{Binding ApplyUpdateAndRestartCommand}"
                         Classes="btn-primary"

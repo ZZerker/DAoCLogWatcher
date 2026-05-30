@@ -646,6 +646,7 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 
 	[ObservableProperty] private bool isUpdateAvailable;
 	[ObservableProperty] private string? updateVersionText;
+	[ObservableProperty] private string? updateError;
 
 	[ObservableProperty] private string? watchError;
 
@@ -788,6 +789,7 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 		this.CombatSummary.PropertyChanged += this.OnCombatSummaryPropertyChanged;
 		this.TimeFilter.FilterChanged += this.OnTimeFilterChanged;
 		this.watchSession.ErrorOccurred += this.OnWatchSessionError;
+		this.updateService.ErrorOccurred += this.OnUpdateError;
 		this.parsingDebounceTimer = new System.Timers.Timer(PARSING_DEBOUNCE_INTERVAL_MS)
 		                            {
 				                            AutoReset = false
@@ -823,6 +825,11 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 	private void OnWatchSessionError(object? sender, string message)
 	{
 		Dispatcher.UIThread.InvokeAsync(() => this.WatchError = message);
+	}
+
+	private void OnUpdateError(object? sender, string message)
+	{
+		Dispatcher.UIThread.InvokeAsync(() => this.UpdateError = message);
 	}
 
 	private void OnCombatSummaryPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -1231,9 +1238,10 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 	}
 
 	[RelayCommand]
-	private void ApplyUpdateAndRestart()
+	private Task ApplyUpdateAndRestart()
 	{
-		this.updateService.ApplyAndRestart();
+		this.UpdateError = null;
+		return this.updateService.ApplyAndRestartAsync();
 	}
 
 	public void Dispose()
@@ -1247,6 +1255,7 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 		this.CombatSummary.PropertyChanged -= this.OnCombatSummaryPropertyChanged;
 		this.TimeFilter.FilterChanged -= this.OnTimeFilterChanged;
 		this.watchSession.ErrorOccurred -= this.OnWatchSessionError;
+		this.updateService.ErrorOccurred -= this.OnUpdateError;
 		this.watchController.Stop();
 		this.parsingDebounceTimer.Stop();
 		this.parsingDebounceTimer.Dispose();
