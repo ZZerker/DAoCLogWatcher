@@ -100,7 +100,7 @@ public partial class MainWindow: Window
 
 	private void SelectFirstVisibleTab()
 	{
-		if(this.MainTabControl.SelectedItem is not TabItem selected || selected.IsVisible)
+		if(this.MainTabControl.SelectedItem is not TabItem selected||selected.IsVisible)
 		{
 			return;
 		}
@@ -114,7 +114,7 @@ public partial class MainWindow: Window
 
 	private void ApplyTheme(bool isDark)
 	{
-		Application.Current!.RequestedThemeVariant = isDark ? ThemeVariant.Dark : ThemeVariant.Light;
+		Application.Current!.RequestedThemeVariant = isDark?ThemeVariant.Dark:ThemeVariant.Light;
 	}
 
 	private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -130,7 +130,7 @@ public partial class MainWindow: Window
 		}
 		else if(e.PropertyName == nameof(ViewModels.MainWindowViewModel.IsSidebarVisible))
 		{
-			this.MainContentGrid.ColumnDefinitions[0].Width = newVm.IsSidebarVisible ? new GridLength(320) : new GridLength(0);
+			this.MainContentGrid.ColumnDefinitions[0].Width = newVm.IsSidebarVisible?new GridLength(320):new GridLength(0);
 		}
 	}
 
@@ -154,12 +154,18 @@ public partial class MainWindow: Window
 						             new KeyFrame
 						             {
 								             Cue = new Cue(0),
-								             Setters = { new Setter(OpacityProperty, 0.0) }
+								             Setters =
+								             {
+										             new Setter(OpacityProperty, 0.0)
+								             }
 						             },
 						             new KeyFrame
 						             {
 								             Cue = new Cue(1),
-								             Setters = { new Setter(OpacityProperty, 1.0) }
+								             Setters =
+								             {
+										             new Setter(OpacityProperty, 1.0)
+								             }
 						             }
 				             }
 		             };
@@ -177,12 +183,18 @@ public partial class MainWindow: Window
 						              new KeyFrame
 						              {
 								              Cue = new Cue(0),
-								              Setters = { new Setter(OpacityProperty, 1.0) }
+								              Setters =
+								              {
+										              new Setter(OpacityProperty, 1.0)
+								              }
 						              },
 						              new KeyFrame
 						              {
 								              Cue = new Cue(1),
-								              Setters = { new Setter(OpacityProperty, 0.0) }
+								              Setters =
+								              {
+										              new Setter(OpacityProperty, 0.0)
+								              }
 						              }
 				              }
 		              };

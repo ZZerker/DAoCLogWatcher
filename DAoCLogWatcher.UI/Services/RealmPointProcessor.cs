@@ -35,8 +35,10 @@ public sealed class RealmPointProcessor: IRealmPointProcessor
 
 	public IReadOnlyList<KillActivityPoint> KillActivityPoints => this.zoneKillTracker.KillActivityPoints;
 
-	public IReadOnlyList<KillActivityPoint> GetSessionActivityPoints(DateTime sessionStart, DateTime now) =>
-		this.zoneKillTracker.GetSessionActivityPoints(sessionStart, now);
+	public IReadOnlyList<KillActivityPoint> GetSessionActivityPoints(DateTime sessionStart, DateTime now)
+	{
+		return this.zoneKillTracker.GetSessionActivityPoints(sessionStart, now);
+	}
 
 	public string? DetectedCharacterName { get; private set; }
 
@@ -95,7 +97,7 @@ public sealed class RealmPointProcessor: IRealmPointProcessor
 				               Source = entry.Source.ToString(),
 				               Details = details,
 				               VictimName = entry.Victim,
-			               IsDeathblow = entry.IsDeathblow
+				               IsDeathblow = entry.IsDeathblow
 		               };
 
 		if(entry.Source == RealmPointSource.PlayerKill)
@@ -124,20 +126,58 @@ public sealed class RealmPointProcessor: IRealmPointProcessor
 		this.DetectedCharacterName = null;
 	}
 
-	private static (string Label, Action<RealmPointSummary, int> Accumulate) GetSourceMeta(RealmPointSource source) =>
-		source switch
+	private static (string Label, Action<RealmPointSummary, int> Accumulate) GetSourceMeta(RealmPointSource source)
+	{
+		return source switch
 		{
-				RealmPointSource.PlayerKill => ("Player Kill", (s, p) => { s.PlayerKills++; s.PlayerKillsRP += p; }),
-				RealmPointSource.CampaignQuest => ("Campaign Quest completed", (s, p) => { s.CampaignQuests++; s.CampaignQuestsRP += p; }),
-				RealmPointSource.Tick => ("Battle Tick", (s, p) => { s.Ticks++; s.TicksRP += p; }),
-				RealmPointSource.Siege => ("Siege (Tower/Keep Capture)", (s, p) => { s.Siege++; s.SiegeRP += p; }),
-				RealmPointSource.AssaultOrder => ("Assault Order", (s, p) => { s.AssaultOrder++; s.AssaultOrderRP += p; }),
-				RealmPointSource.SupportActivity => ("Support Tick", (s, p) => { s.SupportActivity++; s.SupportActivityRP += p; }),
-				RealmPointSource.RelicCapture => ("Relic Capture", (s, p) => { s.RelicCapture++; s.RelicCaptureRP += p; }),
-				RealmPointSource.TimedMission => ("Timed Mission", (s, p) => { s.TimedMissions++; s.TimedMissionsRP += p; }),
-				RealmPointSource.Misc => ("Other", (s, p) => { s.Misc++; s.MiscRP += p; }),
+				RealmPointSource.PlayerKill => ("Player Kill", (s, p) =>
+				                                               {
+					                                               s.PlayerKills++;
+					                                               s.PlayerKillsRP += p;
+				                                               }),
+				RealmPointSource.CampaignQuest => ("Campaign Quest completed", (s, p) =>
+				                                                               {
+					                                                               s.CampaignQuests++;
+					                                                               s.CampaignQuestsRP += p;
+				                                                               }),
+				RealmPointSource.Tick => ("Battle Tick", (s, p) =>
+				                                         {
+					                                         s.Ticks++;
+					                                         s.TicksRP += p;
+				                                         }),
+				RealmPointSource.Siege => ("Siege (Tower/Keep Capture)", (s, p) =>
+				                                                         {
+					                                                         s.Siege++;
+					                                                         s.SiegeRP += p;
+				                                                         }),
+				RealmPointSource.AssaultOrder => ("Assault Order", (s, p) =>
+				                                                   {
+					                                                   s.AssaultOrder++;
+					                                                   s.AssaultOrderRP += p;
+				                                                   }),
+				RealmPointSource.SupportActivity => ("Support Tick", (s, p) =>
+				                                                     {
+					                                                     s.SupportActivity++;
+					                                                     s.SupportActivityRP += p;
+				                                                     }),
+				RealmPointSource.RelicCapture => ("Relic Capture", (s, p) =>
+				                                                   {
+					                                                   s.RelicCapture++;
+					                                                   s.RelicCaptureRP += p;
+				                                                   }),
+				RealmPointSource.TimedMission => ("Timed Mission", (s, p) =>
+				                                                   {
+					                                                   s.TimedMissions++;
+					                                                   s.TimedMissionsRP += p;
+				                                                   }),
+				RealmPointSource.Misc => ("Other", (s, p) =>
+				                                   {
+					                                   s.Misc++;
+					                                   s.MiscRP += p;
+				                                   }),
 				_ => throw new UnreachableException()
 		};
+	}
 
 	private void OnMultiKillDetected(object? sender, MultiKillResult result)
 	{

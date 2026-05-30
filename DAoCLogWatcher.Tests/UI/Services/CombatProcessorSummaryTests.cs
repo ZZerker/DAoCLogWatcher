@@ -21,85 +21,117 @@ public sealed class CombatProcessorSummaryTests
 	private static readonly TimeOnly T0 = new(12, 0, 0);
 
 	private static DamageLogLine SpellDealt(string target, string spell, int baseDmg = 100, int crit = 0, int absorbed = 0)
-		=> new("", new DamageEvent
-		{
-			Timestamp = T0,
-			Opponent = target,
-			BaseDamage = baseDmg,
-			CritDamage = crit,
-			Absorbed = absorbed,
-			IsDealt = true,
-			SpellName = spell,
-			IsWeaponAttack = false
-		});
+	{
+		return new DamageLogLine("",
+		                         new DamageEvent
+		                         {
+				                         Timestamp = T0,
+				                         Opponent = target,
+				                         BaseDamage = baseDmg,
+				                         CritDamage = crit,
+				                         Absorbed = absorbed,
+				                         IsDealt = true,
+				                         SpellName = spell,
+				                         IsWeaponAttack = false
+		                         });
+	}
 
 	private static DamageLogLine WeaponDealt(string target, string style, int baseDmg = 50)
-		=> new("", new DamageEvent
-		{
-			Timestamp = T0,
-			Opponent = target,
-			BaseDamage = baseDmg,
-			Absorbed = 0,
-			IsDealt = true,
-			SpellName = style,
-			StyleName = style,
-			IsWeaponAttack = true
-		});
+	{
+		return new DamageLogLine("",
+		                         new DamageEvent
+		                         {
+				                         Timestamp = T0,
+				                         Opponent = target,
+				                         BaseDamage = baseDmg,
+				                         Absorbed = 0,
+				                         IsDealt = true,
+				                         SpellName = style,
+				                         StyleName = style,
+				                         IsWeaponAttack = true
+		                         });
+	}
 
 	private static DamageLogLine DotDealt(string target, string spell, int baseDmg = 30)
-		=> new("", new DamageEvent
-		{
-			Timestamp = T0,
-			Opponent = target,
-			BaseDamage = baseDmg,
-			Absorbed = 0,
-			IsDealt = true,
-			SpellName = spell,
-			IsWeaponAttack = false,
-			IsDotTick = true
-		});
+	{
+		return new DamageLogLine("",
+		                         new DamageEvent
+		                         {
+				                         Timestamp = T0,
+				                         Opponent = target,
+				                         BaseDamage = baseDmg,
+				                         Absorbed = 0,
+				                         IsDealt = true,
+				                         SpellName = spell,
+				                         IsWeaponAttack = false,
+				                         IsDotTick = true
+		                         });
+	}
 
 	private static DamageLogLine DamageTaken(string attacker, int baseDmg = 80)
-		=> new("", new DamageEvent
-		{
-			Timestamp = T0,
-			Opponent = attacker,
-			BaseDamage = baseDmg,
-			Absorbed = 0,
-			IsDealt = false,
-			IsWeaponAttack = false
-		});
+	{
+		return new DamageLogLine("",
+		                         new DamageEvent
+		                         {
+				                         Timestamp = T0,
+				                         Opponent = attacker,
+				                         BaseDamage = baseDmg,
+				                         Absorbed = 0,
+				                         IsDealt = false,
+				                         IsWeaponAttack = false
+		                         });
+	}
 
 	private static HealLogLine OutgoingHeal(string target, int hp)
-		=> new("", new HealEvent
-		{
-			Timestamp = T0,
-			HitPoints = hp,
-			IsOutgoing = true,
-			Target = target
-		});
+	{
+		return new HealLogLine("",
+		                       new HealEvent
+		                       {
+				                       Timestamp = T0,
+				                       HitPoints = hp,
+				                       IsOutgoing = true,
+				                       Target = target
+		                       });
+	}
 
 	private static HealLogLine IncomingHeal(string healer, int hp)
-		=> new("", new HealEvent
-		{
-			Timestamp = T0,
-			HitPoints = hp,
-			IsOutgoing = false,
-			Healer = healer
-		});
+	{
+		return new HealLogLine("",
+		                       new HealEvent
+		                       {
+				                       Timestamp = T0,
+				                       HitPoints = hp,
+				                       IsOutgoing = false,
+				                       Healer = healer
+		                       });
+	}
 
 	private static MissLogLine SpellResist()
-		=> new("", new MissEvent { Timestamp = T0, IsSpell = true });
+	{
+		return new MissLogLine("",
+		                       new MissEvent
+		                       {
+				                       Timestamp = T0,
+				                       IsSpell = true
+		                       });
+	}
 
 	private static MissLogLine MeleeMiss()
-		=> new("", new MissEvent { Timestamp = T0, IsSpell = false });
+	{
+		return new MissLogLine("",
+		                       new MissEvent
+		                       {
+				                       Timestamp = T0,
+				                       IsSpell = false
+		                       });
+	}
 
 	// ── Damage dealt ──────────────────────────────────────────────────────────
 
 	[Fact]
 	public void SpellHit_AccumulatesTotalDamageAndHitCount()
 	{
-		this.processor.Process(SpellDealt("Mob", "Fireball", baseDmg: 200));
+		this.processor.Process(SpellDealt("Mob", "Fireball", 200));
 
 		this.summary.TotalDamageDealt.Should().Be(200);
 		this.summary.HitCount.Should().Be(1);
@@ -110,7 +142,7 @@ public sealed class CombatProcessorSummaryTests
 	[Fact]
 	public void WeaponHit_AccumulatesAndCountsAsMelee()
 	{
-		this.processor.Process(WeaponDealt("Mob", "Slash", baseDmg: 75));
+		this.processor.Process(WeaponDealt("Mob", "Slash", 75));
 
 		this.summary.TotalDamageDealt.Should().Be(75);
 		this.summary.HitCount.Should().Be(1);
@@ -121,7 +153,7 @@ public sealed class CombatProcessorSummaryTests
 	[Fact]
 	public void CritHit_IncrementsCritCountAndTotalDamage()
 	{
-		this.processor.Process(SpellDealt("Mob", "Fireball", baseDmg: 150, crit: 50));
+		this.processor.Process(SpellDealt("Mob", "Fireball", 150, 50));
 
 		this.summary.TotalDamageDealt.Should().Be(200);
 		this.summary.CritCount.Should().Be(1);
@@ -131,7 +163,7 @@ public sealed class CombatProcessorSummaryTests
 	[Fact]
 	public void AbsorbedDamage_AccumulatesTotalAbsorbed()
 	{
-		this.processor.Process(SpellDealt("Mob", "Fireball", baseDmg: 100, absorbed: 40));
+		this.processor.Process(SpellDealt("Mob", "Fireball", 100, absorbed: 40));
 
 		this.summary.TotalAbsorbed.Should().Be(40);
 	}
@@ -139,9 +171,9 @@ public sealed class CombatProcessorSummaryTests
 	[Fact]
 	public void DamageByTarget_AccumulatesPerOpponent()
 	{
-		this.processor.Process(SpellDealt("OrcA", "Fireball", baseDmg: 100));
-		this.processor.Process(SpellDealt("OrcA", "Fireball", baseDmg: 50));
-		this.processor.Process(SpellDealt("OrcB", "Fireball", baseDmg: 200));
+		this.processor.Process(SpellDealt("OrcA", "Fireball", 100));
+		this.processor.Process(SpellDealt("OrcA", "Fireball", 50));
+		this.processor.Process(SpellDealt("OrcB", "Fireball", 200));
 
 		this.summary.DamageByTarget["OrcA"].Should().Be(150);
 		this.summary.DamageByTarget["OrcB"].Should().Be(200);
@@ -150,9 +182,9 @@ public sealed class CombatProcessorSummaryTests
 	[Fact]
 	public void DamageBySpell_AccumulatesPerSpell()
 	{
-		this.processor.Process(SpellDealt("Mob", "Fireball", baseDmg: 100));
-		this.processor.Process(SpellDealt("Mob", "Fireball", baseDmg: 80));
-		this.processor.Process(SpellDealt("Mob", "Lightning", baseDmg: 150));
+		this.processor.Process(SpellDealt("Mob", "Fireball", 100));
+		this.processor.Process(SpellDealt("Mob", "Fireball", 80));
+		this.processor.Process(SpellDealt("Mob", "Lightning", 150));
 
 		this.summary.DamageBySpell["Fireball"].TotalDamage.Should().Be(180);
 		this.summary.DamageBySpell["Fireball"].HitCount.Should().Be(2);
@@ -162,7 +194,7 @@ public sealed class CombatProcessorSummaryTests
 	[Fact]
 	public void WeaponDamageBySpell_UsesStyleNameAsKey()
 	{
-		this.processor.Process(WeaponDealt("Mob", "Slash", baseDmg: 60));
+		this.processor.Process(WeaponDealt("Mob", "Slash", 60));
 
 		this.summary.DamageBySpell.Should().ContainKey("Slash");
 		this.summary.DamageBySpell["Slash"].TotalDamage.Should().Be(60);
@@ -173,8 +205,8 @@ public sealed class CombatProcessorSummaryTests
 	[Fact]
 	public void IncomingDamage_AccumulatesTotalDamageTaken()
 	{
-		this.processor.Process(DamageTaken("Orc", baseDmg: 80));
-		this.processor.Process(DamageTaken("Orc", baseDmg: 20));
+		this.processor.Process(DamageTaken("Orc", 80));
+		this.processor.Process(DamageTaken("Orc", 20));
 
 		this.summary.TotalDamageTaken.Should().Be(100);
 		this.summary.HitCount.Should().Be(0, "incoming damage does not count as outgoing hits");
@@ -183,9 +215,9 @@ public sealed class CombatProcessorSummaryTests
 	[Fact]
 	public void IncomingDamage_AccumulatesDamageTakenByAttacker()
 	{
-		this.processor.Process(DamageTaken("OrcA", baseDmg: 50));
-		this.processor.Process(DamageTaken("OrcB", baseDmg: 70));
-		this.processor.Process(DamageTaken("OrcA", baseDmg: 30));
+		this.processor.Process(DamageTaken("OrcA", 50));
+		this.processor.Process(DamageTaken("OrcB", 70));
+		this.processor.Process(DamageTaken("OrcA", 30));
 
 		this.summary.DamageTakenByAttacker["OrcA"].Should().Be(80);
 		this.summary.DamageTakenByAttacker["OrcB"].Should().Be(70);
@@ -196,8 +228,8 @@ public sealed class CombatProcessorSummaryTests
 	[Fact]
 	public void DotTick_AccumulatesTotalDamageDealt()
 	{
-		this.processor.Process(DotDealt("Mob", "Plague", baseDmg: 30));
-		this.processor.Process(DotDealt("Mob", "Plague", baseDmg: 30));
+		this.processor.Process(DotDealt("Mob", "Plague", 30));
+		this.processor.Process(DotDealt("Mob", "Plague", 30));
 
 		this.summary.TotalDamageDealt.Should().Be(60);
 		this.summary.HitCount.Should().Be(2);
@@ -255,9 +287,9 @@ public sealed class CombatProcessorSummaryTests
 	[Fact]
 	public void Reset_ClearsAllSummaryStats()
 	{
-		this.processor.Process(SpellDealt("Mob", "Fireball", baseDmg: 100, crit: 20, absorbed: 10));
+		this.processor.Process(SpellDealt("Mob", "Fireball", 100, 20, 10));
 		this.processor.Process(WeaponDealt("Mob", "Slash"));
-		this.processor.Process(DamageTaken("Orc", baseDmg: 50));
+		this.processor.Process(DamageTaken("Orc", 50));
 		this.processor.Process(OutgoingHeal("Ally", 200));
 		this.processor.Process(IncomingHeal("Cleric", 100));
 		this.processor.Process(SpellResist());

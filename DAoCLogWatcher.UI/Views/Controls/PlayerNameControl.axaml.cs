@@ -7,36 +7,48 @@ using Avalonia.Media;
 
 namespace DAoCLogWatcher.UI.Views.Controls;
 
-public partial class PlayerNameControl : UserControl
+public partial class PlayerNameControl: UserControl
 {
-    public static readonly StyledProperty<string?> PlayerNameProperty =
-        AvaloniaProperty.Register<PlayerNameControl, string?>(nameof(PlayerName));
+	public static readonly StyledProperty<string?> PlayerNameProperty = AvaloniaProperty.Register<PlayerNameControl, string?>(nameof(PlayerName));
 
-    public static readonly StyledProperty<IBrush?> NameForegroundProperty =
-        AvaloniaProperty.Register<PlayerNameControl, IBrush?>(nameof(NameForeground));
+	public static readonly StyledProperty<IBrush?> NameForegroundProperty = AvaloniaProperty.Register<PlayerNameControl, IBrush?>(nameof(NameForeground));
 
-    public static readonly StyledProperty<double> NameFontSizeProperty =
-        AvaloniaProperty.Register<PlayerNameControl, double>(nameof(NameFontSize), 13.0);
+	public static readonly StyledProperty<double> NameFontSizeProperty = AvaloniaProperty.Register<PlayerNameControl, double>(nameof(NameFontSize), 13.0);
 
-    public string? PlayerName { get => GetValue(PlayerNameProperty); set => SetValue(PlayerNameProperty, value); }
-    public IBrush? NameForeground { get => GetValue(NameForegroundProperty); set => SetValue(NameForegroundProperty, value); }
-    public double NameFontSize { get => GetValue(NameFontSizeProperty); set => SetValue(NameFontSizeProperty, value); }
+	public string? PlayerName
+	{
+		get => this.GetValue(PlayerNameProperty);
+		set => this.SetValue(PlayerNameProperty, value);
+	}
 
-    public PlayerNameControl()
-    {
-        InitializeComponent();
-    }
+	public IBrush? NameForeground
+	{
+		get => this.GetValue(NameForegroundProperty);
+		set => this.SetValue(NameForegroundProperty, value);
+	}
 
-    private void OnClick(object? sender, RoutedEventArgs e)
-    {
-        var name = PlayerName;
-        if(string.IsNullOrEmpty(name))
-        {
-            return;
-        }
+	public double NameFontSize
+	{
+		get => this.GetValue(NameFontSizeProperty);
+		set => this.SetValue(NameFontSizeProperty, value);
+	}
 
-        Process.Start(new ProcessStartInfo(
-            $"https://eden-daoc.net/herald?n=player&k={Uri.EscapeDataString(name)}")
-            { UseShellExecute = true });
-    }
+	public PlayerNameControl()
+	{
+		this.InitializeComponent();
+	}
+
+	private void OnClick(object? sender, RoutedEventArgs e)
+	{
+		var name = this.PlayerName;
+		if(string.IsNullOrEmpty(name))
+		{
+			return;
+		}
+
+		Process.Start(new ProcessStartInfo($"https://eden-daoc.net/herald?n=player&k={Uri.EscapeDataString(name)}")
+		              {
+				              UseShellExecute = true
+		              });
+	}
 }

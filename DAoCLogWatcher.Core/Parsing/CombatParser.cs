@@ -78,52 +78,51 @@ public sealed partial class CombatParser
 		if(this.TryMatchHealCrit(line, out heal))
 		{
 			damage = this.FlushPendingDealtOrFallback(flushedTaken);
-			return heal != null || damage != null;
+			return heal != null||damage != null;
 		}
 
-		// Not a heal crit — flush any outgoing heal that was waiting for one
 		var flushedHeal = this.FlushPendingOutgoingHeal();
 
 		if(this.TryMatchSpellCast(line))
 		{
 			damage = this.FlushPendingDealtOrFallback(flushedTaken);
 			heal = flushedHeal;
-			return damage != null || heal != null;
+			return damage != null||heal != null;
 		}
 
 		if(this.TryMatchBowShot(line))
 		{
 			damage = this.FlushPendingDealtOrFallback(flushedTaken);
 			heal = flushedHeal;
-			return damage != null || heal != null;
+			return damage != null||heal != null;
 		}
 
 		if(this.TryMatchStylePerformed(line))
 		{
 			damage = this.FlushPendingDealtOrFallback(flushedTaken);
 			heal = flushedHeal;
-			return damage != null || heal != null;
+			return damage != null||heal != null;
 		}
 
 		if(this.TryMatchStylePrepare(line))
 		{
 			damage = this.FlushPendingDealtOrFallback(flushedTaken);
 			heal = flushedHeal;
-			return damage != null || heal != null;
+			return damage != null||heal != null;
 		}
 
 		if(this.TryMatchStyleChainFallback(line))
 		{
 			damage = this.FlushPendingDealtOrFallback(flushedTaken);
 			heal = flushedHeal;
-			return damage != null || heal != null;
+			return damage != null||heal != null;
 		}
 
 		if(this.TryMatchStyleFailed(line))
 		{
 			damage = this.FlushPendingDealtOrFallback(flushedTaken);
 			heal = flushedHeal;
-			return damage != null || heal != null;
+			return damage != null||heal != null;
 		}
 
 		if(this.TryMatchIncomingHeal(line, out heal))
@@ -136,27 +135,27 @@ public sealed partial class CombatParser
 		{
 			damage = this.FlushPendingDealtOrFallback(flushedTaken);
 			heal = flushedHeal;
-			return damage != null || heal != null;
+			return damage != null||heal != null;
 		}
 
 		if(this.TryMatchAnyDealtHit(line, out var dealtPending))
 		{
 			damage = this.SwapPendingDealt(dealtPending, flushedTaken);
 			heal = flushedHeal;
-			return damage != null || heal != null;
+			return damage != null||heal != null;
 		}
 
 		if(this.TryMatchDealtCrit(line, out damage))
 		{
 			heal = flushedHeal;
-			return damage != null || heal != null;
+			return damage != null||heal != null;
 		}
 
 		if(this.TryMatchTakenHit(line, out var takenPending))
 		{
 			damage = this.SetTakenPending(takenPending, flushedTaken);
 			heal = flushedHeal;
-			return damage != null || heal != null;
+			return damage != null||heal != null;
 		}
 
 		if(this.TryMatchMeleeMiss(line, out miss)||this.TryMatchBlock(line, out miss)||this.TryMatchSpellResist(line, out miss))
@@ -166,14 +165,12 @@ public sealed partial class CombatParser
 			return true;
 		}
 
-		// No combat match — flush any stale pending
 		this.pendingHealCrit = 0;
 		damage = this.FlushPendingDealtOrFallback(flushedTaken);
 		heal = flushedHeal;
-		return damage != null || heal != null;
+		return damage != null||heal != null;
 	}
 
-	/// <summary>Flush any pending events (call at end of session/reset).</summary>
 	public DamageEvent? FlushPending()
 	{
 		if(this.pendingDealt != null)
@@ -190,8 +187,6 @@ public sealed partial class CombatParser
 
 		return null;
 	}
-
-	// ── Match methods ────────────────────────────────────────────────────
 
 	private bool TryTakenCritContinuation(string line, out DamageEvent? damage)
 	{
@@ -285,10 +280,10 @@ public sealed partial class CombatParser
 		return true;
 	}
 
-	private bool TryMatchAnyDealtHit(string line, out PendingDamage pending) =>
-		this.TryMatchWeaponAttack(line, out pending) ||
-		this.TryMatchDealtSpellHit(line, out pending) ||
-		this.TryMatchDealtDotHit(line, out pending);
+	private bool TryMatchAnyDealtHit(string line, out PendingDamage pending)
+	{
+		return this.TryMatchWeaponAttack(line, out pending)||this.TryMatchDealtSpellHit(line, out pending)||this.TryMatchDealtDotHit(line, out pending);
+	}
 
 	private string? ResolveStyleName(TimeOnly hitTimestamp)
 	{
@@ -313,7 +308,10 @@ public sealed partial class CombatParser
 		var crit = int.Parse(match.Groups["crit"].Value, CultureInfo.InvariantCulture);
 		if(this.pendingOutgoingHeal != null)
 		{
-			heal = this.pendingOutgoingHeal with { CritHitPoints = crit };
+			heal = this.pendingOutgoingHeal with
+			       {
+					       CritHitPoints = crit
+			       };
 			this.pendingOutgoingHeal = null;
 		}
 		else
@@ -515,8 +513,6 @@ public sealed partial class CombatParser
 		return true;
 	}
 
-	// ── State management helpers ─────────────────────────────────────────
-
 	/// <summary>
 	/// Two-tier spell attribution:
 	/// 1. Within window of last cast → attribute to that spell and confirm it deals damage.
@@ -618,10 +614,8 @@ public sealed partial class CombatParser
 
 	private DamageEvent? FlushForMiss(DamageEvent? flushedTaken)
 	{
-		return flushedTaken ?? (this.pendingDealt != null?FlushPendingDealt():null);
+		return flushedTaken ?? (this.pendingDealt != null?this.FlushPendingDealt():null);
 	}
-
-	// ── Parsing utilities ────────────────────────────────────────────────
 
 	private static bool ExtractTimestamp(Match match, out TimeOnly timestamp)
 	{
@@ -634,7 +628,6 @@ public sealed partial class CombatParser
 		return group.Success?int.Parse(group.Value, CultureInfo.InvariantCulture):0;
 	}
 
-	// ── Regex patterns ───────────────────────────────────────────────────
 
 	// [HH:mm:ss] You attack {target} with your {weapon} and hit for {N} (-{abs}) damage! (Damage Modifier: X)
 	[GeneratedRegex(@"^\[(?<ts>\d{2}:\d{2}:\d{2})\] You attack (?<target>.+?) with your (?<weapon>.+?) and hit for (?<dmg>\d+)(?: \(-(?<abs>\d+)\))? damage!", RegexOptions.Compiled|RegexOptions.CultureInvariant)]
@@ -723,16 +716,16 @@ public sealed partial class CombatParser
 		{
 			return new DamageEvent
 			       {
-					       Timestamp = Timestamp,
-					       Opponent = Opponent,
-					       BaseDamage = BaseDamage,
-					       Absorbed = Absorbed,
-					       IsDealt = IsDealt,
+					       Timestamp = this.Timestamp,
+					       Opponent = this.Opponent,
+					       BaseDamage = this.BaseDamage,
+					       Absorbed = this.Absorbed,
+					       IsDealt = this.IsDealt,
 					       CritDamage = critDamage,
-					       SpellName = SpellName,
-					       IsWeaponAttack = IsWeaponAttack,
-					       StyleName = StyleName,
-					       IsDotTick = IsDotTick
+					       SpellName = this.SpellName,
+					       IsWeaponAttack = this.IsWeaponAttack,
+					       StyleName = this.StyleName,
+					       IsDotTick = this.IsDotTick
 			       };
 		}
 	}

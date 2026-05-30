@@ -31,8 +31,9 @@ public partial class RealmPointLogEntry: ObservableObject
 			return;
 		}
 
-		Process.Start(new ProcessStartInfo(
-			$"https://eden-daoc.net/herald?n=player&k={Uri.EscapeDataString(this.VictimName)}")
-			{ UseShellExecute = true });
+		Process.Start(new ProcessStartInfo($"https://eden-daoc.net/herald?n=player&k={Uri.EscapeDataString(this.VictimName)}")
+		              {
+				              UseShellExecute = true
+		              });
 	}
 }

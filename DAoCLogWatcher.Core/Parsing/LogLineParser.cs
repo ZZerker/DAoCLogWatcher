@@ -16,14 +16,7 @@ internal sealed partial class LogLineParser
 	private readonly CombatParser combatParser = new();
 	private KillEvent? lastKillEvent;
 
-	internal readonly record struct ParseResult(
-		RealmPointEntry? Entry,
-		DamageEvent? DamageEvent,
-		HealEvent? HealEvent,
-		MissEvent? MissEvent,
-		KillEvent? KillEvent,
-		SendEvent? SendEvent,
-		RegionEvent? RegionEvent);
+	internal readonly record struct ParseResult(RealmPointEntry? Entry, DamageEvent? DamageEvent, HealEvent? HealEvent, MissEvent? MissEvent, KillEvent? KillEvent, SendEvent? SendEvent, RegionEvent? RegionEvent);
 
 	internal ParseResult Parse(string line, string? currentCharacterName)
 	{
@@ -113,8 +106,10 @@ internal sealed partial class LogLineParser
 		       };
 	}
 
-	private static bool TryParseTimestamp(Match match, out TimeOnly timestamp) =>
-		TimeOnly.TryParseExact(match.Groups["timestamp"].Value, "HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out timestamp);
+	private static bool TryParseTimestamp(Match match, out TimeOnly timestamp)
+	{
+		return TimeOnly.TryParseExact(match.Groups["timestamp"].Value, "HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out timestamp);
+	}
 
 	[GeneratedRegex(@"^\[(?<timestamp>\d{2}:\d{2}:\d{2})\] (?<victim>.+?) was just killed by (?<killer>\w+) in (?<zone>.+)\.$", RegexOptions.Compiled|RegexOptions.CultureInvariant)]
 	private static partial Regex GenerateKillLineRegex();

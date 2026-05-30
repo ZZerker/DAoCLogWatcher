@@ -281,7 +281,16 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 
 	// ── Per-line processing ──────────────────────────────────────────────
 
-	private readonly record struct ParsedLine(bool ShouldYield, RealmPointEntry? Entry, DamageEvent? DamageEvent, HealEvent? HealEvent, MissEvent? MissEvent, KillEvent? KillEvent, SendEvent? SendEvent, RegionEvent? RegionEvent, string? CharacterName);
+	private readonly record struct ParsedLine(
+			bool ShouldYield,
+			RealmPointEntry? Entry,
+			DamageEvent? DamageEvent,
+			HealEvent? HealEvent,
+			MissEvent? MissEvent,
+			KillEvent? KillEvent,
+			SendEvent? SendEvent,
+			RegionEvent? RegionEvent,
+			string? CharacterName);
 
 	private ParsedLine ProcessOneLine(string line)
 	{
@@ -433,5 +442,4 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 
 	[GeneratedRegex(@"^Statistics for (?<name>\w+) this Session:$", RegexOptions.CultureInvariant)]
 	private static partial Regex GenerateStatsCharacterRegex();
-
 }

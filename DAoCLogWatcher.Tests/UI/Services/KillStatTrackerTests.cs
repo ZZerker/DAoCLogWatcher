@@ -10,7 +10,15 @@ public sealed class KillStatTrackerTests
 	private static readonly TimeOnly T0 = new(20, 0, 0);
 
 	private static KillEvent Kill(string killer, string victim)
-		=> new() { Timestamp = T0, Killer = killer, Victim = victim, Zone = "Emain Macha" };
+	{
+		return new KillEvent
+		       {
+				       Timestamp = T0,
+				       Killer = killer,
+				       Victim = victim,
+				       Zone = "Emain Macha"
+		       };
+	}
 
 	// ── OnKillEvent ───────────────────────────────────────────────────────────
 
@@ -77,6 +85,7 @@ public sealed class KillStatTrackerTests
 	public void OnCharacterChanged_RecomputesFromBuffer()
 	{
 		var changed = false;
+
 		// Events arrive before character is known
 		this.tracker.OnKillEvent(Kill("MyChar", "Enemy1"), null, ref changed);
 		this.tracker.OnKillEvent(Kill("Enemy2", "MyChar"), null, ref changed);
@@ -118,9 +127,11 @@ public sealed class KillStatTrackerTests
 	{
 		var changed = false;
 		this.tracker.OnKillEvent(Kill("MyChar", "Enemy"), "MyChar", ref changed);
+
 		// Kills=1, Deaths=0
 
 		changed = false;
+
 		// Same character name; recompute produces the same counts, so changed stays false
 		this.tracker.OnCharacterChanged("MyChar", ref changed);
 
@@ -131,10 +142,12 @@ public sealed class KillStatTrackerTests
 	public void OnCharacterChanged_ToDifferentCharacter_RecomputesFromBuffer()
 	{
 		var changed = false;
+
 		// Buffer 3 events: Alice has 2 kills, Bob has 1
 		this.tracker.OnKillEvent(Kill("Alice", "Enemy1"), "Alice", ref changed);
 		this.tracker.OnKillEvent(Kill("Alice", "Enemy2"), "Alice", ref changed);
 		this.tracker.OnKillEvent(Kill("Bob", "Enemy3"), "Alice", ref changed);
+
 		// Kills=2, Deaths=0 (tracked for Alice)
 
 		changed = false;

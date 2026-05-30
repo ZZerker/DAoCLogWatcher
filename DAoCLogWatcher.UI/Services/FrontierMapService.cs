@@ -10,7 +10,7 @@ public interface IFrontierMapService
 	FrontierMapData Load();
 }
 
-public class FrontierMapService : IFrontierMapService
+public class FrontierMapService: IFrontierMapService
 {
 	private static readonly JsonSerializerOptions Options = new()
 	                                                        {

@@ -5,31 +5,40 @@ using DAoCLogWatcher.UI.Models;
 
 namespace DAoCLogWatcher.UI.ViewModels;
 
-public sealed partial class DashboardWidgetViewModel : ObservableObject
+public sealed partial class DashboardWidgetViewModel: ObservableObject
 {
 	public DashboardWidgetId Id { get; }
+
 	public string Label { get; }
 
 	[ObservableProperty] private bool isVisible;
 	[ObservableProperty] private DashboardWidgetSize size;
 
 	public bool IsSizeSmall => this.Size == DashboardWidgetSize.Small;
+
 	public bool IsSizeMedium => this.Size == DashboardWidgetSize.Medium;
+
 	public bool IsSizeLarge => this.Size == DashboardWidgetSize.Large;
 
 	public IRelayCommand MoveUpCommand { get; }
+
 	public IRelayCommand MoveDownCommand { get; }
+
 	public IRelayCommand SetSmallCommand { get; }
+
 	public IRelayCommand SetMediumCommand { get; }
+
 	public IRelayCommand SetLargeCommand { get; }
 
 	private readonly Action<DashboardWidgetViewModel> onChanged;
 
-	public DashboardWidgetViewModel(
-		DashboardWidgetId id, string label, bool isVisible, DashboardWidgetSize size,
-		Action<DashboardWidgetViewModel> onMoveUp,
-		Action<DashboardWidgetViewModel> onMoveDown,
-		Action<DashboardWidgetViewModel> onChanged)
+	public DashboardWidgetViewModel(DashboardWidgetId id,
+	                                string label,
+	                                bool isVisible,
+	                                DashboardWidgetSize size,
+	                                Action<DashboardWidgetViewModel> onMoveUp,
+	                                Action<DashboardWidgetViewModel> onMoveDown,
+	                                Action<DashboardWidgetViewModel> onChanged)
 	{
 		this.Id = id;
 		this.Label = label;
@@ -43,7 +52,10 @@ public sealed partial class DashboardWidgetViewModel : ObservableObject
 		this.SetLargeCommand = new RelayCommand(() => this.Size = DashboardWidgetSize.Large);
 	}
 
-	partial void OnIsVisibleChanged(bool value) => this.onChanged(this);
+	partial void OnIsVisibleChanged(bool value)
+	{
+		this.onChanged(this);
+	}
 
 	partial void OnSizeChanged(DashboardWidgetSize value)
 	{

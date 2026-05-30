@@ -33,7 +33,9 @@ public class ZoneMapService
 	private Dictionary<int, PixelBounds>? zonePixelIndex;
 	private SKBitmap? keepR1, keepR2, keepR3;
 	private SKBitmap? towerR1, towerR2, towerR3;
+
 	private SKBitmap? flameBitmap;
+
 	// [realm 1-3, size 1-3] — 1-based indexing, slot [0,*] and [*,0] unused
 	private readonly SKBitmap?[,] fightBitmaps = new SKBitmap?[4, 4];
 	private readonly SKBitmap?[,] groupBitmaps = new SKBitmap?[4, 4];
@@ -45,17 +47,13 @@ public class ZoneMapService
 	{
 		var normalized = NormalizeName(location);
 
-		var matchedZone = map.Zones.FirstOrDefault(z =>
-			z.PixelBounds != null &&
-			string.Equals(NormalizeName(z.Name), normalized, StringComparison.OrdinalIgnoreCase));
+		var matchedZone = map.Zones.FirstOrDefault(z => z.PixelBounds != null&&string.Equals(NormalizeName(z.Name), normalized, StringComparison.OrdinalIgnoreCase));
 		if(matchedZone != null)
 		{
 			return new MinimapViewSpec(matchedZone.PixelBounds!, matchedZone.ZoneId, null, null, matchedZone.Name);
 		}
 
-		var matchedKeep = map.Keeps.FirstOrDefault(k =>
-			k.Pixel != null &&
-			string.Equals(NormalizeName(k.Name), normalized, StringComparison.OrdinalIgnoreCase));
+		var matchedKeep = map.Keeps.FirstOrDefault(k => k.Pixel != null&&string.Equals(NormalizeName(k.Name), normalized, StringComparison.OrdinalIgnoreCase));
 		if(matchedKeep == null)
 		{
 			return null;
@@ -63,14 +61,9 @@ public class ZoneMapService
 
 		var kx = matchedKeep.Pixel!.X;
 		var ky = matchedKeep.Pixel.Y;
-		var containingZone = map.Zones.FirstOrDefault(z =>
-			z.PixelBounds != null &&
-			kx >= z.PixelBounds.X && kx <= z.PixelBounds.X + z.PixelBounds.Width &&
-			ky >= z.PixelBounds.Y && ky <= z.PixelBounds.Y + z.PixelBounds.Height);
+		var containingZone = map.Zones.FirstOrDefault(z => z.PixelBounds != null&&kx >= z.PixelBounds.X&&kx <= z.PixelBounds.X + z.PixelBounds.Width&&ky >= z.PixelBounds.Y&&ky <= z.PixelBounds.Y + z.PixelBounds.Height);
 
-		return containingZone == null
-			? null
-			: new MinimapViewSpec(containingZone.PixelBounds!, containingZone.ZoneId, kx, ky, containingZone.Name);
+		return containingZone == null?null:new MinimapViewSpec(containingZone.PixelBounds!, containingZone.ZoneId, kx, ky, containingZone.Name);
 	}
 
 	public void InitializeMinimapPlot(Plot plot)
@@ -81,7 +74,12 @@ public class ZoneMapService
 		plot.Axes.SetLimits(0, 1408, -1536, 0);
 	}
 
-	public void ApplyMinimapOverlay(Plot plot, FrontierMapData map, MinimapViewSpec spec, IReadOnlyDictionary<string, WarmapKeepState>? liveKeeps = null, IReadOnlyList<WarmapActivityEntry>? fights = null, IReadOnlyList<WarmapActivityEntry>? groups = null)
+	public void ApplyMinimapOverlay(Plot plot,
+	                                FrontierMapData map,
+	                                MinimapViewSpec spec,
+	                                IReadOnlyDictionary<string, WarmapKeepState>? liveKeeps = null,
+	                                IReadOnlyList<WarmapActivityEntry>? fights = null,
+	                                IReadOnlyList<WarmapActivityEntry>? groups = null)
 	{
 		this.EnsureIconsLoaded();
 		plot.Clear();
@@ -106,7 +104,7 @@ public class ZoneMapService
 
 		this.DrawKeepsAndTowers(plot, map.Keeps, liveKeeps, null, b);
 
-		if(spec.PlayerPixelX.HasValue && spec.PlayerPixelY.HasValue)
+		if(spec.PlayerPixelX.HasValue&&spec.PlayerPixelY.HasValue)
 		{
 			var pm = plot.Add.Marker(spec.PlayerPixelX.Value, -spec.PlayerPixelY.Value, MarkerShape.FilledCircle, 14);
 			pm.Color = Color.FromHex("#FFFF00").WithAlpha(0.9);
@@ -122,15 +120,14 @@ public class ZoneMapService
 			var zoneIdx = this.GetOrBuildZoneIndex(map);
 			if(groups != null)
 			{
-				this.DrawActivityMarkers(plot, groups.Where(g => g.Zone == spec.ActiveZoneId.Value).ToList(), isFight: false, zoneIdx);
+				this.DrawActivityMarkers(plot, groups.Where(g => g.Zone == spec.ActiveZoneId.Value).ToList(), false, zoneIdx);
 			}
 
 			if(fights != null)
 			{
-				this.DrawActivityMarkers(plot, fights.Where(f => f.Zone == spec.ActiveZoneId.Value).ToList(), isFight: true, zoneIdx);
+				this.DrawActivityMarkers(plot, fights.Where(f => f.Zone == spec.ActiveZoneId.Value).ToList(), true, zoneIdx);
 			}
 		}
-
 	}
 
 	public void InitializePlot(Plot plot, FrontierMapData map)
@@ -182,7 +179,13 @@ public class ZoneMapService
 		plot.Axes.SetLimits(-20, 1440, -1580, 20);
 	}
 
-	public void ApplyHeatmapOverlay(Plot plot, FrontierMapData map, IReadOnlyDictionary<string, int> zoneCounts, IReadOnlyDictionary<string, WarmapKeepState>? liveKeeps = null, IReadOnlyList<WarmapActivityEntry>? fights = null, IReadOnlyList<WarmapActivityEntry>? groups = null, bool showFights = true)
+	public void ApplyHeatmapOverlay(Plot plot,
+	                                FrontierMapData map,
+	                                IReadOnlyDictionary<string, int> zoneCounts,
+	                                IReadOnlyDictionary<string, WarmapKeepState>? liveKeeps = null,
+	                                IReadOnlyList<WarmapActivityEntry>? fights = null,
+	                                IReadOnlyList<WarmapActivityEntry>? groups = null,
+	                                bool showFights = true)
 	{
 		this.EnsureIconsLoaded();
 		plot.Clear();
@@ -398,12 +401,12 @@ public class ZoneMapService
 			var zoneIdx = this.GetOrBuildZoneIndex(map);
 			if(groups != null)
 			{
-				this.DrawActivityMarkers(plot, groups, isFight: false, zoneIdx);
+				this.DrawActivityMarkers(plot, groups, false, zoneIdx);
 			}
 
 			if(fights != null)
 			{
-				this.DrawActivityMarkers(plot, fights, isFight: true, zoneIdx);
+				this.DrawActivityMarkers(plot, fights, true, zoneIdx);
 			}
 		}
 
@@ -420,8 +423,8 @@ public class ZoneMapService
 			var dx = mapX - entry.Px;
 			var dy = mapY - entry.Py;
 			var dist = Math.Sqrt(dx * dx + dy * dy);
-			var threshold = entry.IsKeep ? 20.0 : 12.0;
-			if(dist <= threshold && dist < bestDist)
+			var threshold = entry.IsKeep?20.0:12.0;
+			if(dist <= threshold&&dist < bestDist)
 			{
 				best = entry;
 				bestDist = dist;
@@ -449,27 +452,25 @@ public class ZoneMapService
 			return this.zonePixelIndex;
 		}
 
-		this.zonePixelIndex = map.Zones
-		                         .Where(z => z.PixelBounds != null)
-		                         .ToDictionary(z => z.ZoneId, z => z.PixelBounds!);
+		this.zonePixelIndex = map.Zones.Where(z => z.PixelBounds != null).ToDictionary(z => z.ZoneId, z => z.PixelBounds!);
 		return this.zonePixelIndex;
 	}
 
 	private void DrawKeepsAndTowers(Plot plot, IEnumerable<FrontierKeep> keeps, IReadOnlyDictionary<string, WarmapKeepState>? liveKeeps, List<(string Name, double Px, double Py, bool IsKeep)>? burning, PixelBounds? clipBounds = null)
 	{
-		foreach(var k in keeps.Where(k => k.Pixel != null && k.Type is "keep" or "tower"))
+		foreach(var k in keeps.Where(k => k.Pixel != null&&k.Type is "keep" or "tower"))
 		{
 			var kx = k.Pixel!.X;
 			var ky = k.Pixel.Y;
 
-			if(clipBounds != null && (kx < clipBounds.X || kx > clipBounds.X + clipBounds.Width || ky < clipBounds.Y || ky > clipBounds.Y + clipBounds.Height))
+			if(clipBounds != null&&(kx < clipBounds.X||kx > clipBounds.X + clipBounds.Width||ky < clipBounds.Y||ky > clipBounds.Y + clipBounds.Height))
 			{
 				continue;
 			}
 
 			WarmapKeepState? live = null;
 			liveKeeps?.TryGetValue(NormalizeName(k.Name), out live);
-			var realm = live != null ? RealmFromInt(live.Realm) : k.DefaultRealm;
+			var realm = live != null?RealmFromInt(live.Realm):k.DefaultRealm;
 			var isKeep = k.Type == "keep";
 
 			if(live?.InCombat == true)
@@ -518,7 +519,7 @@ public class ZoneMapService
 
 			if(bmp != null)
 			{
-				plot.Add.ImageRect(new ScottPlot.Image(bmp), new CoordinateRect(px - half, px + half, py - half, py + half));
+				plot.Add.ImageRect(new Image(bmp), new CoordinateRect(px - half, px + half, py - half, py + half));
 			}
 			else
 			{
@@ -605,21 +606,24 @@ public class ZoneMapService
 
 		if(isKeep)
 		{
-			plot.Add.ImageRect(new ScottPlot.Image(this.flameBitmap), new CoordinateRect(x - 22, x + 22, y - 20, y + 20));
+			plot.Add.ImageRect(new Image(this.flameBitmap), new CoordinateRect(x - 22, x + 22, y - 20, y + 20));
 		}
 		else
 		{
-			plot.Add.ImageRect(new ScottPlot.Image(this.flameBitmap), new CoordinateRect(x - 10, x + 10, y - 16, y + 16));
+			plot.Add.ImageRect(new Image(this.flameBitmap), new CoordinateRect(x - 10, x + 10, y - 16, y + 16));
 		}
 	}
 
-	private static string? RealmFromInt(int realm) => realm switch
+	private static string? RealmFromInt(int realm)
 	{
-			1 => "Albion",
-			2 => "Midgard",
-			3 => "Hibernia",
-			_ => null
-	};
+		return realm switch
+		{
+				1 => "Albion",
+				2 => "Midgard",
+				3 => "Hibernia",
+				_ => null
+		};
+	}
 
 	private void DrawKeepIcon(Plot plot, double x, double y, string? realm)
 	{
@@ -638,7 +642,7 @@ public class ZoneMapService
 			return;
 		}
 
-		plot.Add.ImageRect(new ScottPlot.Image(bmp), new CoordinateRect(x - 15, x + 15, y - 12, y + 12));
+		plot.Add.ImageRect(new Image(bmp), new CoordinateRect(x - 15, x + 15, y - 12, y + 12));
 	}
 
 	private void DrawTowerIcon(Plot plot, double x, double y, string? realm)
@@ -658,7 +662,7 @@ public class ZoneMapService
 			return;
 		}
 
-		plot.Add.ImageRect(new ScottPlot.Image(bmp), new CoordinateRect(x - 5, x + 5, y - 11, y + 11));
+		plot.Add.ImageRect(new Image(bmp), new CoordinateRect(x - 5, x + 5, y - 11, y + 11));
 	}
 
 	private static void ApplyGaussian(double[,] grid, double px, double py, double weight, double sigma = 1.5)

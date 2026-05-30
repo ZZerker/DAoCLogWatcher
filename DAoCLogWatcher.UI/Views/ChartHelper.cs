@@ -44,11 +44,11 @@ internal static class ChartHelper
 
 	public static void ApplyTheme(bool isDark, params AvaPlot[] charts)
 	{
-		var bg = isDark ? "#252525" : "#FAFAFA";
-		var dataBg = isDark ? "#1E1E1E" : "#FFFFFF";
-		var gridMaj = isDark ? "#3A3A3A" : "#D0D0D0";
-		var gridMin = isDark ? "#2A2A2A" : "#EBEBEB";
-		var fg = isDark ? "#CCCCCC" : "#333333";
+		var bg = isDark?"#252525":"#FAFAFA";
+		var dataBg = isDark?"#1E1E1E":"#FFFFFF";
+		var gridMaj = isDark?"#3A3A3A":"#D0D0D0";
+		var gridMin = isDark?"#2A2A2A":"#EBEBEB";
+		var fg = isDark?"#CCCCCC":"#333333";
 		foreach(var chart in charts)
 		{
 			ApplyChartStyle(chart, bg, dataBg, gridMaj, gridMin, fg);
@@ -58,7 +58,7 @@ internal static class ChartHelper
 
 	public static void HandlePointerMoved(PointerEventArgs e, AvaPlot chart, Scatter? scatter, Marker? highlight, Text? tooltip, string unit)
 	{
-		if(scatter == null || highlight == null || tooltip == null)
+		if(scatter == null||highlight == null||tooltip == null)
 		{
 			return;
 		}
@@ -84,7 +84,7 @@ internal static class ChartHelper
 
 	public static void HandlePointerExited(AvaPlot chart, Marker? highlight, Text? tooltip)
 	{
-		if(highlight == null || tooltip == null)
+		if(highlight == null||tooltip == null)
 		{
 			return;
 		}

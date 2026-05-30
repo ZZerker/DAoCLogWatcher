@@ -5,22 +5,33 @@ namespace DAoCLogWatcher.Core;
 
 public sealed class SpellRegistry
 {
-	private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
+	private static readonly JsonSerializerOptions JsonOptions = new()
+	                                                            {
+			                                                            PropertyNameCaseInsensitive = true
+	                                                            };
 
 	private readonly Dictionary<string, SpellInfo> spells;
 
-	private SpellRegistry(Dictionary<string, SpellInfo> spells) => this.spells = spells;
+	private SpellRegistry(Dictionary<string, SpellInfo> spells)
+	{
+		this.spells = spells;
+	}
 
-	public bool TryGet(string name, out SpellInfo info) => this.spells.TryGetValue(name, out info!);
+	public bool TryGet(string name, out SpellInfo info)
+	{
+		return this.spells.TryGetValue(name, out info!);
+	}
 
-	public bool IsKnownAoeNuke(string name) => this.spells.TryGetValue(name, out var info) && info.IsAoeNuke;
+	public bool IsKnownAoeNuke(string name)
+	{
+		return this.spells.TryGetValue(name, out var info)&&info.IsAoeNuke;
+	}
 
 	public static SpellRegistry Empty { get; } = new(new Dictionary<string, SpellInfo>());
 
 	public static SpellRegistry LoadFromEmbedded()
 	{
-		using var stream = typeof(SpellRegistry).Assembly
-			.GetManifestResourceStream("DAoCLogWatcher.Core.Resources.spells.json");
+		using var stream = typeof(SpellRegistry).Assembly.GetManifestResourceStream("DAoCLogWatcher.Core.Resources.spells.json");
 		if(stream == null)
 		{
 			return Empty;
@@ -32,6 +43,7 @@ public sealed class SpellRegistry
 		{
 			dict.TryAdd(spell.Name, spell);
 		}
+
 		return new SpellRegistry(dict);
 	}
 }

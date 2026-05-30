@@ -24,39 +24,48 @@ public sealed class CombatProcessorDotStackTests
 	private static readonly TimeOnly T0 = new(20, 0, 0);
 
 	private static DamageLogLine DotTick(string target, string spell, TimeOnly ts, int baseDmg = 30, int crit = 0)
-		=> new("", new DamageEvent
-		{
-			Timestamp = ts,
-			Opponent = target,
-			BaseDamage = baseDmg,
-			CritDamage = crit,
-			Absorbed = 0,
-			IsDealt = true,
-			SpellName = spell,
-			IsWeaponAttack = false,
-			IsDotTick = true
-		});
+	{
+		return new DamageLogLine("",
+		                         new DamageEvent
+		                         {
+				                         Timestamp = ts,
+				                         Opponent = target,
+				                         BaseDamage = baseDmg,
+				                         CritDamage = crit,
+				                         Absorbed = 0,
+				                         IsDealt = true,
+				                         SpellName = spell,
+				                         IsWeaponAttack = false,
+				                         IsDotTick = true
+		                         });
+	}
 
 	private static DamageLogLine SpellHit(string target, string spell, TimeOnly ts)
-		=> new("", new DamageEvent
-		{
-			Timestamp = ts,
-			Opponent = target,
-			BaseDamage = 100,
-			Absorbed = 0,
-			IsDealt = true,
-			SpellName = spell,
-			IsWeaponAttack = false
-		});
+	{
+		return new DamageLogLine("",
+		                         new DamageEvent
+		                         {
+				                         Timestamp = ts,
+				                         Opponent = target,
+				                         BaseDamage = 100,
+				                         Absorbed = 0,
+				                         IsDealt = true,
+				                         SpellName = spell,
+				                         IsWeaponAttack = false
+		                         });
+	}
 
 	private static HealLogLine IncomingHeal(TimeOnly ts)
-		=> new("", new HealEvent
-		{
-			Timestamp = ts,
-			HitPoints = 100,
-			IsOutgoing = false,
-			Healer = "Cleric"
-		});
+	{
+		return new HealLogLine("",
+		                       new HealEvent
+		                       {
+				                       Timestamp = ts,
+				                       HitPoints = 100,
+				                       IsOutgoing = false,
+				                       Healer = "Cleric"
+		                       });
+	}
 
 	// ── First tick ────────────────────────────────────────────────────────────
 
@@ -78,8 +87,8 @@ public sealed class CombatProcessorDotStackTests
 	[Fact]
 	public void SecondTickSameTarget_UpdatesEntryInPlaceWithoutNewLoggedEvent()
 	{
-		this.processor.Process(DotTick("Mob", "Plague", T0, baseDmg: 30));
-		this.processor.Process(DotTick("Mob", "Plague", T0.Add(TimeSpan.FromSeconds(3)), baseDmg: 30));
+		this.processor.Process(DotTick("Mob", "Plague", T0, 30));
+		this.processor.Process(DotTick("Mob", "Plague", T0.Add(TimeSpan.FromSeconds(3)), 30));
 
 		this.logged.Should().HaveCount(1, "second tick mutates the existing entry");
 		this.logged[0].TotalDamage.Should().Be(60);
@@ -91,7 +100,7 @@ public sealed class CombatProcessorDotStackTests
 	{
 		for(var i = 0; i < 4; i++)
 		{
-			this.processor.Process(DotTick("Mob", "Plague", T0.Add(TimeSpan.FromSeconds(i * 3)), baseDmg: 25));
+			this.processor.Process(DotTick("Mob", "Plague", T0.Add(TimeSpan.FromSeconds(i * 3)), 25));
 		}
 
 		this.logged.Should().HaveCount(1);
@@ -115,17 +124,17 @@ public sealed class CombatProcessorDotStackTests
 	[Fact]
 	public void AoEDot_SecondRoundOfTicks_UpdatesExistingEntries()
 	{
-		this.processor.Process(DotTick("MobA", "Rain", T0, baseDmg: 20));
-		this.processor.Process(DotTick("MobB", "Rain", T0, baseDmg: 20));
-		this.processor.Process(DotTick("MobA", "Rain", T0.Add(TimeSpan.FromSeconds(3)), baseDmg: 20));
-		this.processor.Process(DotTick("MobB", "Rain", T0.Add(TimeSpan.FromSeconds(3)), baseDmg: 20));
+		this.processor.Process(DotTick("MobA", "Rain", T0, 20));
+		this.processor.Process(DotTick("MobB", "Rain", T0, 20));
+		this.processor.Process(DotTick("MobA", "Rain", T0.Add(TimeSpan.FromSeconds(3)), 20));
+		this.processor.Process(DotTick("MobB", "Rain", T0.Add(TimeSpan.FromSeconds(3)), 20));
 
 		this.logged.Should().HaveCount(2, "second round updates entries in place");
 		this.logged.Should().AllSatisfy(e =>
-		{
-			e.TotalDamage.Should().Be(40);
-			e.HitCount.Should().Be(2);
-		});
+		                                {
+			                                e.TotalDamage.Should().Be(40);
+			                                e.HitCount.Should().Be(2);
+		                                });
 	}
 
 	// ── Crit propagation ─────────────────────────────────────────────────────
@@ -134,7 +143,7 @@ public sealed class CombatProcessorDotStackTests
 	public void CritTick_SetsIsCritOnExistingEntry()
 	{
 		this.processor.Process(DotTick("Mob", "Plague", T0, crit: 0));
-		this.processor.Process(DotTick("Mob", "Plague", T0.Add(TimeSpan.FromSeconds(3)), baseDmg: 30, crit: 15));
+		this.processor.Process(DotTick("Mob", "Plague", T0.Add(TimeSpan.FromSeconds(3)), 30, 15));
 
 		this.logged[0].IsCrit.Should().BeTrue("a crit on any tick marks the entry as crit");
 	}
@@ -153,10 +162,10 @@ public sealed class CombatProcessorDotStackTests
 	[Fact]
 	public void DifferentSpellArrives_ClosesCurrentStackAndStartsNew()
 	{
-		this.processor.Process(DotTick("Mob", "Plague", T0, baseDmg: 30));
-		this.processor.Process(DotTick("Mob", "Plague", T0.Add(TimeSpan.FromSeconds(3)), baseDmg: 30));
+		this.processor.Process(DotTick("Mob", "Plague", T0, 30));
+		this.processor.Process(DotTick("Mob", "Plague", T0.Add(TimeSpan.FromSeconds(3)), 30));
 
-		this.processor.Process(DotTick("Mob", "Disease", T0.Add(TimeSpan.FromSeconds(4)), baseDmg: 20));
+		this.processor.Process(DotTick("Mob", "Disease", T0.Add(TimeSpan.FromSeconds(4)), 20));
 
 		this.logged.Should().HaveCount(2, "Disease creates a new entry after Plague stack is closed");
 		this.logged[0].SpellName.Should().Be("Plague");
@@ -169,13 +178,13 @@ public sealed class CombatProcessorDotStackTests
 	[Fact]
 	public void AfterWindowExpires_NewTickOfSameSpellStartsFreshEntry()
 	{
-		this.processor.Process(DotTick("Mob", "Plague", T0, baseDmg: 30));
+		this.processor.Process(DotTick("Mob", "Plague", T0, 30));
 
 		// 16s > DOT_STACK_WINDOW_SECONDS (15s) — window expires on next timestamped event
 		this.processor.Process(IncomingHeal(T0.Add(TimeSpan.FromSeconds(16))));
 
 		// New tick of same spell after expiry should create a fresh entry
-		this.processor.Process(DotTick("Mob", "Plague", T0.Add(TimeSpan.FromSeconds(17)), baseDmg: 30));
+		this.processor.Process(DotTick("Mob", "Plague", T0.Add(TimeSpan.FromSeconds(17)), 30));
 
 		this.logged.Should().HaveCount(2, "stack expired; new entry created for the second cast");
 		this.logged[1].HitCount.Should().Be(1);
@@ -186,8 +195,8 @@ public sealed class CombatProcessorDotStackTests
 	public void WithinWindow_TicksAccumulateAcrossGaps()
 	{
 		// 14s gap is within the 15s window — should still accumulate
-		this.processor.Process(DotTick("Mob", "Plague", T0, baseDmg: 30));
-		this.processor.Process(DotTick("Mob", "Plague", T0.Add(TimeSpan.FromSeconds(14)), baseDmg: 30));
+		this.processor.Process(DotTick("Mob", "Plague", T0, 30));
+		this.processor.Process(DotTick("Mob", "Plague", T0.Add(TimeSpan.FromSeconds(14)), 30));
 
 		this.logged.Should().HaveCount(1);
 		this.logged[0].TotalDamage.Should().Be(60);

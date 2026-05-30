@@ -9,6 +9,7 @@ namespace DAoCLogWatcher.UI.Services;
 public sealed class CombatProcessor(CombatSummary summary, SpellRegistry? dotRegistry = null): ICombatProcessor
 {
 	private readonly SpellRegistry registry = dotRegistry ?? SpellRegistry.Empty;
+
 	public event EventHandler<CombatLogEntry>? DamageLogged;
 
 	public event EventHandler<HealLogEntry>? HealLogged;
@@ -126,7 +127,7 @@ public sealed class CombatProcessor(CombatSummary summary, SpellRegistry? dotReg
 
 			var spellKey = damage.IsWeaponAttack?damage.StyleName ?? "Melee":damage.SpellName ?? "Other";
 			summary.DamageBySpell.TryGetValue(spellKey, out var existingSpell);
-			summary.DamageBySpell[spellKey] = (existingSpell.TotalDamage + damage.TotalDamage, existingSpell.HitCount + 1, existingSpell.CritCount + (damage.CritDamage > 0 ? 1 : 0));
+			summary.DamageBySpell[spellKey] = (existingSpell.TotalDamage + damage.TotalDamage, existingSpell.HitCount + 1, existingSpell.CritCount + (damage.CritDamage > 0?1:0));
 		}
 		else
 		{
@@ -229,7 +230,7 @@ public sealed class CombatProcessor(CombatSummary summary, SpellRegistry? dotReg
 
 	private void FinalizeHitWindow()
 	{
-		var threshold = this.multiHitIsKnownAoeNuke ? 2 : MULTI_HIT_THRESHOLD;
+		var threshold = this.multiHitIsKnownAoeNuke?2:MULTI_HIT_THRESHOLD;
 		if(this.multiHitTargets.Count >= threshold)
 		{
 			this.MultiHitDetected?.Invoke(this,
@@ -270,20 +271,20 @@ public sealed class CombatProcessor(CombatSummary summary, SpellRegistry? dotReg
 
 		if(!this.dotStackEntries.TryGetValue(target, out var entry))
 		{
-			var isAoe = this.registry.TryGet(spell, out var info) && info.IsAoe;
+			var isAoe = this.registry.TryGet(spell, out var info)&&info.IsAoe;
 			entry = new CombatLogEntry
-			{
-				Timestamp = damage.Timestamp.ToString("HH:mm:ss"),
-				Opponent = target,
-				TotalDamage = damage.TotalDamage,
-				IsDealt = true,
-				IsCrit = damage.CritDamage > 0,
-				SpellName = spell,
-				IsWeaponAttack = false,
-				IsDotTick = true,
-				IsAoe = isAoe,
-				HitCount = 1
-			};
+			        {
+					        Timestamp = damage.Timestamp.ToString("HH:mm:ss"),
+					        Opponent = target,
+					        TotalDamage = damage.TotalDamage,
+					        IsDealt = true,
+					        IsCrit = damage.CritDamage > 0,
+					        SpellName = spell,
+					        IsWeaponAttack = false,
+					        IsDotTick = true,
+					        IsAoe = isAoe,
+					        HitCount = 1
+			        };
 			this.dotStackEntries[target] = entry;
 			this.lastDealtByOpponent[target] = entry;
 			this.DamageLogged?.Invoke(this, entry);
@@ -314,12 +315,12 @@ public sealed class CombatProcessor(CombatSummary summary, SpellRegistry? dotReg
 
 	private double DotWindowFor(string spell)
 	{
-		if(!this.registry.TryGet(spell, out var info) || info.DurationSeconds <= 0)
+		if(!this.registry.TryGet(spell, out var info)||info.DurationSeconds <= 0)
 		{
 			return DOT_STACK_FALLBACK_SECONDS;
 		}
 
-		var tick = info.FrequencySeconds > 0 ? info.FrequencySeconds : 2;
+		var tick = info.FrequencySeconds > 0?info.FrequencySeconds:2;
 		return info.DurationSeconds + tick + DOT_STACK_SLACK_SECONDS;
 	}
 

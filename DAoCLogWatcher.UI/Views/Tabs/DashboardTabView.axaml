@@ -87,7 +87,8 @@
                     <ItemsControl ItemsSource="{Binding DashboardWidgets}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="vm:DashboardWidgetViewModel">
-                                <Border BorderBrush="{DynamicResource AppRowBorder}" BorderThickness="0,0,0,1" Padding="0,4">
+                                <Border BorderBrush="{DynamicResource AppRowBorder}" BorderThickness="0,0,0,1"
+                                        Padding="0,4">
                                     <Grid ColumnDefinitions="26,26,*,Auto,Auto" ColumnSpacing="4">
                                         <Button Grid.Column="0" Content="↑" Command="{Binding MoveUpCommand}"
                                                 Classes="btn-ghost"
@@ -98,7 +99,8 @@
                                         <TextBlock Grid.Column="2" Text="{Binding Label}" FontSize="12"
                                                    Foreground="{DynamicResource AppTextPrimary}"
                                                    VerticalAlignment="Center" Margin="4,0" />
-                                        <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="3" Margin="0,0,6,0">
+                                        <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="3"
+                                                    Margin="0,0,6,0">
                                             <Button Content="S" Command="{Binding SetSmallCommand}"
                                                     Classes="btn-toggle"
                                                     Classes.active="{Binding IsSizeSmall}"
@@ -566,7 +568,8 @@
                                                                             NameForeground="{DynamicResource AppTextSecondary}"
                                                                             NameFontSize="11" />
                                                 <TextBlock Grid.Column="5" Text="{Binding Details}"
-                                                           FontSize="11" Foreground="{DynamicResource AppTextSecondary}"
+                                                           FontSize="11"
+                                                           Foreground="{DynamicResource AppTextSecondary}"
                                                            TextTrimming="CharacterEllipsis"
                                                            IsVisible="{Binding VictimName, Converter={x:Static StringConverters.IsNullOrEmpty}}" />
                                             </Grid>

@@ -18,7 +18,6 @@ public static partial class LogSessionScanner
 
 	private const string DATE_FORMAT = "ddd MMM d HH:mm:ss yyyy";
 
-	/// <summary>Scan the file and return all sessions, newest first.</summary>
 	public static List<LogSession> Scan(string logFilePath)
 	{
 		ArgumentException.ThrowIfNullOrWhiteSpace(logFilePath);

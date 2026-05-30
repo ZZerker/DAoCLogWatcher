@@ -108,7 +108,7 @@
     <Application.Styles>
         <FluentTheme />
 
-<Style Selector="Button.btn-primary">
+        <Style Selector="Button.btn-primary">
             <Setter Property="Background" Value="{DynamicResource AppPrimaryAction}" />
             <Setter Property="Foreground" Value="White" />
             <Setter Property="Padding" Value="14,8" />
@@ -117,7 +117,8 @@
             <Setter Property="CornerRadius" Value="6" />
             <Setter Property="BorderThickness" Value="0" />
         </Style>
-        <Style Selector="Button.btn-primary:pointerover /template/ ContentPresenter, Button.btn-primary:pressed /template/ ContentPresenter">
+        <Style
+            Selector="Button.btn-primary:pointerover /template/ ContentPresenter, Button.btn-primary:pressed /template/ ContentPresenter">
             <Setter Property="Background" Value="{DynamicResource AppPrimaryActionHover}" />
         </Style>
 
@@ -131,7 +132,8 @@
             <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}" />
             <Setter Property="BorderThickness" Value="1" />
         </Style>
-        <Style Selector="Button.btn-secondary:pointerover /template/ ContentPresenter, Button.btn-secondary:pressed /template/ ContentPresenter">
+        <Style
+            Selector="Button.btn-secondary:pointerover /template/ ContentPresenter, Button.btn-secondary:pressed /template/ ContentPresenter">
             <Setter Property="Background" Value="{DynamicResource AppButtonBgHover}" />
             <Setter Property="BorderBrush" Value="{DynamicResource AppAccentCyan}" />
         </Style>
@@ -151,7 +153,8 @@
         <Style Selector="Button.btn-icon.brand">
             <Setter Property="Tag" Value="brand" />
         </Style>
-        <Style Selector="Button.btn-icon:not(.brand):pointerover /template/ ContentPresenter, Button.btn-icon:not(.brand):pressed /template/ ContentPresenter">
+        <Style
+            Selector="Button.btn-icon:not(.brand):pointerover /template/ ContentPresenter, Button.btn-icon:not(.brand):pressed /template/ ContentPresenter">
             <Setter Property="Background" Value="{DynamicResource AppIconButtonHover}" />
         </Style>
 
@@ -163,7 +166,8 @@
             <Setter Property="CornerRadius" Value="4" />
             <Setter Property="BorderThickness" Value="0" />
         </Style>
-        <Style Selector="Button.btn-ghost:pointerover /template/ ContentPresenter, Button.btn-ghost:pressed /template/ ContentPresenter">
+        <Style
+            Selector="Button.btn-ghost:pointerover /template/ ContentPresenter, Button.btn-ghost:pressed /template/ ContentPresenter">
             <Setter Property="Background" Value="{DynamicResource AppGhostHoverBg}" />
             <Setter Property="TextElement.Foreground" Value="{DynamicResource AppTextPrimary}" />
         </Style>

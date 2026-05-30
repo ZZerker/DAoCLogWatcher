@@ -81,7 +81,8 @@ public sealed class MainWindowViewModelTests: IDisposable
 		               {
 				               ShowRealmPointsTab = false,
 				               ShowCombatTab = false,
-				               ShowHealLogTab = false,
+				               ShowHealLogTab = false
+
 				               // ShowCombatLogTab = false
 		               };
 
@@ -90,6 +91,7 @@ public sealed class MainWindowViewModelTests: IDisposable
 		vm.RealmPointsTab.Value.Should().BeFalse();
 		vm.CombatTab.Value.Should().BeFalse();
 		vm.HealLogTab.Value.Should().BeFalse();
+
 		// vm.CombatLogTab.Value.Should().BeFalse();
 	}
 

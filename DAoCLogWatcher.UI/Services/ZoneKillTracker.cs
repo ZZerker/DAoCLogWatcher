@@ -120,7 +120,7 @@ public sealed class ZoneKillTracker
 		}
 
 		var lastKill = this.allKillTimes[^1];
-		var end = lastKill < now ? lastKill : now;
+		var end = lastKill < now?lastKill:now;
 		if(sessionStart > end)
 		{
 			sessionStart = this.allKillTimes[0];
@@ -139,7 +139,7 @@ public sealed class ZoneKillTracker
 
 		foreach(var t in this.allKillTimes)
 		{
-			if(t < sessionStart || t > end)
+			if(t < sessionStart||t > end)
 			{
 				continue;
 			}

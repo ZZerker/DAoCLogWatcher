@@ -13,7 +13,8 @@
                                        ValueColor="{DynamicResource AppPositive}" />
                     <controls:StatTile Label="HEALS RECEIVED" Value="{Binding CombatSummary.TotalHealsReceived}"
                                        ValueColor="{DynamicResource AppPositive}" />
-                    <controls:StatTile Label="CRIT RATE" Value="{Binding CombatSummary.HealCritRate, StringFormat='{}{0:F1}%'}"
+                    <controls:StatTile Label="CRIT RATE"
+                                       Value="{Binding CombatSummary.HealCritRate, StringFormat='{}{0:F1}%'}"
                                        ValueColor="{DynamicResource AppCrit}" />
                     <controls:StatTile Label="PEOPLE HEALED" Value="{Binding CombatSummary.UniqueHealTargetCount}"
                                        ValueColor="{DynamicResource AppTextPrimary}" />
@@ -51,7 +52,8 @@
                                                  ValueColor="{DynamicResource AppPositive}" />
                             <controls:StatNumber Label="CRITS" Value="{Binding CombatSummary.HealCritCount}"
                                                  ValueColor="{DynamicResource AppCrit}" />
-                            <controls:StatNumber Label="CRIT RATE" Value="{Binding CombatSummary.HealCritRate, StringFormat='{}{0:F1}%'}"
+                            <controls:StatNumber Label="CRIT RATE"
+                                                 Value="{Binding CombatSummary.HealCritRate, StringFormat='{}{0:F1}%'}"
                                                  ValueColor="{DynamicResource AppCrit}" />
                         </StackPanel>
                         <Grid>
@@ -137,9 +139,9 @@
                                                MinWidth="80"
                                                Foreground="{DynamicResource AppAccentCyan}" />
                                     <controls:PlayerNameControl Grid.Column="4"
-                                                              PlayerName="{Binding Who}"
-                                                              NameForeground="{DynamicResource AppTextSecondary}"
-                                                              NameFontSize="13" />
+                                                                PlayerName="{Binding Who}"
+                                                                NameForeground="{DynamicResource AppTextSecondary}"
+                                                                NameFontSize="13" />
                                 </Grid>
                             </Border>
                         </DataTemplate>

@@ -23,10 +23,17 @@ public partial class SummarySidebar: UserControl
 	{
 		this.InitializeComponent();
 
-		this.renderTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1000.0 / 15) };
+		this.renderTimer = new DispatcherTimer
+		                   {
+				                   Interval = TimeSpan.FromMilliseconds(1000.0 / 15)
+		                   };
 		this.renderTimer.Tick += (_, _) =>
 		                         {
-			                         if(!this.isDirty) return;
+			                         if(!this.isDirty)
+			                         {
+				                         return;
+			                         }
+
 			                         this.isDirty = false;
 			                         this.RenderMinimap();
 		                         };
@@ -41,7 +48,10 @@ public partial class SummarySidebar: UserControl
 				                           this.vm = null;
 			                           }
 
-			                           if(this.DataContext is not MainWindowViewModel newVm) return;
+			                           if(this.DataContext is not MainWindowViewModel newVm)
+			                           {
+				                           return;
+			                           }
 
 			                           this.vm = newVm;
 			                           var app = (App)Application.Current!;
@@ -64,12 +74,10 @@ public partial class SummarySidebar: UserControl
 
 	private void OnMinimapLocationChanged(object? sender, EventArgs e)
 	{
-		if(this.vm != null && this.zoneMapService != null)
+		if(this.vm != null&&this.zoneMapService != null)
 		{
 			var loc = this.vm.CurrentMapLocation;
-			this.cachedMinimapSpec = string.IsNullOrEmpty(loc)
-				? null
-				: this.zoneMapService.GetMinimapViewSpec(loc, this.vm.FrontierMap);
+			this.cachedMinimapSpec = string.IsNullOrEmpty(loc)?null:this.zoneMapService.GetMinimapViewSpec(loc, this.vm.FrontierMap);
 		}
 
 		this.isDirty = true;
@@ -77,7 +85,7 @@ public partial class SummarySidebar: UserControl
 
 	private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
 	{
-		if(e.PropertyName == nameof(MainWindowViewModel.IsDarkTheme) && this.vm != null)
+		if(e.PropertyName == nameof(MainWindowViewModel.IsDarkTheme)&&this.vm != null)
 		{
 			ChartHelper.ApplyTheme(this.vm.IsDarkTheme, this.SidebarMinimap);
 			this.isDirty = true;
@@ -86,7 +94,10 @@ public partial class SummarySidebar: UserControl
 
 	private void RenderMinimap()
 	{
-		if(this.vm == null || this.zoneMapService == null || this.cachedMinimapSpec == null) return;
+		if(this.vm == null||this.zoneMapService == null||this.cachedMinimapSpec == null)
+		{
+			return;
+		}
 
 		var liveKeeps = this.warmapService?.GetSnapshot();
 		var fights = this.warmapService?.GetFightsSnapshot();

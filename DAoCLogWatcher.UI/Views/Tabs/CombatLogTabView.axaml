@@ -13,7 +13,8 @@
                                        ValueColor="{DynamicResource AppHeat}" />
                     <controls:StatTile Label="TOTAL TAKEN" Value="{Binding CombatSummary.TotalDamageTaken}"
                                        ValueColor="{DynamicResource AppDanger}" />
-                    <controls:StatTile Label="CRIT RATE" Value="{Binding CombatSummary.CritRate, StringFormat='{}{0:F1}%'}"
+                    <controls:StatTile Label="CRIT RATE"
+                                       Value="{Binding CombatSummary.CritRate, StringFormat='{}{0:F1}%'}"
                                        ValueColor="{DynamicResource AppCrit}" />
                     <controls:StatTile Label="HITS" Value="{Binding CombatSummary.HitCount}"
                                        ValueColor="{DynamicResource AppTextPrimary}" />
@@ -70,8 +71,7 @@
                             <Border BorderBrush="{DynamicResource AppRowBorder}"
                                     BorderThickness="0,0,0,1" Padding="10,8"
                                     Background="Transparent"
-                                    Classes.multihit="{Binding IsMultiHit}"
->
+                                    Classes.multihit="{Binding IsMultiHit}">
                                 <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,*">
                                     <TextBlock Grid.Column="0" Text="{Binding Timestamp}"
                                                Foreground="{DynamicResource AppTextMuted}"
@@ -130,10 +130,10 @@
                                                MinWidth="100"
                                                Foreground="{DynamicResource AppAccentCyan}" />
                                     <controls:PlayerNameControl Grid.Column="5"
-                                                              PlayerName="{Binding Opponent}"
-                                                              NameForeground="{DynamicResource AppTextSecondary}"
-                                                              NameFontSize="13"
-                                                              IsVisible="{Binding IsPlayer}" />
+                                                                PlayerName="{Binding Opponent}"
+                                                                NameForeground="{DynamicResource AppTextSecondary}"
+                                                                NameFontSize="13"
+                                                                IsVisible="{Binding IsPlayer}" />
                                     <TextBlock Grid.Column="5"
                                                Text="{Binding Opponent}"
                                                FontSize="13"

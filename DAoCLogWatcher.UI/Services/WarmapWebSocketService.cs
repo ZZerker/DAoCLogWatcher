@@ -32,6 +32,7 @@ public sealed class WarmapWebSocketService: IDisposable
 	private Timer? expiryTimer;
 
 	public event EventHandler? KeepsUpdated;
+
 	public event EventHandler? FightsUpdated;
 
 	public void Start()
@@ -212,7 +213,7 @@ public sealed class WarmapWebSocketService: IDisposable
 
 				this.idToName[id] = name;
 				this.states[name] = new WarmapKeepState(rlm, combat);
-				if(combat && !this.combatStartTimes.ContainsKey(name))
+				if(combat&&!this.combatStartTimes.ContainsKey(name))
 				{
 					this.combatStartTimes[name] = DateTime.UtcNow;
 				}
@@ -244,7 +245,7 @@ public sealed class WarmapWebSocketService: IDisposable
 			var rlm = keepEl.TryGetProperty("r", out var rEl)?rEl.GetInt32():existing.Realm;
 			var combat = keepEl.TryGetProperty("c", out var cEl)?cEl.GetInt32() != 0:existing.InCombat;
 			this.states[name] = new WarmapKeepState(rlm, combat);
-			if(combat && !existing.InCombat && !this.combatStartTimes.ContainsKey(name))
+			if(combat&&!existing.InCombat&&!this.combatStartTimes.ContainsKey(name))
 			{
 				this.combatStartTimes[name] = DateTime.UtcNow;
 			}

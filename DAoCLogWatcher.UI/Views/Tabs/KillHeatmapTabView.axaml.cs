@@ -24,10 +24,17 @@ public partial class KillHeatmapTabView: UserControl
 	{
 		this.InitializeComponent();
 
-		this.renderTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1000.0 / 30) };
+		this.renderTimer = new DispatcherTimer
+		                   {
+				                   Interval = TimeSpan.FromMilliseconds(1000.0 / 30)
+		                   };
 		this.renderTimer.Tick += (_, _) =>
 		                         {
-			                         if(!this.isDirty) return;
+			                         if(!this.isDirty)
+			                         {
+				                         return;
+			                         }
+
 			                         this.isDirty = false;
 			                         this.RenderHeatmap();
 		                         };
@@ -35,11 +42,19 @@ public partial class KillHeatmapTabView: UserControl
 
 		this.PropertyChanged += (_, e) =>
 		                        {
-			                        if(e.Property != IsVisibleProperty) return;
+			                        if(e.Property != IsVisibleProperty)
+			                        {
+				                        return;
+			                        }
+
 			                        if(this.IsVisible)
+			                        {
 				                        this.renderTimer.Start();
+			                        }
 			                        else
+			                        {
 				                        this.renderTimer.Stop();
+			                        }
 		                        };
 
 		this.DataContextChanged += (_, _) =>
@@ -51,7 +66,10 @@ public partial class KillHeatmapTabView: UserControl
 				                           this.vm = null;
 			                           }
 
-			                           if(this.DataContext is not MainWindowViewModel newVm) return;
+			                           if(this.DataContext is not MainWindowViewModel newVm)
+			                           {
+				                           return;
+			                           }
 
 			                           this.vm = newVm;
 			                           var app = (App)Application.Current!;
@@ -77,7 +95,10 @@ public partial class KillHeatmapTabView: UserControl
 
 	private void InitKillHeatmapChart()
 	{
-		if(this.vm == null || this.zoneMapService == null) return;
+		if(this.vm == null||this.zoneMapService == null)
+		{
+			return;
+		}
 
 		this.zoneMapService.InitializePlot(this.KillHeatmapPlot.Plot, this.vm.FrontierMap);
 		ChartHelper.HideAxes(this.KillHeatmapPlot.Plot);
@@ -86,20 +107,34 @@ public partial class KillHeatmapTabView: UserControl
 
 	private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
 	{
-		if(e.PropertyName == nameof(MainWindowViewModel.IsDarkTheme) && this.vm != null)
+		if(e.PropertyName == nameof(MainWindowViewModel.IsDarkTheme)&&this.vm != null)
 		{
 			ChartHelper.ApplyTheme(this.vm.IsDarkTheme, this.KillHeatmapPlot);
 			this.isDirty = true;
 		}
 	}
 
-	private void OnKillActivityUpdated(object? sender, EventArgs e) => this.isDirty = true;
-	private void OnKeepsUpdated(object? sender, EventArgs e) => this.isDirty = true;
-	private void OnFightsUpdated(object? sender, EventArgs e) => this.isDirty = true;
+	private void OnKillActivityUpdated(object? sender, EventArgs e)
+	{
+		this.isDirty = true;
+	}
+
+	private void OnKeepsUpdated(object? sender, EventArgs e)
+	{
+		this.isDirty = true;
+	}
+
+	private void OnFightsUpdated(object? sender, EventArgs e)
+	{
+		this.isDirty = true;
+	}
 
 	private void RenderHeatmap()
 	{
-		if(this.vm == null || this.zoneMapService == null) return;
+		if(this.vm == null||this.zoneMapService == null)
+		{
+			return;
+		}
 
 		var liveKeeps = this.warmapService?.GetSnapshot();
 		var fights = this.warmapService?.GetFightsSnapshot();
@@ -116,7 +151,10 @@ public partial class KillHeatmapTabView: UserControl
 
 	private void OnHeatmapPointerMoved(object? sender, PointerEventArgs e)
 	{
-		if(this.zoneMapService == null || this.warmapService == null) return;
+		if(this.zoneMapService == null||this.warmapService == null)
+		{
+			return;
+		}
 
 		var pos = e.GetPosition(this.KillHeatmapPlot);
 		var pixel = new Pixel((float)pos.X, (float)pos.Y);

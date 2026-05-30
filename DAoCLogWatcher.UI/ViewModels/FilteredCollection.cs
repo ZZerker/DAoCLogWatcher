@@ -42,7 +42,7 @@ public sealed partial class FilteredCollection<T>: ObservableObject
 			this.Items.RemoveAt(this.Items.Count - 1);
 		}
 
-		if(this.matches(item, this.FilterText) && (this.typeFilter == null || this.typeFilter(item)))
+		if(this.matches(item, this.FilterText)&&(this.typeFilter == null||this.typeFilter(item)))
 		{
 			this.Filtered.Insert(0, item);
 			if(this.Filtered.Count > CAPACITY)
@@ -63,7 +63,7 @@ public sealed partial class FilteredCollection<T>: ObservableObject
 		this.Filtered.Clear();
 		foreach(var e in this.Items)
 		{
-			if(this.matches(e, this.FilterText) && (this.typeFilter == null || this.typeFilter(e)))
+			if(this.matches(e, this.FilterText)&&(this.typeFilter == null||this.typeFilter(e)))
 			{
 				this.Filtered.Add(e);
 				if(this.Filtered.Count >= CAPACITY)
