@@ -116,7 +116,7 @@
                                        Foreground="{DynamicResource AppPositive}" FontWeight="SemiBold" FontSize="12" />
                             <TextBlock Text="·" Foreground="{DynamicResource AppTextDim}" FontSize="12" />
                             <TextBlock Text="{Binding Summary.PlayerKillsPercentage, StringFormat='{}{0:F1}%'}"
-                                       Foreground="{DynamicResource AppWarning}" FontSize="12" />
+                                       Foreground="{DynamicResource AppPositive}" FontSize="12" />
                         </StackPanel>
                     </Grid>
                     <ProgressBar Value="{Binding Summary.PlayerKillsPercentage}" Minimum="0" Maximum="100" Height="4"
@@ -132,7 +132,7 @@
                                        Foreground="{DynamicResource AppPositive}" FontWeight="SemiBold" FontSize="12" />
                             <TextBlock Text="·" Foreground="{DynamicResource AppTextDim}" FontSize="12" />
                             <TextBlock Text="{Binding Summary.CampaignQuestsPercentage, StringFormat='{}{0:F1}%'}"
-                                       Foreground="{DynamicResource AppWarning}" FontSize="12" />
+                                       Foreground="{DynamicResource AppPositive}" FontSize="12" />
                         </StackPanel>
                     </Grid>
                     <ProgressBar Value="{Binding Summary.CampaignQuestsPercentage}" Minimum="0" Maximum="100"
@@ -148,7 +148,7 @@
                                        FontWeight="SemiBold" FontSize="12" />
                             <TextBlock Text="·" Foreground="{DynamicResource AppTextDim}" FontSize="12" />
                             <TextBlock Text="{Binding Summary.TicksPercentage, StringFormat='{}{0:F1}%'}"
-                                       Foreground="{DynamicResource AppWarning}" FontSize="12" />
+                                       Foreground="{DynamicResource AppPositive}" FontSize="12" />
                         </StackPanel>
                     </Grid>
                     <ProgressBar Value="{Binding Summary.TicksPercentage}" Minimum="0" Maximum="100" Height="4"
@@ -164,7 +164,7 @@
                                        FontWeight="SemiBold" FontSize="12" />
                             <TextBlock Text="·" Foreground="{DynamicResource AppTextDim}" FontSize="12" />
                             <TextBlock Text="{Binding Summary.SiegePercentage, StringFormat='{}{0:F1}%'}"
-                                       Foreground="{DynamicResource AppWarning}" FontSize="12" />
+                                       Foreground="{DynamicResource AppPositive}" FontSize="12" />
                         </StackPanel>
                     </Grid>
                     <ProgressBar Value="{Binding Summary.SiegePercentage}" Minimum="0" Maximum="100" Height="4"
@@ -180,7 +180,7 @@
                                        Foreground="{DynamicResource AppPositive}" FontWeight="SemiBold" FontSize="12" />
                             <TextBlock Text="·" Foreground="{DynamicResource AppTextDim}" FontSize="12" />
                             <TextBlock Text="{Binding Summary.AssaultOrderPercentage, StringFormat='{}{0:F1}%'}"
-                                       Foreground="{DynamicResource AppWarning}" FontSize="12" />
+                                       Foreground="{DynamicResource AppPositive}" FontSize="12" />
                         </StackPanel>
                     </Grid>
                     <ProgressBar Value="{Binding Summary.AssaultOrderPercentage}" Minimum="0" Maximum="100" Height="4"
@@ -196,7 +196,7 @@
                                        Foreground="{DynamicResource AppPositive}" FontWeight="SemiBold" FontSize="12" />
                             <TextBlock Text="·" Foreground="{DynamicResource AppTextDim}" FontSize="12" />
                             <TextBlock Text="{Binding Summary.SupportActivityPercentage, StringFormat='{}{0:F1}%'}"
-                                       Foreground="{DynamicResource AppWarning}" FontSize="12" />
+                                       Foreground="{DynamicResource AppPositive}" FontSize="12" />
                         </StackPanel>
                     </Grid>
                     <ProgressBar Value="{Binding Summary.SupportActivityPercentage}" Minimum="0" Maximum="100"
@@ -212,7 +212,7 @@
                                        Foreground="{DynamicResource AppPositive}" FontWeight="SemiBold" FontSize="12" />
                             <TextBlock Text="·" Foreground="{DynamicResource AppTextDim}" FontSize="12" />
                             <TextBlock Text="{Binding Summary.RelicCapturePercentage, StringFormat='{}{0:F1}%'}"
-                                       Foreground="{DynamicResource AppWarning}" FontSize="12" />
+                                       Foreground="{DynamicResource AppPositive}" FontSize="12" />
                         </StackPanel>
                     </Grid>
                     <ProgressBar Value="{Binding Summary.RelicCapturePercentage}" Minimum="0" Maximum="100" Height="4"
@@ -228,7 +228,7 @@
                                        Foreground="{DynamicResource AppPositive}" FontWeight="SemiBold" FontSize="12" />
                             <TextBlock Text="·" Foreground="{DynamicResource AppTextDim}" FontSize="12" />
                             <TextBlock Text="{Binding Summary.TimedMissionsPercentage, StringFormat='{}{0:F1}%'}"
-                                       Foreground="{DynamicResource AppWarning}" FontSize="12" />
+                                       Foreground="{DynamicResource AppPositive}" FontSize="12" />
                         </StackPanel>
                     </Grid>
                     <ProgressBar Value="{Binding Summary.TimedMissionsPercentage}" Minimum="0" Maximum="100" Height="4"
@@ -244,7 +244,7 @@
                                        FontWeight="SemiBold" FontSize="12" />
                             <TextBlock Text="·" Foreground="{DynamicResource AppTextDim}" FontSize="12" />
                             <TextBlock Text="{Binding Summary.MiscPercentage, StringFormat='{}{0:F1}%'}"
-                                       Foreground="{DynamicResource AppWarning}" FontSize="12" />
+                                       Foreground="{DynamicResource AppPositive}" FontSize="12" />
                         </StackPanel>
                     </Grid>
                     <ProgressBar Value="{Binding Summary.MiscPercentage}" Minimum="0" Maximum="100" Height="4"

@@ -546,6 +546,38 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 		this.SaveDashboardWidgets();
 	}
 
+	// Move a widget to an absolute index within DashboardWidgets, then persist.
+	// Used by drag-to-reorder; the buttons go through MoveDashboardWidgetUp/Down.
+	public void MoveDashboardWidget(DashboardWidgetViewModel widget, int targetIndex)
+	{
+		var from = this.DashboardWidgets.IndexOf(widget);
+		if(from < 0)
+		{
+			return;
+		}
+
+		targetIndex = Math.Clamp(targetIndex, 0, this.DashboardWidgets.Count - 1);
+		if(from == targetIndex)
+		{
+			return;
+		}
+
+		this.DashboardWidgets.Move(from, targetIndex);
+		this.SaveDashboardWidgets();
+	}
+
+	// Commit a size chosen by border-drag resize (snap already applied in the view).
+	// Rides the existing OnSizeChanged -> OnDashboardWidgetChanged -> SaveDashboardWidgets chain.
+	public void SetDashboardWidgetSize(DashboardWidgetViewModel widget, DashboardWidgetSize size)
+	{
+		if(widget.Size == size)
+		{
+			return;
+		}
+
+		widget.Size = size;
+	}
+
 	private void OnDashboardWidgetChanged(DashboardWidgetViewModel widget)
 	{
 		this.SaveDashboardWidgets();

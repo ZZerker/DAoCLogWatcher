@@ -295,4 +295,68 @@ public sealed class MainWindowViewModelTests: IDisposable
 
 		await this.mockSession.Received(1).StopAndWaitAsync();
 	}
+
+	// ── Dashboard drag-to-arrange (Phase 1) ──────────────────────────────────
+
+	[Fact]
+	public void MoveDashboardWidget_MovesToTargetIndexAndPersists()
+	{
+		var vm = this.Build();
+		var moved = vm.DashboardWidgets[0];
+
+		vm.MoveDashboardWidget(moved, 3);
+
+		vm.DashboardWidgets.IndexOf(moved).Should().Be(3);
+		this.mockSettingsService.Received().Save(Arg.Any<AppSettings>());
+	}
+
+	[Fact]
+	public void MoveDashboardWidget_ClampsTargetIndexToBounds()
+	{
+		var vm = this.Build();
+		var moved = vm.DashboardWidgets[1];
+
+		vm.MoveDashboardWidget(moved, 9999);
+
+		vm.DashboardWidgets.IndexOf(moved).Should().Be(vm.DashboardWidgets.Count - 1);
+	}
+
+	[Fact]
+	public void MoveDashboardWidget_SameIndex_DoesNotPersist()
+	{
+		var vm = this.Build();
+		var widget = vm.DashboardWidgets[2];
+		this.mockSettingsService.ClearReceivedCalls();
+
+		vm.MoveDashboardWidget(widget, 2);
+
+		this.mockSettingsService.DidNotReceive().Save(Arg.Any<AppSettings>());
+	}
+
+	[Fact]
+	public void SetDashboardWidgetSize_UpdatesSizeAndPersists()
+	{
+		var vm = this.Build();
+		var widget = vm.DashboardWidgets[0];
+		widget.Size = DashboardWidgetSize.Small;
+		this.mockSettingsService.ClearReceivedCalls();
+
+		vm.SetDashboardWidgetSize(widget, DashboardWidgetSize.Large);
+
+		widget.Size.Should().Be(DashboardWidgetSize.Large);
+		this.mockSettingsService.Received().Save(Arg.Any<AppSettings>());
+	}
+
+	[Fact]
+	public void SetDashboardWidgetSize_SameSize_DoesNotPersist()
+	{
+		var vm = this.Build();
+		var widget = vm.DashboardWidgets[0];
+		widget.Size = DashboardWidgetSize.Medium;
+		this.mockSettingsService.ClearReceivedCalls();
+
+		vm.SetDashboardWidgetSize(widget, DashboardWidgetSize.Medium);
+
+		this.mockSettingsService.DidNotReceive().Save(Arg.Any<AppSettings>());
+	}
 }

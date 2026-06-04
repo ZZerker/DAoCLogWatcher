@@ -14,21 +14,9 @@ public sealed partial class DashboardWidgetViewModel: ObservableObject
 	[ObservableProperty] private bool isVisible;
 	[ObservableProperty] private DashboardWidgetSize size;
 
-	public bool IsSizeSmall => this.Size == DashboardWidgetSize.Small;
-
-	public bool IsSizeMedium => this.Size == DashboardWidgetSize.Medium;
-
-	public bool IsSizeLarge => this.Size == DashboardWidgetSize.Large;
-
 	public IRelayCommand MoveUpCommand { get; }
 
 	public IRelayCommand MoveDownCommand { get; }
-
-	public IRelayCommand SetSmallCommand { get; }
-
-	public IRelayCommand SetMediumCommand { get; }
-
-	public IRelayCommand SetLargeCommand { get; }
 
 	private readonly Action<DashboardWidgetViewModel> onChanged;
 
@@ -47,9 +35,6 @@ public sealed partial class DashboardWidgetViewModel: ObservableObject
 		this.onChanged = onChanged;
 		this.MoveUpCommand = new RelayCommand(() => onMoveUp(this));
 		this.MoveDownCommand = new RelayCommand(() => onMoveDown(this));
-		this.SetSmallCommand = new RelayCommand(() => this.Size = DashboardWidgetSize.Small);
-		this.SetMediumCommand = new RelayCommand(() => this.Size = DashboardWidgetSize.Medium);
-		this.SetLargeCommand = new RelayCommand(() => this.Size = DashboardWidgetSize.Large);
 	}
 
 	partial void OnIsVisibleChanged(bool value)
@@ -59,9 +44,6 @@ public sealed partial class DashboardWidgetViewModel: ObservableObject
 
 	partial void OnSizeChanged(DashboardWidgetSize value)
 	{
-		this.OnPropertyChanged(nameof(this.IsSizeSmall));
-		this.OnPropertyChanged(nameof(this.IsSizeMedium));
-		this.OnPropertyChanged(nameof(this.IsSizeLarge));
 		this.onChanged(this);
 	}
 }

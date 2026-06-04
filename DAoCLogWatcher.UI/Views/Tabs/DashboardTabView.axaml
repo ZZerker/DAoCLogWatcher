@@ -82,14 +82,14 @@
                                 Classes="btn-ghost" />
                     </StackPanel>
                     <Border Height="1" Background="{DynamicResource AppRowBorder}" Margin="0,4" />
-                    <TextBlock Text="WIDGET ORDER · VISIBILITY · SIZE" FontSize="10" FontWeight="SemiBold"
+                    <TextBlock Text="WIDGET ORDER · VISIBILITY" FontSize="10" FontWeight="SemiBold"
                                Foreground="{DynamicResource AppTextMuted}" />
                     <ItemsControl ItemsSource="{Binding DashboardWidgets}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="vm:DashboardWidgetViewModel">
                                 <Border BorderBrush="{DynamicResource AppRowBorder}" BorderThickness="0,0,0,1"
                                         Padding="0,4">
-                                    <Grid ColumnDefinitions="26,26,*,Auto,Auto" ColumnSpacing="4">
+                                    <Grid ColumnDefinitions="26,26,*,Auto" ColumnSpacing="4">
                                         <Button Grid.Column="0" Content="↑" Command="{Binding MoveUpCommand}"
                                                 Classes="btn-ghost"
                                                 Width="22" Height="22" Padding="0" FontSize="11" />
@@ -99,22 +99,7 @@
                                         <TextBlock Grid.Column="2" Text="{Binding Label}" FontSize="12"
                                                    Foreground="{DynamicResource AppTextPrimary}"
                                                    VerticalAlignment="Center" Margin="4,0" />
-                                        <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="3"
-                                                    Margin="0,0,6,0">
-                                            <Button Content="S" Command="{Binding SetSmallCommand}"
-                                                    Classes="btn-toggle"
-                                                    Classes.active="{Binding IsSizeSmall}"
-                                                    Width="30" Height="24" Padding="0" FontSize="11" />
-                                            <Button Content="M" Command="{Binding SetMediumCommand}"
-                                                    Classes="btn-toggle"
-                                                    Classes.active="{Binding IsSizeMedium}"
-                                                    Width="30" Height="24" Padding="0" FontSize="11" />
-                                            <Button Content="L" Command="{Binding SetLargeCommand}"
-                                                    Classes="btn-toggle"
-                                                    Classes.active="{Binding IsSizeLarge}"
-                                                    Width="30" Height="24" Padding="0" FontSize="11" />
-                                        </StackPanel>
-                                        <ToggleSwitch Grid.Column="4" IsChecked="{Binding IsVisible}"
+                                        <ToggleSwitch Grid.Column="3" IsChecked="{Binding IsVisible}"
                                                       OffContent="" OnContent=""
                                                       VerticalAlignment="Center" />
                                     </Grid>
@@ -200,7 +185,7 @@
                                    Foreground="{DynamicResource AppTextMuted}" />
                         <TextBlock Text="{Binding KdRatio, StringFormat='{}{0:F2}'}"
                                    FontSize="36" FontWeight="Bold"
-                                   Foreground="{DynamicResource AppAccentCyan}" />
+                                   Foreground="{DynamicResource AppWarning}" />
                         <TextBlock Text="{Binding Kills, StringFormat='{}{0} kills'}"
                                    FontSize="11" Foreground="{DynamicResource AppTextDim}" />
                     </StackPanel>
@@ -230,7 +215,7 @@
                         <TextBlock Text="BEST MULTI-KILL" FontSize="10" FontWeight="SemiBold"
                                    Foreground="{DynamicResource AppTextMuted}" />
                         <TextBlock Text="{Binding BestMultiKill}" FontSize="36" FontWeight="Bold"
-                                   Foreground="{DynamicResource AppWarning}" />
+                                   Foreground="{DynamicResource AppMultiKill}" />
                         <TextBlock Text="simultaneous kills" FontSize="11"
                                    Foreground="{DynamicResource AppTextDim}" />
                     </StackPanel>

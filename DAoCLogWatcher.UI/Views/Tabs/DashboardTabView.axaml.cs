@@ -29,12 +29,43 @@ public partial class DashboardTabView: UserControl
 
 	private static double GetWidgetWidth(DashboardWidgetId id, DashboardWidgetSize size)
 	{
-		return StatTileWidgets.Contains(id)?size switch { DashboardWidgetSize.Small => 160, DashboardWidgetSize.Medium => 220, _ => 300 }:
-		       LogWidgets.Contains(id)?size switch { DashboardWidgetSize.Small => 380, DashboardWidgetSize.Medium => 560, _ => 740 }:size switch { DashboardWidgetSize.Small => 280, DashboardWidgetSize.Medium => 380, _ => 560 };
+		if(StatTileWidgets.Contains(id))
+		{
+			return size switch
+			       {
+					       DashboardWidgetSize.XSmall => 140,
+					       DashboardWidgetSize.Small => 190,
+					       DashboardWidgetSize.Medium => 240,
+					       DashboardWidgetSize.Large => 300,
+					       _ => 380
+			       };
+		}
+
+		if(LogWidgets.Contains(id))
+		{
+			return size switch
+			       {
+					       DashboardWidgetSize.XSmall => 320,
+					       DashboardWidgetSize.Small => 460,
+					       DashboardWidgetSize.Medium => 600,
+					       DashboardWidgetSize.Large => 760,
+					       _ => 920
+			       };
+		}
+
+		return size switch
+		       {
+				       DashboardWidgetSize.XSmall => 240,
+				       DashboardWidgetSize.Small => 320,
+				       DashboardWidgetSize.Medium => 420,
+				       DashboardWidgetSize.Large => 520,
+				       _ => 640
+		       };
 	}
 
 	private MainWindowViewModel? vm;
 	private Dictionary<DashboardWidgetId, Control>? widgetControls;
+	private readonly DashboardArrangeBehavior arrange = new();
 	private ZoneMapService? zoneMapService;
 	private WarmapWebSocketService? warmapService;
 	private DispatcherTimer? minimapRenderTimer;
@@ -123,6 +154,10 @@ public partial class DashboardTabView: UserControl
 				                           w.PropertyChanged += this.OnWidgetPropertyChanged;
 			                           }
 
+			                           this.arrange.Vm = this.vm;
+			                           this.arrange.RebuildPanels = this.RebuildWidgetPanel;
+			                           this.arrange.WidthFor = GetWidgetWidth;
+			                           this.arrange.SetEditMode(this.vm.IsDashboardCustomizeVisible);
 			                           this.RebuildWidgetPanel();
 			                           this.minimapDirty = true;
 		                           };
@@ -145,6 +180,11 @@ public partial class DashboardTabView: UserControl
 		{
 			ChartHelper.ApplyTheme(this.vm.IsDarkTheme, this.MinimapZoomPlot);
 			this.minimapDirty = true;
+		}
+
+		if(e.PropertyName == nameof(MainWindowViewModel.IsDashboardCustomizeVisible)&&this.vm != null)
+		{
+			this.arrange.SetEditMode(this.vm.IsDashboardCustomizeVisible);
 		}
 	}
 
@@ -182,6 +222,13 @@ public partial class DashboardTabView: UserControl
 
 	private void OnWidgetsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
 	{
+		// A drag commit moves the same widget instance and has already arranged the
+		// panel in place, so skip the rebuild (and the no-op subscription churn).
+		if(this.arrange.IsCommitting)
+		{
+			return;
+		}
+
 		if(e.OldItems != null)
 		{
 			foreach(DashboardWidgetViewModel w in e.OldItems)
@@ -203,6 +250,13 @@ public partial class DashboardTabView: UserControl
 
 	private void OnWidgetPropertyChanged(object? sender, PropertyChangedEventArgs e)
 	{
+		// A drag-resize commit already applied the exact width in place; rebuilding
+		// here would needlessly re-add every tile.
+		if(this.arrange.IsCommitting)
+		{
+			return;
+		}
+
 		if(e.PropertyName is nameof(DashboardWidgetViewModel.IsVisible) or nameof(DashboardWidgetViewModel.Size))
 		{
 			this.RebuildWidgetPanel();
@@ -226,16 +280,18 @@ public partial class DashboardTabView: UserControl
 				continue;
 			}
 
-			control.IsVisible = widget.IsVisible;
 			control.Width = GetWidgetWidth(widget.Id, widget.Size);
+
+			var tile = this.arrange.Wrap(widget, control);
+			tile.IsVisible = widget.IsVisible;
 
 			if(StatTileWidgets.Contains(widget.Id))
 			{
-				this.StatWidgetPanel.Children.Add(control);
+				this.StatWidgetPanel.Children.Add(tile);
 			}
 			else
 			{
-				this.WidgetPanel.Children.Add(control);
+				this.WidgetPanel.Children.Add(tile);
 			}
 		}
 	}
