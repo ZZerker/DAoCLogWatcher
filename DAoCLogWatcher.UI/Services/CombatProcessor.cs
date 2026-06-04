@@ -104,6 +104,13 @@ public sealed class CombatProcessor(CombatSummary summary, SpellRegistry? dotReg
 
 	private void ProcessDamage(DamageEvent damage)
 	{
+		// Hard-exclude NPCs (training dummies, keep doors, guards) from all combat stats,
+		// widgets and the damage log — they pollute RvR (player-vs-player) numbers.
+		if(NpcFilter.IsNpc(damage.Opponent))
+		{
+			return;
+		}
+
 		if(damage.IsDealt)
 		{
 			summary.TotalDamageDealt += damage.TotalDamage;
@@ -174,6 +181,12 @@ public sealed class CombatProcessor(CombatSummary summary, SpellRegistry? dotReg
 
 	private void ProcessHeal(HealEvent heal)
 	{
+		// Exclude heals to/from NPCs from all heal stats, widgets and the heal log.
+		if(NpcFilter.IsNpc(heal.IsOutgoing?heal.Target:heal.Healer))
+		{
+			return;
+		}
+
 		if(heal.IsOutgoing)
 		{
 			summary.TotalHealingDone += heal.TotalHitPoints;
