@@ -5,6 +5,11 @@
 		<AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
 	</PropertyGroup>
 
+	<!-- Flatpak/Flathub builds update through the store, so the in-app Velopack updater is compiled out. Set via -p:Flatpak=true. -->
+	<PropertyGroup Condition="'$(Flatpak)' == 'true'">
+		<DefineConstants>$(DefineConstants);FLATPAK</DefineConstants>
+	</PropertyGroup>
+
 	<PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Windows')) Or $(RuntimeIdentifier.StartsWith('win'))">
 		<OutputType>WinExe</OutputType>
 		<ApplicationManifest>app.manifest</ApplicationManifest>

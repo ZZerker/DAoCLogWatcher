@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Threading;
@@ -72,6 +73,10 @@ public partial class DashboardTabView: UserControl
 	private bool minimapDirty;
 	private ZoneMapService.MinimapViewSpec? cachedMinimapSpec;
 
+	private ScottPlot.Plottables.Scatter? globalActivityScatter;
+	private ScottPlot.Plottables.Marker? globalActivityHighlight;
+	private ScottPlot.Plottables.Text? globalActivityTooltip;
+
 	public DashboardTabView()
 	{
 		this.InitializeComponent();
@@ -96,8 +101,13 @@ public partial class DashboardTabView: UserControl
 				                      [DashboardWidgetId.RpLog] = this.WidgetRpLog,
 				                      [DashboardWidgetId.HealLog] = this.WidgetHealLog,
 				                      [DashboardWidgetId.CombatLog] = this.WidgetCombatLog,
-				                      [DashboardWidgetId.Minimap] = this.WidgetMinimap
+				                      [DashboardWidgetId.Minimap] = this.WidgetMinimap,
+				                      [DashboardWidgetId.GlobalActivity] = this.WidgetGlobalActivity
 		                      };
+
+		this.InitializeGlobalActivityChart();
+		this.GlobalActivityPlot.PointerMoved += (_, e) => ChartHelper.HandlePointerMoved(e, this.GlobalActivityPlot, this.globalActivityScatter, this.globalActivityHighlight, this.globalActivityTooltip, "Kills");
+		this.GlobalActivityPlot.PointerExited += (_, _) => ChartHelper.HandlePointerExited(this.GlobalActivityPlot, this.globalActivityHighlight, this.globalActivityTooltip);
 
 		this.minimapRenderTimer = new DispatcherTimer
 		                          {
@@ -117,10 +127,12 @@ public partial class DashboardTabView: UserControl
 		                           {
 			                           if(this.vm != null)
 			                           {
-				                           this.vm.DashboardWidgets.CollectionChanged -= this.OnWidgetsCollectionChanged;
+				                           this.vm.Dashboard.DashboardWidgets.CollectionChanged -= this.OnWidgetsCollectionChanged;
 				                           this.vm.MinimapLocationChanged -= this.OnMinimapLocationChanged;
-				                           this.vm.PropertyChanged -= this.OnVmPropertyChanged;
-				                           foreach(var w in this.vm.DashboardWidgets)
+				                           this.vm.KillActivityUpdated -= this.OnKillActivityUpdated;
+				                           this.vm.SettingsPopup.PropertyChanged -= this.OnVmPropertyChanged;
+				                           this.vm.Dashboard.PropertyChanged -= this.OnDashboardPropertyChanged;
+				                           foreach(var w in this.vm.Dashboard.DashboardWidgets)
 				                           {
 					                           w.PropertyChanged -= this.OnWidgetPropertyChanged;
 				                           }
@@ -144,22 +156,26 @@ public partial class DashboardTabView: UserControl
 
 			                           this.zoneMapService.InitializeMinimapPlot(this.MinimapZoomPlot.Plot);
 			                           ChartHelper.HideAxes(this.MinimapZoomPlot.Plot);
-			                           ChartHelper.ApplyTheme(this.vm.IsDarkTheme, this.MinimapZoomPlot);
+			                           ChartHelper.ApplyTheme(this.vm.SettingsPopup.IsDarkTheme, this.MinimapZoomPlot);
 
-			                           this.vm.DashboardWidgets.CollectionChanged += this.OnWidgetsCollectionChanged;
+			                           this.vm.Dashboard.DashboardWidgets.CollectionChanged += this.OnWidgetsCollectionChanged;
 			                           this.vm.MinimapLocationChanged += this.OnMinimapLocationChanged;
-			                           this.vm.PropertyChanged += this.OnVmPropertyChanged;
-			                           foreach(var w in this.vm.DashboardWidgets)
+			                           this.vm.KillActivityUpdated += this.OnKillActivityUpdated;
+			                           this.vm.SettingsPopup.PropertyChanged += this.OnVmPropertyChanged;
+			                           this.vm.Dashboard.PropertyChanged += this.OnDashboardPropertyChanged;
+			                           foreach(var w in this.vm.Dashboard.DashboardWidgets)
 			                           {
 				                           w.PropertyChanged += this.OnWidgetPropertyChanged;
 			                           }
 
-			                           this.arrange.Vm = this.vm;
+			                           this.arrange.Vm = this.vm.Dashboard;
 			                           this.arrange.RebuildPanels = this.RebuildWidgetPanel;
 			                           this.arrange.WidthFor = GetWidgetWidth;
-			                           this.arrange.SetEditMode(this.vm.IsDashboardCustomizeVisible);
+			                           this.arrange.SetEditMode(this.vm.Dashboard.IsDashboardCustomizeVisible);
+			                           ChartHelper.ApplyTheme(this.vm.SettingsPopup.IsDarkTheme, this.GlobalActivityPlot);
 			                           this.RebuildWidgetPanel();
 			                           this.minimapDirty = true;
+			                           this.OnKillActivityUpdated(this.vm, EventArgs.Empty);
 		                           };
 	}
 
@@ -176,15 +192,19 @@ public partial class DashboardTabView: UserControl
 
 	private void OnVmPropertyChanged(object? sender, PropertyChangedEventArgs e)
 	{
-		if(e.PropertyName == nameof(MainWindowViewModel.IsDarkTheme)&&this.vm != null)
+		if(e.PropertyName == nameof(SettingsPopupViewModel.IsDarkTheme)&&this.vm != null)
 		{
-			ChartHelper.ApplyTheme(this.vm.IsDarkTheme, this.MinimapZoomPlot);
+			ChartHelper.ApplyTheme(this.vm.SettingsPopup.IsDarkTheme, this.MinimapZoomPlot);
+			ChartHelper.ApplyTheme(this.vm.SettingsPopup.IsDarkTheme, this.GlobalActivityPlot);
 			this.minimapDirty = true;
 		}
+	}
 
-		if(e.PropertyName == nameof(MainWindowViewModel.IsDashboardCustomizeVisible)&&this.vm != null)
+	private void OnDashboardPropertyChanged(object? sender, PropertyChangedEventArgs e)
+	{
+		if(e.PropertyName == nameof(DashboardViewModel.IsDashboardCustomizeVisible)&&this.vm != null)
 		{
-			this.arrange.SetEditMode(this.vm.IsDashboardCustomizeVisible);
+			this.arrange.SetEditMode(this.vm.Dashboard.IsDashboardCustomizeVisible);
 		}
 	}
 
@@ -273,7 +293,7 @@ public partial class DashboardTabView: UserControl
 		this.StatWidgetPanel.Children.Clear();
 		this.WidgetPanel.Children.Clear();
 
-		foreach(var widget in this.vm.DashboardWidgets)
+		foreach(var widget in this.vm.Dashboard.DashboardWidgets)
 		{
 			if(!this.widgetControls.TryGetValue(widget.Id, out var control))
 			{
@@ -294,5 +314,22 @@ public partial class DashboardTabView: UserControl
 				this.WidgetPanel.Children.Add(tile);
 			}
 		}
+	}
+
+	private void InitializeGlobalActivityChart()
+	{
+		(this.globalActivityHighlight, this.globalActivityTooltip) = ChartHelper.InitActivityChart(this.GlobalActivityPlot, "Kills per window", "#7CDAFF");
+	}
+
+	private void OnKillActivityUpdated(object? sender, EventArgs e)
+	{
+		if(this.vm == null)
+		{
+			return;
+		}
+
+		var points = this.vm.GetSessionKillActivityPoints().Select(p => (p.Time, (double)p.KillCount)).ToList();
+		(this.globalActivityScatter, this.globalActivityHighlight, this.globalActivityTooltip) =
+				ChartHelper.UpdateActivityChart(this.GlobalActivityPlot, points, this.vm.Summary.SessionStartTime, "#7CDAFF");
 	}
 }

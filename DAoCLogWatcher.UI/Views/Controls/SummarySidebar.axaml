@@ -13,7 +13,7 @@
             <Grid>
                 <TextBlock Text="Summary" FontSize="22" FontWeight="Bold"
                            Foreground="{DynamicResource AppTextPrimary}" VerticalAlignment="Center" />
-                <Button Content="{Binding SidebarToggleIcon}" Command="{Binding ToggleSidebarCommand}"
+                <Button Content="{Binding SettingsPopup.SidebarToggleIcon}" Command="{Binding SettingsPopup.ToggleSidebarCommand}"
                         Classes="btn-ghost"
                         HorizontalAlignment="Right" FontSize="14" />
             </Grid>

@@ -62,7 +62,7 @@ public partial class KillHeatmapTabView: UserControl
 			                           if(this.vm != null)
 			                           {
 				                           this.vm.KillActivityUpdated -= this.OnKillActivityUpdated;
-				                           this.vm.PropertyChanged -= this.OnViewModelPropertyChanged;
+				                           this.vm.SettingsPopup.PropertyChanged -= this.OnViewModelPropertyChanged;
 				                           this.vm = null;
 			                           }
 
@@ -82,9 +82,9 @@ public partial class KillHeatmapTabView: UserControl
 			                           }
 
 			                           this.InitKillHeatmapChart();
-			                           ChartHelper.ApplyTheme(newVm.IsDarkTheme, this.KillHeatmapPlot);
+			                           ChartHelper.ApplyTheme(newVm.SettingsPopup.IsDarkTheme, this.KillHeatmapPlot);
 			                           newVm.KillActivityUpdated += this.OnKillActivityUpdated;
-			                           newVm.PropertyChanged += this.OnViewModelPropertyChanged;
+			                           newVm.SettingsPopup.PropertyChanged += this.OnViewModelPropertyChanged;
 		                           };
 
 		this.ShowFightsCheckBox.IsCheckedChanged += (_, _) => this.isDirty = true;
@@ -107,9 +107,9 @@ public partial class KillHeatmapTabView: UserControl
 
 	private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
 	{
-		if(e.PropertyName == nameof(MainWindowViewModel.IsDarkTheme)&&this.vm != null)
+		if(e.PropertyName == nameof(SettingsPopupViewModel.IsDarkTheme)&&this.vm != null)
 		{
-			ChartHelper.ApplyTheme(this.vm.IsDarkTheme, this.KillHeatmapPlot);
+			ChartHelper.ApplyTheme(this.vm.SettingsPopup.IsDarkTheme, this.KillHeatmapPlot);
 			this.isDirty = true;
 		}
 	}

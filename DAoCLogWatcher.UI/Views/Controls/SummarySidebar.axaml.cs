@@ -44,7 +44,7 @@ public partial class SummarySidebar: UserControl
 			                           if(this.vm != null)
 			                           {
 				                           this.vm.MinimapLocationChanged -= this.OnMinimapLocationChanged;
-				                           this.vm.PropertyChanged -= this.OnViewModelPropertyChanged;
+				                           this.vm.SettingsPopup.PropertyChanged -= this.OnViewModelPropertyChanged;
 				                           this.vm = null;
 			                           }
 
@@ -65,9 +65,9 @@ public partial class SummarySidebar: UserControl
 
 			                           this.zoneMapService.InitializeMinimapPlot(this.SidebarMinimap.Plot);
 			                           ChartHelper.HideAxes(this.SidebarMinimap.Plot);
-			                           ChartHelper.ApplyTheme(newVm.IsDarkTheme, this.SidebarMinimap);
+			                           ChartHelper.ApplyTheme(newVm.SettingsPopup.IsDarkTheme, this.SidebarMinimap);
 			                           newVm.MinimapLocationChanged += this.OnMinimapLocationChanged;
-			                           newVm.PropertyChanged += this.OnViewModelPropertyChanged;
+			                           newVm.SettingsPopup.PropertyChanged += this.OnViewModelPropertyChanged;
 			                           this.isDirty = true;
 		                           };
 	}
@@ -85,9 +85,9 @@ public partial class SummarySidebar: UserControl
 
 	private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
 	{
-		if(e.PropertyName == nameof(MainWindowViewModel.IsDarkTheme)&&this.vm != null)
+		if(e.PropertyName == nameof(SettingsPopupViewModel.IsDarkTheme)&&this.vm != null)
 		{
-			ChartHelper.ApplyTheme(this.vm.IsDarkTheme, this.SidebarMinimap);
+			ChartHelper.ApplyTheme(this.vm.SettingsPopup.IsDarkTheme, this.SidebarMinimap);
 			this.isDirty = true;
 		}
 	}

@@ -13,9 +13,11 @@ public sealed class UpdateService: IUpdateService
 
 	private static readonly string LogPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DAoCLogWatcher", "update.log");
 
+#if !FLATPAK
 	private UpdateInfo? pendingUpdate;
 	private Task? downloadTask;
 	private bool downloadFailed;
+#endif
 
 	public event EventHandler<string>? ErrorOccurred;
 
@@ -26,6 +28,9 @@ public sealed class UpdateService: IUpdateService
 	/// </summary>
 	public async Task<(string? VersionText, bool Available)> CheckForUpdatesAsync()
 	{
+#if FLATPAK
+		return await Task.FromResult<(string?, bool)>((null, false));
+#else
 		try
 		{
 			var mgr = new UpdateManager(new GithubSource(GITHUB_URL, null, false));
@@ -63,6 +68,7 @@ public sealed class UpdateService: IUpdateService
 			this.ReportError("check", ex);
 			return (null, false);
 		}
+#endif
 	}
 
 	/// <summary>
@@ -72,6 +78,9 @@ public sealed class UpdateService: IUpdateService
 	/// </summary>
 	public async Task ApplyAndRestartAsync()
 	{
+#if FLATPAK
+		await Task.CompletedTask;
+#else
 		if(this.downloadTask != null)
 		{
 			await this.downloadTask;
@@ -96,6 +105,7 @@ public sealed class UpdateService: IUpdateService
 		{
 			this.ReportError("apply", ex);
 		}
+#endif
 	}
 
 	private void ReportError(string context, Exception ex)

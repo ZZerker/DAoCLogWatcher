@@ -105,7 +105,7 @@ public sealed class MainWindowViewModelTests: IDisposable
 
 		var vm = this.Build(settings);
 
-		vm.CustomChatLogPath.Should().Be(@"C:\Logs\chat.log");
+		vm.SettingsPopup.CustomChatLogPath.Should().Be(@"C:\Logs\chat.log");
 	}
 
 	// ── Watch lifecycle ───────────────────────────────────────────────────────
@@ -302,11 +302,11 @@ public sealed class MainWindowViewModelTests: IDisposable
 	public void MoveDashboardWidget_MovesToTargetIndexAndPersists()
 	{
 		var vm = this.Build();
-		var moved = vm.DashboardWidgets[0];
+		var moved = vm.Dashboard.DashboardWidgets[0];
 
-		vm.MoveDashboardWidget(moved, 3);
+		vm.Dashboard.MoveDashboardWidget(moved, 3);
 
-		vm.DashboardWidgets.IndexOf(moved).Should().Be(3);
+		vm.Dashboard.DashboardWidgets.IndexOf(moved).Should().Be(3);
 		this.mockSettingsService.Received().Save(Arg.Any<AppSettings>());
 	}
 
@@ -314,21 +314,21 @@ public sealed class MainWindowViewModelTests: IDisposable
 	public void MoveDashboardWidget_ClampsTargetIndexToBounds()
 	{
 		var vm = this.Build();
-		var moved = vm.DashboardWidgets[1];
+		var moved = vm.Dashboard.DashboardWidgets[1];
 
-		vm.MoveDashboardWidget(moved, 9999);
+		vm.Dashboard.MoveDashboardWidget(moved, 9999);
 
-		vm.DashboardWidgets.IndexOf(moved).Should().Be(vm.DashboardWidgets.Count - 1);
+		vm.Dashboard.DashboardWidgets.IndexOf(moved).Should().Be(vm.Dashboard.DashboardWidgets.Count - 1);
 	}
 
 	[Fact]
 	public void MoveDashboardWidget_SameIndex_DoesNotPersist()
 	{
 		var vm = this.Build();
-		var widget = vm.DashboardWidgets[2];
+		var widget = vm.Dashboard.DashboardWidgets[2];
 		this.mockSettingsService.ClearReceivedCalls();
 
-		vm.MoveDashboardWidget(widget, 2);
+		vm.Dashboard.MoveDashboardWidget(widget, 2);
 
 		this.mockSettingsService.DidNotReceive().Save(Arg.Any<AppSettings>());
 	}
@@ -337,11 +337,11 @@ public sealed class MainWindowViewModelTests: IDisposable
 	public void SetDashboardWidgetSize_UpdatesSizeAndPersists()
 	{
 		var vm = this.Build();
-		var widget = vm.DashboardWidgets[0];
+		var widget = vm.Dashboard.DashboardWidgets[0];
 		widget.Size = DashboardWidgetSize.Small;
 		this.mockSettingsService.ClearReceivedCalls();
 
-		vm.SetDashboardWidgetSize(widget, DashboardWidgetSize.Large);
+		vm.Dashboard.SetDashboardWidgetSize(widget, DashboardWidgetSize.Large);
 
 		widget.Size.Should().Be(DashboardWidgetSize.Large);
 		this.mockSettingsService.Received().Save(Arg.Any<AppSettings>());
@@ -351,11 +351,11 @@ public sealed class MainWindowViewModelTests: IDisposable
 	public void SetDashboardWidgetSize_SameSize_DoesNotPersist()
 	{
 		var vm = this.Build();
-		var widget = vm.DashboardWidgets[0];
+		var widget = vm.Dashboard.DashboardWidgets[0];
 		widget.Size = DashboardWidgetSize.Medium;
 		this.mockSettingsService.ClearReceivedCalls();
 
-		vm.SetDashboardWidgetSize(widget, DashboardWidgetSize.Medium);
+		vm.Dashboard.SetDashboardWidgetSize(widget, DashboardWidgetSize.Medium);
 
 		this.mockSettingsService.DidNotReceive().Save(Arg.Any<AppSettings>());
 	}

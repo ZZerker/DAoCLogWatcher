@@ -102,6 +102,59 @@ internal static class ChartHelper
 		plot.Axes.Top.IsVisible = false;
 	}
 
+	public static (Marker highlight, Text tooltip) InitActivityChart(AvaPlot chart, string yLabel, string accentHex)
+	{
+		ApplyChartStyle(chart, "#252525", "#1E1E1E", "#3A3A3A", "#2A2A2A", "#CCCCCC");
+		chart.Plot.Axes.Bottom.TickGenerator = new ScottPlot.TickGenerators.DateTimeAutomatic();
+		chart.Plot.YLabel(yLabel);
+		var overlays = AddHoverOverlays(chart, accentHex);
+		chart.Refresh();
+		return overlays;
+	}
+
+	public static (Scatter? scatter, Marker highlight, Text tooltip) UpdateActivityChart(AvaPlot chart, IReadOnlyList<(DateTime Time, double Value)> points, DateTime? rangeStart, string accentHex)
+	{
+		Scatter? scatter = null;
+		Marker highlight;
+		Text tooltip;
+
+		lock(chart.Plot.Sync)
+		{
+			chart.Plot.Clear();
+
+			if(points.Count > 0)
+			{
+				var times = new double[points.Count];
+				var values = new double[points.Count];
+				var yMax = 0.0;
+				for(var i = 0; i < points.Count; i++)
+				{
+					times[i] = points[i].Time.ToOADate();
+					values[i] = points[i].Value;
+					if(values[i] > yMax)
+					{
+						yMax = values[i];
+					}
+				}
+
+				scatter = chart.Plot.Add.Scatter(times, values);
+				scatter.Color = Color.FromHex(accentHex);
+				scatter.LineWidth = 2;
+				scatter.MarkerSize = 6;
+				scatter.MarkerShape = MarkerShape.FilledCircle;
+
+				var xMin = (rangeStart ?? points[0].Time).ToOADate();
+				var xMax = points[^1].Time.ToOADate();
+				chart.Plot.Axes.SetLimits(xMin, xMax, 0, yMax * 1.15);
+			}
+
+			(highlight, tooltip) = AddHoverOverlays(chart, accentHex);
+		}
+
+		chart.Refresh();
+		return (scatter, highlight, tooltip);
+	}
+
 	public static void UpdateBarChart(AvaPlot chart, IEnumerable<(string Label, double Value)> data, string fillColor, int labelMaxLength = 12)
 	{
 		lock(chart.Plot.Sync)

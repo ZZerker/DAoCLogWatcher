@@ -25,15 +25,15 @@ public partial class MainWindow: Window
 		                           {
 			                           if(this.vm != null)
 			                           {
-				                           this.vm.PropertyChanged -= this.OnViewModelPropertyChanged;
+				                           this.vm.SettingsPopup.PropertyChanged -= this.OnViewModelPropertyChanged;
 				                           this.vm = null;
 			                           }
 
 			                           if(this.DataContext is ViewModels.MainWindowViewModel newVm)
 			                           {
 				                           this.vm = newVm;
-				                           newVm.PropertyChanged += this.OnViewModelPropertyChanged;
-				                           this.ApplyTheme(newVm.IsDarkTheme);
+				                           newVm.SettingsPopup.PropertyChanged += this.OnViewModelPropertyChanged;
+				                           this.ApplyTheme(newVm.SettingsPopup.IsDarkTheme);
 			                           }
 		                           };
 	}
@@ -119,18 +119,18 @@ public partial class MainWindow: Window
 
 	private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
 	{
-		if(sender is not ViewModels.MainWindowViewModel newVm)
+		if(sender is not ViewModels.SettingsPopupViewModel settings)
 		{
 			return;
 		}
 
-		if(e.PropertyName == nameof(ViewModels.MainWindowViewModel.IsDarkTheme))
+		if(e.PropertyName == nameof(ViewModels.SettingsPopupViewModel.IsDarkTheme))
 		{
-			this.ApplyTheme(newVm.IsDarkTheme);
+			this.ApplyTheme(settings.IsDarkTheme);
 		}
-		else if(e.PropertyName == nameof(ViewModels.MainWindowViewModel.IsSidebarVisible))
+		else if(e.PropertyName == nameof(ViewModels.SettingsPopupViewModel.IsSidebarVisible))
 		{
-			this.MainContentGrid.ColumnDefinitions[0].Width = newVm.IsSidebarVisible?new GridLength(320):new GridLength(0);
+			this.MainContentGrid.ColumnDefinitions[0].Width = settings.IsSidebarVisible?new GridLength(320):new GridLength(0);
 		}
 	}
 

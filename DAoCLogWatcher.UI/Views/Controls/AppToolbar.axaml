@@ -233,9 +233,9 @@
                         Click="OnScreenshotButtonClick"
                         ToolTip.Tip="Copy screenshot to clipboard"
                         Classes="btn-icon" />
-                <Button Content="{Binding ThemeIcon}"
-                        Command="{Binding ToggleThemeCommand}"
-                        ToolTip.Tip="{Binding ThemeTooltip}"
+                <Button Content="{Binding SettingsPopup.ThemeIcon}"
+                        Command="{Binding SettingsPopup.ToggleThemeCommand}"
+                        ToolTip.Tip="{Binding SettingsPopup.ThemeTooltip}"
                         FontSize="16"
                         Classes="btn-icon" />
                 <Button Click="OnDiscordButtonClick"
@@ -253,7 +253,7 @@
                         </Canvas>
                     </Viewbox>
                 </Button>
-                <Button Command="{Binding ToggleSettingsPopupCommand}"
+                <Button Command="{Binding SettingsPopup.ToggleSettingsPopupCommand}"
                         ToolTip.Tip="Settings"
                         Classes="btn-icon">
                     <Viewbox Width="16" Height="16">

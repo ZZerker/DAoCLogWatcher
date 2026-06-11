@@ -22,13 +22,13 @@
                 <TextBlock Text="Dashboard" FontSize="22" FontWeight="Bold"
                            Foreground="{DynamicResource AppTextPrimary}" VerticalAlignment="Center" />
                 <Button Content="⚙ Customize"
-                        Command="{Binding ToggleDashboardCustomizeCommand}"
+                        Command="{Binding Dashboard.ToggleDashboardCustomizeCommand}"
                         Classes="btn-secondary"
                         HorizontalAlignment="Right" />
             </Grid>
 
             <!-- Customize panel -->
-            <Border IsVisible="{Binding IsDashboardCustomizeVisible}"
+            <Border IsVisible="{Binding Dashboard.IsDashboardCustomizeVisible}"
                     Background="{DynamicResource AppCardBackground}"
                     BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1"
                     CornerRadius="8" Padding="14">
@@ -39,8 +39,8 @@
                         <TextBlock Text="Profile" FontSize="12"
                                    Foreground="{DynamicResource AppTextMuted}"
                                    VerticalAlignment="Center" Margin="0,0,2,0" />
-                        <ComboBox ItemsSource="{Binding DashboardProfileNames}"
-                                  SelectedItem="{Binding SelectedDashboardProfile}"
+                        <ComboBox ItemsSource="{Binding Dashboard.DashboardProfileNames}"
+                                  SelectedItem="{Binding Dashboard.SelectedDashboardProfile}"
                                   PlaceholderText="(unsaved layout)"
                                   MinWidth="200"
                                   BorderBrush="{DynamicResource AppAccentCyan}"
@@ -59,32 +59,32 @@
                             </ComboBox.ItemTemplate>
                         </ComboBox>
                         <Button Content="Save"
-                                Command="{Binding SaveDashboardProfileCommand}"
+                                Command="{Binding Dashboard.SaveDashboardProfileCommand}"
                                 Classes="btn-secondary"
                                 ToolTip.Tip="Overwrite the selected profile with the current layout" />
                         <Button Content="Save As…"
-                                Command="{Binding BeginSaveAsDashboardProfileCommand}"
+                                Command="{Binding Dashboard.BeginSaveAsDashboardProfileCommand}"
                                 Classes="btn-secondary" />
                         <Button Content="Delete"
-                                Command="{Binding DeleteDashboardProfileCommand}"
+                                Command="{Binding Dashboard.DeleteDashboardProfileCommand}"
                                 Classes="btn-ghost" />
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Spacing="6"
-                                IsVisible="{Binding IsAddingDashboardProfile}">
-                        <TextBox Text="{Binding NewDashboardProfileName}"
+                                IsVisible="{Binding Dashboard.IsAddingDashboardProfile}">
+                        <TextBox Text="{Binding Dashboard.NewDashboardProfileName}"
                                  Watermark="Profile name"
                                  MinWidth="180" />
                         <Button Content="Save"
-                                Command="{Binding ConfirmSaveAsDashboardProfileCommand}"
+                                Command="{Binding Dashboard.ConfirmSaveAsDashboardProfileCommand}"
                                 Classes="btn-primary" />
                         <Button Content="Cancel"
-                                Command="{Binding CancelSaveAsDashboardProfileCommand}"
+                                Command="{Binding Dashboard.CancelSaveAsDashboardProfileCommand}"
                                 Classes="btn-ghost" />
                     </StackPanel>
                     <Border Height="1" Background="{DynamicResource AppRowBorder}" Margin="0,4" />
                     <TextBlock Text="WIDGET ORDER · VISIBILITY" FontSize="10" FontWeight="SemiBold"
                                Foreground="{DynamicResource AppTextMuted}" />
-                    <ItemsControl ItemsSource="{Binding DashboardWidgets}">
+                    <ItemsControl ItemsSource="{Binding Dashboard.DashboardWidgets}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="vm:DashboardWidgetViewModel">
                                 <Border BorderBrush="{DynamicResource AppRowBorder}" BorderThickness="0,0,0,1"
@@ -662,6 +662,23 @@
                         <TextBlock Text="Waiting for zone entry…" FontSize="12"
                                    Foreground="{DynamicResource AppTextDim}"
                                    IsVisible="{Binding CurrentMapLocation, Converter={x:Static StringConverters.IsNullOrEmpty}}" />
+                    </StackPanel>
+                </Border>
+
+                <!-- GlobalActivity -->
+                <Border x:Name="WidgetGlobalActivity" Margin="0,0,12,12" Width="520"
+                        Background="{DynamicResource AppCardBackground}"
+                        BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1"
+                        CornerRadius="8" Padding="16">
+                    <StackPanel Spacing="10">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Text="GLOBAL ACTIVITY" FontSize="11" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource AppTextMuted}" />
+                            <TextBlock Grid.Column="1" Text="Kills per point in time over the current window"
+                                       FontSize="11" Foreground="{DynamicResource AppTextSecondary}"
+                                       TextTrimming="CharacterEllipsis" MaxWidth="260" />
+                        </Grid>
+                        <scott:AvaPlot x:Name="GlobalActivityPlot" Height="180" />
                     </StackPanel>
                 </Border>
 

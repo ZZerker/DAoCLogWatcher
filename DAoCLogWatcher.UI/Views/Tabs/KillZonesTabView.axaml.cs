@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using Avalonia.Controls;
 using DAoCLogWatcher.UI.ViewModels;
@@ -29,7 +28,7 @@ public partial class KillZonesTabView: UserControl
 			                           if(this.vm != null)
 			                           {
 				                           this.vm.KillActivityUpdated -= this.OnKillActivityUpdated;
-				                           this.vm.PropertyChanged -= this.OnViewModelPropertyChanged;
+				                           this.vm.SettingsPopup.PropertyChanged -= this.OnViewModelPropertyChanged;
 				                           this.vm = null;
 			                           }
 
@@ -37,19 +36,15 @@ public partial class KillZonesTabView: UserControl
 			                           {
 				                           this.vm = newVm;
 				                           newVm.KillActivityUpdated += this.OnKillActivityUpdated;
-				                           newVm.PropertyChanged += this.OnViewModelPropertyChanged;
-				                           ChartHelper.ApplyTheme(newVm.IsDarkTheme, this.GlobalActivityChart);
+				                           newVm.SettingsPopup.PropertyChanged += this.OnViewModelPropertyChanged;
+				                           ChartHelper.ApplyTheme(newVm.SettingsPopup.IsDarkTheme, this.GlobalActivityChart);
 			                           }
 		                           };
 	}
 
 	private void InitializeGlobalActivityChart()
 	{
-		ChartHelper.ApplyChartStyle(this.GlobalActivityChart, "#252525", "#1E1E1E", "#3A3A3A", "#2A2A2A", "#CCCCCC");
-		this.GlobalActivityChart.Plot.Axes.Bottom.TickGenerator = new ScottPlot.TickGenerators.DateTimeAutomatic();
-		this.GlobalActivityChart.Plot.YLabel("Kills per window");
-		(this.globalActivityHighlight, this.globalActivityTooltip) = ChartHelper.AddHoverOverlays(this.GlobalActivityChart, "#7CDAFF");
-		this.GlobalActivityChart.Refresh();
+		(this.globalActivityHighlight, this.globalActivityTooltip) = ChartHelper.InitActivityChart(this.GlobalActivityChart, "Kills per window", "#7CDAFF");
 	}
 
 	private void OnKillActivityUpdated(object? sender, EventArgs e)
@@ -59,50 +54,21 @@ public partial class KillZonesTabView: UserControl
 			return;
 		}
 
-		this.UpdateGlobalActivityChart(this.vm.GetSessionKillActivityPoints().Select(p => (p.Time, (double)p.KillCount)).ToList());
-	}
-
-	private void UpdateGlobalActivityChart(List<(DateTime Time, double KillCount)> dataPoints)
-	{
-		lock(this.GlobalActivityChart.Plot.Sync)
-		{
-			this.GlobalActivityChart.Plot.Clear();
-			this.globalActivityScatter = null;
-
-			if(dataPoints.Count > 0)
-			{
-				var times = dataPoints.Select(p => p.Time.ToOADate()).ToArray();
-				var values = dataPoints.Select(p => p.KillCount).ToArray();
-
-				this.globalActivityScatter = this.GlobalActivityChart.Plot.Add.Scatter(times, values);
-				this.globalActivityScatter.Color = ScottPlot.Color.FromHex("#7CDAFF");
-				this.globalActivityScatter.LineWidth = 2;
-				this.globalActivityScatter.MarkerSize = 6;
-				this.globalActivityScatter.MarkerShape = ScottPlot.MarkerShape.FilledCircle;
-
-				var parseStart = this.vm?.Summary.SessionStartTime ?? dataPoints[0].Time;
-				var xMin = parseStart.ToOADate();
-				var xMax = dataPoints[^1].Time.ToOADate();
-				var yMax = values.Max() * 1.15;
-				this.GlobalActivityChart.Plot.Axes.SetLimits(xMin, xMax, 0, yMax);
-			}
-
-			(this.globalActivityHighlight, this.globalActivityTooltip) = ChartHelper.AddHoverOverlays(this.GlobalActivityChart, "#7CDAFF");
-		}
-
-		this.GlobalActivityChart.Refresh();
+		var points = this.vm.GetSessionKillActivityPoints().Select(p => (p.Time, (double)p.KillCount)).ToList();
+		(this.globalActivityScatter, this.globalActivityHighlight, this.globalActivityTooltip) =
+				ChartHelper.UpdateActivityChart(this.GlobalActivityChart, points, this.vm.Summary.SessionStartTime, "#7CDAFF");
 	}
 
 	private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
 	{
-		if(sender is not MainWindowViewModel newVm)
+		if(sender is not SettingsPopupViewModel settings)
 		{
 			return;
 		}
 
-		if(e.PropertyName == nameof(MainWindowViewModel.IsDarkTheme))
+		if(e.PropertyName == nameof(SettingsPopupViewModel.IsDarkTheme))
 		{
-			ChartHelper.ApplyTheme(newVm.IsDarkTheme, this.GlobalActivityChart);
+			ChartHelper.ApplyTheme(settings.IsDarkTheme, this.GlobalActivityChart);
 		}
 	}
 }

@@ -36,7 +36,7 @@ public partial class RealmPointsTabView: UserControl
 			                           if(this.vm != null)
 			                           {
 				                           this.vm.ChartData.UpdateRequested -= this.OnChartUpdateRequested;
-				                           this.vm.PropertyChanged -= this.OnViewModelPropertyChanged;
+				                           this.vm.SettingsPopup.PropertyChanged -= this.OnViewModelPropertyChanged;
 				                           this.vm = null;
 			                           }
 
@@ -44,8 +44,8 @@ public partial class RealmPointsTabView: UserControl
 			                           {
 				                           this.vm = newVm;
 				                           newVm.ChartData.UpdateRequested += this.OnChartUpdateRequested;
-				                           newVm.PropertyChanged += this.OnViewModelPropertyChanged;
-				                           ChartHelper.ApplyTheme(newVm.IsDarkTheme, this.RpChart, this.RpsHourlyChart);
+				                           newVm.SettingsPopup.PropertyChanged += this.OnViewModelPropertyChanged;
+				                           ChartHelper.ApplyTheme(newVm.SettingsPopup.IsDarkTheme, this.RpChart, this.RpsHourlyChart);
 			                           }
 		                           };
 	}
@@ -133,14 +133,14 @@ public partial class RealmPointsTabView: UserControl
 
 	private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
 	{
-		if(sender is not MainWindowViewModel newVm)
+		if(sender is not SettingsPopupViewModel settings)
 		{
 			return;
 		}
 
-		if(e.PropertyName == nameof(MainWindowViewModel.IsDarkTheme))
+		if(e.PropertyName == nameof(SettingsPopupViewModel.IsDarkTheme))
 		{
-			ChartHelper.ApplyTheme(newVm.IsDarkTheme, this.RpChart, this.RpsHourlyChart);
+			ChartHelper.ApplyTheme(settings.IsDarkTheme, this.RpChart, this.RpsHourlyChart);
 		}
 	}
 }

@@ -21,5 +21,6 @@ public enum DashboardWidgetId
 	RpLog,
 	HealLog,
 	CombatLog,
-	Minimap
+	Minimap,
+	GlobalActivity
 }

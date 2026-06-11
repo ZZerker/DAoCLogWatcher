@@ -41,7 +41,7 @@ internal sealed class DashboardArrangeBehavior
 	private readonly Dictionary<DashboardWidgetId, TileWrapper> tiles = new();
 	private bool editMode;
 
-	public MainWindowViewModel? Vm { get; set; }
+	public DashboardViewModel? Vm { get; set; }
 
 	// Maps (widget, size) -> exact tile width, mirroring the view's layout rule so
 	// resize can snap to the same S/M/L widths the rebuild applies.
@@ -575,6 +575,7 @@ internal sealed class DashboardArrangeBehavior
 	{
 		private static readonly Cursor DragCursor = new(StandardCursorType.SizeAll);
 		private static readonly Cursor ResizeCursor = new(StandardCursorType.SizeWestEast);
+		private static readonly Cursor ArrowCursor = new(StandardCursorType.Arrow);
 
 		public Control Content { get; }
 
@@ -627,6 +628,16 @@ internal sealed class DashboardArrangeBehavior
 					               Children = { outline, this.Grip }
 			               };
 			this.Overlay.PointerPressed += (_, e) => owner.OnTilePointerPressed(this, e);
+
+			var hideItem = new MenuItem { Header = "Hide widget" };
+			hideItem.Click += (_, _) =>
+			                  {
+				                  if(this.Widget != null)
+				                  {
+					                  this.Widget.IsVisible = false;
+				                  }
+			                  };
+			this.Overlay.ContextMenu = new ContextMenu { Cursor = ArrowCursor, ItemsSource = new[] { hideItem } };
 
 			this.Root = new Grid { Children = { content, this.Overlay } };
 		}

@@ -143,8 +143,8 @@
         </Grid>
 
         <!-- Sidebar reopen strip (visible only when sidebar is collapsed) -->
-        <Button IsVisible="{Binding !IsSidebarVisible}"
-                Command="{Binding ToggleSidebarCommand}"
+        <Button IsVisible="{Binding !SettingsPopup.IsSidebarVisible}"
+                Command="{Binding SettingsPopup.ToggleSidebarCommand}"
                 Content="▶"
                 HorizontalAlignment="Left" VerticalAlignment="Center"
                 Margin="0"
@@ -250,7 +250,7 @@
         </Border>
 
         <!-- Settings popup -->
-        <Border IsVisible="{Binding IsSettingsPopupVisible}"
+        <Border IsVisible="{Binding SettingsPopup.IsSettingsPopupVisible}"
                 HorizontalAlignment="Right" VerticalAlignment="Top"
                 Margin="0,55,10,0"
                 Background="{DynamicResource AppCardBackground}"
@@ -265,7 +265,7 @@
                                VerticalAlignment="Center" />
                     <Button Grid.Column="1" Content="✕"
                             Classes="btn-ghost"
-                            Command="{Binding CloseSettingsPopupCommand}"
+                            Command="{Binding SettingsPopup.CloseSettingsPopupCommand}"
                             VerticalAlignment="Top" />
                 </Grid>
                 <Rectangle Fill="{DynamicResource AppBorderBrush}" Height="1" />
@@ -349,18 +349,18 @@
                         <Button Grid.Column="1"
                                 Content="Browse"
                                 Classes="btn-secondary"
-                                Command="{Binding BrowseChatLogPathCommand}"
+                                Command="{Binding SettingsPopup.BrowseChatLogPathCommand}"
                                 CommandParameter="{Binding $parent[Window].StorageProvider}"
                                 Padding="10,5" FontSize="11"
                                 VerticalAlignment="Center" Margin="6,0,0,0" />
                         <Button Grid.Column="2"
                                 Content="✕"
                                 Classes="btn-ghost"
-                                Command="{Binding ClearChatLogPathCommand}"
-                                IsVisible="{Binding CustomChatLogPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                Command="{Binding SettingsPopup.ClearChatLogPathCommand}"
+                                IsVisible="{Binding SettingsPopup.CustomChatLogPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                                 FontSize="11" VerticalAlignment="Center" Margin="2,0,0,0" />
                     </Grid>
-                    <TextBox Text="{Binding CustomChatLogPath}"
+                    <TextBox Text="{Binding SettingsPopup.CustomChatLogPath}"
                              Watermark="Auto-detected"
                              IsReadOnly="True"
                              FontSize="10"
