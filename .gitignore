@@ -2,6 +2,9 @@ obj
 bin
 *.log
 
+# graphify knowledge graph output (generated)
+graphify-out/
+
 
 # ReSharper is a .NET coding add-in
 _ReSharper*/
