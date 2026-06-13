@@ -59,7 +59,7 @@ public sealed class LogWatcherTests: IDisposable
 	public async Task WatchAsync_EmptyFile_WaitsForContent()
 	{
 		// Arrange
-		await File.WriteAllTextAsync(this.testLogFilePath, string.Empty);
+		await File.WriteAllTextAsync(this.testLogFilePath, string.Empty, TestContext.Current.CancellationToken);
 		var watcher = new LogWatcher(this.testLogFilePath);
 		using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
 
@@ -80,7 +80,7 @@ public sealed class LogWatcherTests: IDisposable
 	{
 		// Arrange
 		var initialContent = "[12:00:00] You get 1000 realm points for Campaign Quest!\n";
-		await File.WriteAllTextAsync(this.testLogFilePath, initialContent);
+		await File.WriteAllTextAsync(this.testLogFilePath, initialContent, TestContext.Current.CancellationToken);
 
 		var watcher = new LogWatcher(this.testLogFilePath, 0, false);
 		using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(1));
@@ -98,7 +98,7 @@ public sealed class LogWatcherTests: IDisposable
 					                        cts.Cancel();
 				                        }
 			                        }
-		                        });
+		                        }, TestContext.Current.CancellationToken);
 
 		await readTask;
 
@@ -114,7 +114,7 @@ public sealed class LogWatcherTests: IDisposable
 	{
 		// Arrange
 		var content = "[12:00:00] First line\n[12:00:01] Second line\n";
-		await File.WriteAllTextAsync(this.testLogFilePath, content);
+		await File.WriteAllTextAsync(this.testLogFilePath, content, TestContext.Current.CancellationToken);
 
 		var startPosition = Encoding.UTF8.GetByteCount("[12:00:00] First line\n");
 		var watcher = new LogWatcher(this.testLogFilePath, startPosition, false);
@@ -133,7 +133,7 @@ public sealed class LogWatcherTests: IDisposable
 					                        cts.Cancel();
 				                        }
 			                        }
-		                        });
+		                        }, TestContext.Current.CancellationToken);
 
 		await readTask;
 
@@ -146,7 +146,7 @@ public sealed class LogWatcherTests: IDisposable
 	public async Task WatchAsync_NewContentAppended_DetectsChanges()
 	{
 		// Arrange
-		await File.WriteAllTextAsync(this.testLogFilePath, string.Empty);
+		await File.WriteAllTextAsync(this.testLogFilePath, string.Empty, TestContext.Current.CancellationToken);
 
 		var watcher = new LogWatcher(this.testLogFilePath, enableTimeFiltering: false);
 		using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
@@ -164,20 +164,20 @@ public sealed class LogWatcherTests: IDisposable
 					                         cts.Cancel();
 				                         }
 			                         }
-		                         });
+		                         }, TestContext.Current.CancellationToken);
 
 		// Give watcher time to start
-		await Task.Delay(100);
+		await Task.Delay(100, TestContext.Current.CancellationToken);
 
 		await using(var stream = new FileStream(this.testLogFilePath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite))
 		{
 			await using(var writer = new StreamWriter(stream))
 			{
 				await writer.WriteLineAsync("[12:00:00] You get 1000 realm points for Campaign Quest!");
-				await writer.FlushAsync();
-				await Task.Delay(100);
+				await writer.FlushAsync(TestContext.Current.CancellationToken);
+				await Task.Delay(100, TestContext.Current.CancellationToken);
 				await writer.WriteLineAsync("[12:00:01] You get 500 realm points for Tower Capture!");
-				await writer.FlushAsync();
+				await writer.FlushAsync(TestContext.Current.CancellationToken);
 			}
 		}
 
@@ -193,7 +193,7 @@ public sealed class LogWatcherTests: IDisposable
 	public async Task WatchAsync_CancellationToken_StopsWatching()
 	{
 		// Arrange
-		await File.WriteAllTextAsync(this.testLogFilePath, string.Empty);
+		await File.WriteAllTextAsync(this.testLogFilePath, string.Empty, TestContext.Current.CancellationToken);
 		var watcher = new LogWatcher(this.testLogFilePath);
 		using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(200));
 
@@ -214,7 +214,7 @@ public sealed class LogWatcherTests: IDisposable
 	{
 		// Arrange
 		var content = "*** Chat Log Opened: Mon Jan 15 10:30:00 2024\n[10:30:01] You get 1000 realm points!\n";
-		await File.WriteAllTextAsync(this.testLogFilePath, content);
+		await File.WriteAllTextAsync(this.testLogFilePath, content, TestContext.Current.CancellationToken);
 
 		var watcher = new LogWatcher(this.testLogFilePath, enableTimeFiltering: false);
 		using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(1));
@@ -241,7 +241,7 @@ public sealed class LogWatcherTests: IDisposable
 	{
 		// Arrange
 		var content = "[12:00:00] Test line\n";
-		await File.WriteAllTextAsync(this.testLogFilePath, content);
+		await File.WriteAllTextAsync(this.testLogFilePath, content, TestContext.Current.CancellationToken);
 
 		var watcher = new LogWatcher(this.testLogFilePath, enableTimeFiltering: false);
 		using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(1));
@@ -266,7 +266,7 @@ public sealed class LogWatcherTests: IDisposable
 	public async Task WatchAsync_IncompleteLines_AreBufferedUntilComplete()
 	{
 		// Arrange
-		await File.WriteAllTextAsync(this.testLogFilePath, string.Empty);
+		await File.WriteAllTextAsync(this.testLogFilePath, string.Empty, TestContext.Current.CancellationToken);
 
 		var watcher = new LogWatcher(this.testLogFilePath, enableTimeFiltering: false);
 		using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
@@ -284,19 +284,19 @@ public sealed class LogWatcherTests: IDisposable
 					                         cts.Cancel();
 				                         }
 			                         }
-		                         });
+		                         }, TestContext.Current.CancellationToken);
 
-		await Task.Delay(100);
+		await Task.Delay(100, TestContext.Current.CancellationToken);
 
 		await using(var stream = new FileStream(this.testLogFilePath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite))
 		{
 			await using(var writer = new StreamWriter(stream))
 			{
 				await writer.WriteAsync("[12:00:00] Incomplete");
-				await writer.FlushAsync();
-				await Task.Delay(100);
+				await writer.FlushAsync(TestContext.Current.CancellationToken);
+				await Task.Delay(100, TestContext.Current.CancellationToken);
 				await writer.WriteLineAsync(" line completed!");
-				await writer.FlushAsync();
+				await writer.FlushAsync(TestContext.Current.CancellationToken);
 			}
 		}
 
@@ -314,7 +314,7 @@ public sealed class LogWatcherTests: IDisposable
 		var content = "*** Chat Log Opened: Sat Feb 21 11:49:00 2026\n" + "[11:49:01] You get 500 realm points for Tower Capture!\n" + "*** Chat Log Closed: Sat Feb 21 11:50:35 2026\n" + "\n" +
 		              "*** Chat Log Opened: Sat Feb 21 11:50:37 2026\n" + "[11:50:37] You get 100 realm points for Battle Tick!\n";
 
-		await File.WriteAllTextAsync(this.testLogFilePath, content);
+		await File.WriteAllTextAsync(this.testLogFilePath, content, TestContext.Current.CancellationToken);
 		var watcher = new LogWatcher(this.testLogFilePath, enableTimeFiltering: false);
 		using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
 
@@ -342,7 +342,7 @@ public sealed class LogWatcherTests: IDisposable
 		var content = "*** Chat Log Opened: Sat Feb 21 11:00:00 2026\n" + "[11:00:01] You get 500 realm points for Tower Capture!\n" + "*** Chat Log Closed: Sat Feb 21 11:00:10 2026\n" + "\n" +
 		              "*** Chat Log Opened: Sat Feb 21 11:05:00 2026\n" + "[11:05:01] You get 100 realm points for Battle Tick!\n";
 
-		await File.WriteAllTextAsync(this.testLogFilePath, content);
+		await File.WriteAllTextAsync(this.testLogFilePath, content, TestContext.Current.CancellationToken);
 		var watcher = new LogWatcher(this.testLogFilePath, enableTimeFiltering: false);
 		using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
 
@@ -370,7 +370,7 @@ public sealed class LogWatcherTests: IDisposable
 		var content = "*** Chat Log Opened: Mon Feb 16 20:51:29 2026\n" + "[20:54:35] Options: /stats [ rp | kills | deathblows | solo | irs | heal | rez | player <name|target>  ]\n" + "Statistics for Kobil this Session:\n" +
 		              "Total RP: 4717\n" + "[20:55:00] You get 1000 realm points for Campaign Quest!\n";
 
-		await File.WriteAllTextAsync(this.testLogFilePath, content);
+		await File.WriteAllTextAsync(this.testLogFilePath, content, TestContext.Current.CancellationToken);
 		var watcher = new LogWatcher(this.testLogFilePath, enableTimeFiltering: false);
 		using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
 
@@ -404,7 +404,7 @@ public sealed class LogWatcherTests: IDisposable
 		var content = "*** Chat Log Opened: Mon Feb 16 20:51:29 2026\n" + "Statistics for Kobil this Session:\n" + "Statistics for OtherPlayer this Session:\n" + "Statistics for Kobil this Session:\n" +
 		              "[20:55:00] You get 1000 realm points for Campaign Quest!\n";
 
-		await File.WriteAllTextAsync(this.testLogFilePath, content);
+		await File.WriteAllTextAsync(this.testLogFilePath, content, TestContext.Current.CancellationToken);
 		var watcher = new LogWatcher(this.testLogFilePath, enableTimeFiltering: false);
 		using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
 
@@ -432,7 +432,7 @@ public sealed class LogWatcherTests: IDisposable
 		var content = $"*** Chat Log Opened: {sessionDateStr}\n" + $"[{oldTime}] Options: /stats [ rp | kills | deathblows | solo | irs | heal | rez | player <name|target>  ]\n" + "Statistics for OldContextChar this Session:\n" +
 		              $"[{recentTime}] You get 500 realm points for Battle Tick!\n";
 
-		await File.WriteAllTextAsync(this.testLogFilePath, content);
+		await File.WriteAllTextAsync(this.testLogFilePath, content, TestContext.Current.CancellationToken);
 		var watcher = new LogWatcher(this.testLogFilePath, enableTimeFiltering: true, filterHours: 6);
 		using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
 
@@ -459,7 +459,7 @@ public sealed class LogWatcherTests: IDisposable
 		var content = $"*** Chat Log Opened: {sessionDateStr}\n" + $"[{recentTime}] Options: /stats [ rp | kills | deathblows | solo | irs | heal | rez | player <name|target>  ]\n" + "Statistics for RecentChar this Session:\n" +
 		              $"[{recentTime}] You get 500 realm points for Battle Tick!\n";
 
-		await File.WriteAllTextAsync(this.testLogFilePath, content);
+		await File.WriteAllTextAsync(this.testLogFilePath, content, TestContext.Current.CancellationToken);
 		var watcher = new LogWatcher(this.testLogFilePath, enableTimeFiltering: true, filterHours: 6);
 		using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
 
@@ -483,7 +483,7 @@ public sealed class LogWatcherTests: IDisposable
 		var content = "*** Chat Log Opened: Sat Feb 21 10:00:00 2026\n" + "Statistics for Kobil this Session:\n" + "[10:00:01] You get 500 realm points for Battle Tick!\n" + "*** Chat Log Closed: Sat Feb 21 10:05:00 2026\n" +
 		              "*** Chat Log Opened: Sat Feb 21 11:00:00 2026\n" + "Statistics for AltChar this Session:\n" + "[11:00:01] You get 200 realm points for Battle Tick!\n";
 
-		await File.WriteAllTextAsync(this.testLogFilePath, content);
+		await File.WriteAllTextAsync(this.testLogFilePath, content, TestContext.Current.CancellationToken);
 		var watcher = new LogWatcher(this.testLogFilePath, enableTimeFiltering: false);
 		using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
 
@@ -506,7 +506,7 @@ public sealed class LogWatcherTests: IDisposable
 		// Arrange
 		var content = "*** Chat Log Opened: Mon Feb 16 20:00:00 2026\n" + "[20:34:52] Dfensze was just killed by Linkx in Emain Macha.\n" + "[20:35:00] You get 500 realm points for Battle Tick!\n";
 
-		await File.WriteAllTextAsync(this.testLogFilePath, content);
+		await File.WriteAllTextAsync(this.testLogFilePath, content, TestContext.Current.CancellationToken);
 		var watcher = new LogWatcher(this.testLogFilePath, enableTimeFiltering: false);
 		using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
 
@@ -545,7 +545,7 @@ public sealed class LogWatcherTests: IDisposable
 
 		var content = $"*** Chat Log Opened: {sessionDateStr}\n" + $"[{oldTime}] Dfensze was just killed by Linkx in Emain Macha.\n" + $"[{recentTime}] You get 500 realm points for Battle Tick!\n";
 
-		await File.WriteAllTextAsync(this.testLogFilePath, content);
+		await File.WriteAllTextAsync(this.testLogFilePath, content, TestContext.Current.CancellationToken);
 		var watcher = new LogWatcher(this.testLogFilePath, enableTimeFiltering: true, filterHours: 6);
 		using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
 
@@ -586,7 +586,7 @@ public sealed class LogWatcherTests: IDisposable
 	public async Task DisposeAsync_CanBeCalledMultipleTimes()
 	{
 		// Arrange
-		await File.WriteAllTextAsync(this.testLogFilePath, string.Empty);
+		await File.WriteAllTextAsync(this.testLogFilePath, string.Empty, TestContext.Current.CancellationToken);
 		var watcher = new LogWatcher(this.testLogFilePath);
 
 		// Act & Assert
@@ -605,7 +605,7 @@ public sealed class LogWatcherTests: IDisposable
 
 		var content = $"*** Chat Log Opened: {sessionDate}\n" + $"[{oldTime}] You get 51 realm points!\n" + $"[{oldTime}] XP Guild Bonus: 160,671\n" + "You gain a total of 3,374,108 experience points.\n";
 
-		await File.WriteAllTextAsync(this.testLogFilePath, content);
+		await File.WriteAllTextAsync(this.testLogFilePath, content, TestContext.Current.CancellationToken);
 
 		var entries = new List<RealmPointLogLine>();
 		var watcher = new LogWatcher(this.testLogFilePath, enableTimeFiltering: true, filterHours: 24);
@@ -637,7 +637,7 @@ public sealed class LogWatcherTests: IDisposable
 
 		var content = $"*** Chat Log Opened: {sessionDateStr}\n" + $"[{entryTimeStr}] You get 500 realm points for Battle Tick!\n";
 
-		await File.WriteAllTextAsync(this.testLogFilePath, content);
+		await File.WriteAllTextAsync(this.testLogFilePath, content, TestContext.Current.CancellationToken);
 
 		var entries = new List<RealmPointLogLine>();
 		var watcher = new LogWatcher(this.testLogFilePath, enableTimeFiltering: true, filterHours: filterHours);
@@ -676,7 +676,7 @@ public sealed class LogWatcherTests: IDisposable
 
 		var content = $"*** Chat Log Opened: {sessionDateStr}\n" + $"[{lineTimeStr}] You get 500 realm points for Battle Tick!\n";
 
-		await File.WriteAllTextAsync(this.testLogFilePath, content);
+		await File.WriteAllTextAsync(this.testLogFilePath, content, TestContext.Current.CancellationToken);
 
 		var entries = new List<RealmPointLogLine>();
 		var watcher = new LogWatcher(this.testLogFilePath, enableTimeFiltering: true, filterHours: 24);

@@ -4,7 +4,10 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace DAoCLogWatcher.UI.Services;
 
-// 0=All time  1=1 week  2=48h  3=24h  4=12h  5=6h  6=3h  7=2h  8=1h  9=Custom
+// 0=Current session  1=1 week  2=48h  3=24h  4=12h  5=6h  6=3h  7=2h  8=1h  9=Custom
+// NOTE: index 0 ("Current session") is handled by MainWindowViewModel via session-boundary
+// scanning, NOT here. GetFilterParameters() returning (false, 0) for index 0 is only used as the
+// fall-through when no session can be resolved.
 public partial class TimeFilterService: ObservableObject
 {
 	private const int CUSTOM_FILTER_INDEX = 9;

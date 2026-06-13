@@ -39,7 +39,7 @@ public sealed class EndToEndTests: IDisposable
 	{
 		// Arrange - Create realistic log file with various RP sources
 		var logContent = CreateRealisticLogFile();
-		await File.WriteAllTextAsync(this.testLogFilePath, logContent);
+		await File.WriteAllTextAsync(this.testLogFilePath, logContent, TestContext.Current.CancellationToken);
 
 		var summary = new TestSummary();
 		var watcher = new LogWatcher(this.testLogFilePath, enableTimeFiltering: false);
@@ -78,7 +78,7 @@ public sealed class EndToEndTests: IDisposable
 [10:00:10] You get 750 realm points!
 [10:00:11] You gain a total of 7,500 experience points.
 ";
-		await File.WriteAllTextAsync(this.testLogFilePath, logContent);
+		await File.WriteAllTextAsync(this.testLogFilePath, logContent, TestContext.Current.CancellationToken);
 
 		var summary = new TestSummary();
 		var watcher = new LogWatcher(this.testLogFilePath, enableTimeFiltering: false);
@@ -110,7 +110,7 @@ public sealed class EndToEndTests: IDisposable
 [10:00:00] You get an additional 10 realm points due to your guild's buff!
 [10:00:05] You get 200 realm points for Battle Tick!
 ";
-		await File.WriteAllTextAsync(this.testLogFilePath, logContent);
+		await File.WriteAllTextAsync(this.testLogFilePath, logContent, TestContext.Current.CancellationToken);
 
 		var summary = new TestSummary();
 		var watcher = new LogWatcher(this.testLogFilePath, enableTimeFiltering: false);
@@ -146,7 +146,7 @@ public sealed class EndToEndTests: IDisposable
 [10:00:30] Albion has stored the Strength of Hibernia
 [10:00:31] You get 5000 realm points!
 ";
-		await File.WriteAllTextAsync(this.testLogFilePath, logContent);
+		await File.WriteAllTextAsync(this.testLogFilePath, logContent, TestContext.Current.CancellationToken);
 
 		var summary = new TestSummary();
 		var watcher = new LogWatcher(this.testLogFilePath, enableTimeFiltering: false);
@@ -193,7 +193,7 @@ public sealed class EndToEndTests: IDisposable
 [21:23:47] You get an additional 53 realm points due to your realm rank!
 [21:23:47] You get 160 realm points!
 ";
-		await File.WriteAllTextAsync(this.testLogFilePath, logContent);
+		await File.WriteAllTextAsync(this.testLogFilePath, logContent, TestContext.Current.CancellationToken);
 
 		var summary = new TestSummary();
 		var watcher = new LogWatcher(this.testLogFilePath, enableTimeFiltering: false);
@@ -218,7 +218,7 @@ public sealed class EndToEndTests: IDisposable
 	public async Task FullFlow_EmptyLog_HandlesGracefully()
 	{
 		// Arrange
-		await File.WriteAllTextAsync(this.testLogFilePath, string.Empty);
+		await File.WriteAllTextAsync(this.testLogFilePath, string.Empty, TestContext.Current.CancellationToken);
 
 		var summary = new TestSummary();
 		var watcher = new LogWatcher(this.testLogFilePath, enableTimeFiltering: false);

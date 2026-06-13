@@ -527,6 +527,11 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 			return;
 		}
 
+		if(await this.TryStartCurrentSessionAsync())
+		{
+			return;
+		}
+
 		var (filterEnabled, filterHours) = this.TimeFilter.GetFilterParameters();
 		await this.RunWatchLoop(this.logWatcherFactory.Create(this.CurrentFilePath, 0, filterEnabled, filterHours));
 	}
@@ -753,8 +758,34 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 			return;
 		}
 
+		if(await this.TryStartCurrentSessionAsync())
+		{
+			return;
+		}
+
 		var (filterEnabled, filterHours) = this.TimeFilter.GetFilterParameters();
 		await this.RunWatchLoop(this.logWatcherFactory.Create(this.CurrentFilePath, 0, filterEnabled, filterHours));
+	}
+
+	/// <summary>When the "Current session" filter (index 0) is active, start watching from the last
+	/// session boundary instead of reading the entire log. Returns true if a session watch was started.</summary>
+	private async Task<bool> TryStartCurrentSessionAsync()
+	{
+		if(this.TimeFilter.SelectedTimeFilterIndex != 0||string.IsNullOrWhiteSpace(this.CurrentFilePath))
+		{
+			return false;
+		}
+
+		var path = this.CurrentFilePath;
+		var sessions = await Task.Run(() => LogSessionScanner.Scan(path));
+		var last = sessions.FirstOrDefault();
+		if(last == null)
+		{
+			return false;
+		}
+
+		await this.StartWatchingFromSession(last);
+		return true;
 	}
 
 	private Task RunWatchLoop(LogWatcher watcher)
