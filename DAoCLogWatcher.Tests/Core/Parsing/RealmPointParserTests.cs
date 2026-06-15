@@ -6,6 +6,21 @@ namespace DAoCLogWatcher.Tests.Core.Parsing;
 
 public sealed class RealmPointParserTests
 {
+	// Feeds unrelated chatter lines until the pending entry flushes (the parser skips a
+	// bounded number of non-confirmation lines before classifying the entry as Misc).
+	private static RealmPointEntry? FlushWithChatter(RealmPointParser parser, string timestamp)
+	{
+		for(var i = 0; i < 8; i++)
+		{
+			if(parser.TryParse($"[{timestamp}] Unrelated chatter {i}", out var e))
+			{
+				return e;
+			}
+		}
+
+		return null;
+	}
+
 	[Theory]
 	[InlineData("[12:34:56] You get 1000 realm points for Campaign Quest!", 1000, RealmPointSource.CampaignQuest, null)]
 	[InlineData("[23:59:59] You get 500 realm points for Tower Capture!", 500, RealmPointSource.Siege, "Tower Capture")]
@@ -197,8 +212,18 @@ public sealed class RealmPointParserTests
 		// Assert - Even with 0 points, parsing should work
 		result.Should().BeFalse(); // Returns false because it's waiting for participation check
 
-		// Parse another line to trigger emission
-		parser.TryParse("[12:34:57] Next line", out var secondEntry);
+		// Unrelated chatter is skipped up to the bounded budget; feed enough to exhaust
+		// it and flush the pending entry as Misc.
+		RealmPointEntry? secondEntry = null;
+		for(var i = 0; i < 8; i++)
+		{
+			if(parser.TryParse($"[12:34:57] Next line {i}", out var e))
+			{
+				secondEntry = e;
+				break;
+			}
+		}
+
 		secondEntry.Should().NotBeNull();
 		secondEntry!.Points.Should().Be(expectedPoints);
 	}
@@ -288,13 +313,13 @@ public sealed class RealmPointParserTests
 		// Arrange
 		var parser = new RealmPointParser();
 
-		// Act - First sequence
+		// Act - First sequence (unrelated chatter is skipped until the budget is exhausted)
 		parser.TryParse("[10:00:00] You get 1000 realm points!", out _);
-		parser.TryParse("[10:00:01] Trigger line", out var firstEntry);
+		var firstEntry = FlushWithChatter(parser, "10:00:01");
 
 		// Second sequence should work independently
 		parser.TryParse("[10:00:02] You get 2000 realm points!", out _);
-		parser.TryParse("[10:00:03] Trigger line", out var secondEntry);
+		var secondEntry = FlushWithChatter(parser, "10:00:03");
 
 		// Assert
 		firstEntry.Should().NotBeNull();

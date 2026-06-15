@@ -26,6 +26,17 @@ public static class NpcFilter
 			                                                        "Training Dummy"
 	                                                        };
 
+	// Keep lords and named commanders carry a realm title prefix followed by a unique
+	// name (Albion "Lord …", Midgard "Jarl …", Hibernia "Chieftain …"). The trailing
+	// space is required: player names are single tokens, so "Jarl Bleedmer" is always
+	// an NPC, while a player named "Lordbob" (no space) must not match.
+	private static readonly string[] NpcTitlePrefixes =
+	{
+		"Lord ",
+		"Jarl ",
+		"Chieftain "
+	};
+
 	public static bool IsNpc(string? name)
 	{
 		if(string.IsNullOrEmpty(name))
@@ -36,6 +47,14 @@ public static class NpcFilter
 		if(KnownNpcNames.Contains(name))
 		{
 			return true;
+		}
+
+		foreach(var title in NpcTitlePrefixes)
+		{
+			if(name.StartsWith(title, StringComparison.OrdinalIgnoreCase))
+			{
+				return true;
+			}
 		}
 
 		// Keep/fortress structures appear under varied names (e.g. "Keep Door",

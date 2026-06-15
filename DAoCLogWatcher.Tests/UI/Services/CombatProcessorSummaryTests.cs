@@ -252,13 +252,15 @@ public sealed class CombatProcessorSummaryTests
 	[Fact]
 	public void IncomingHeal_AccumulatesTotalHealsReceivedAndByHealer()
 	{
-		this.processor.Process(IncomingHeal("Cleric", 180));
-		this.processor.Process(IncomingHeal("Cleric", 120));
-		this.processor.Process(IncomingHeal("Friar", 90));
+		// Use player character names, not class names — class names like "Cleric"/"Friar"
+		// match keep-guard NPCs in NpcFilter and would be excluded from heal stats.
+		this.processor.Process(IncomingHeal("Healbot", 180));
+		this.processor.Process(IncomingHeal("Healbot", 120));
+		this.processor.Process(IncomingHeal("Mendalion", 90));
 
 		this.summary.TotalHealsReceived.Should().Be(390);
-		this.summary.HealsByHealer["Cleric"].Should().Be(300);
-		this.summary.HealsByHealer["Friar"].Should().Be(90);
+		this.summary.HealsByHealer["Healbot"].Should().Be(300);
+		this.summary.HealsByHealer["Mendalion"].Should().Be(90);
 	}
 
 	// ── Misses and resists ────────────────────────────────────────────────────
