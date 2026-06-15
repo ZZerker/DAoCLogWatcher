@@ -40,7 +40,10 @@
 		</PackageReference>
 		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.9" />
-		<PackageReference Include="Tmds.DBus.Protocol" Version="0.94.1" />
+		<!-- Pin 0.21.3 (min patched for CVE-2026-39959): same API line as Avalonia 11.3.13's
+		     FreeDesktop (exposes Tmds.DBus.Protocol.Connection). Do NOT bump to 0.9x — that line
+		     renamed the type and crashes X11 IME init on Linux with TypeLoadException. -->
+		<PackageReference Include="Tmds.DBus.Protocol" Version="0.21.3" />
 		<PackageReference Include="Velopack" Version="1.2.0" />
 		<PackageReference Include="ScottPlot.Avalonia" Version="5.1.58" />
 		<!-- Override ScottPlot's outdated Linux native SkiaSharp assets to match the managed SkiaSharp 3.x used by Avalonia -->

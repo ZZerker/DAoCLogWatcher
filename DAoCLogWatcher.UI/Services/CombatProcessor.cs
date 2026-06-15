@@ -142,16 +142,20 @@ public sealed class CombatProcessor(CombatSummary summary, SpellRegistry? dotReg
 			summary.DamageTakenByAttacker.Accumulate(damage.Opponent, damage.TotalDamage);
 		}
 
+		// spells.json is the authority on what's a DoT — not the cast-attribution timing.
+		// The parser's IsDotTick is only a fallback for spells the registry doesn't know yet.
+		var isDot = this.IsDotTick(damage);
+
 		// Finalize any previous AoE window before logging the new hit, so the aggregate
 		// entry appears immediately after the last AoE hit rather than after this one.
 		// Weapon attacks carry the weapon name as SpellName but are single-target by nature;
 		// including them would interrupt or pollute spell AoE windows mid-sequence.
-		if(damage.IsDealt&&damage.SpellName != null&&!damage.IsWeaponAttack&&!damage.IsDotTick)
+		if(damage.IsDealt&&damage.SpellName != null&&!damage.IsWeaponAttack&&!isDot)
 		{
 			this.TrackMultiHit(damage);
 		}
 
-		if(damage.IsDotTick&&damage.IsDealt)
+		if(isDot)
 		{
 			this.TrackDotStack(damage);
 		}
@@ -167,7 +171,7 @@ public sealed class CombatProcessor(CombatSummary summary, SpellRegistry? dotReg
 					            SpellName = damage.SpellName,
 					            StyleName = damage.StyleName,
 					            IsWeaponAttack = damage.IsWeaponAttack,
-					            IsDotTick = damage.IsDotTick,
+					            IsDotTick = false,
 					            IsPlayer = !NpcFilter.IsNpc(damage.Opponent)
 			            };
 			if(damage.IsDealt)
@@ -264,6 +268,26 @@ public sealed class CombatProcessor(CombatSummary summary, SpellRegistry? dotReg
 		this.multiHitSpell = null;
 		this.multiHitTargets.Clear();
 		this.multiHitTotalDamage = 0;
+	}
+
+	/// <summary>
+	/// Registry-backed DoT classification. A known spell is a DoT iff it has a tick frequency;
+	/// for spells the registry doesn't know, fall back to the parser's "Your X hits" format flag
+	/// so newly-added DoTs still stack. Single-target nukes (e.g. Frigid Torment) satisfy neither.
+	/// </summary>
+	private bool IsDotTick(DamageEvent damage)
+	{
+		if(!damage.IsDealt||damage.IsWeaponAttack||damage.SpellName == null)
+		{
+			return false;
+		}
+
+		if(this.registry.TryGet(damage.SpellName, out var info))
+		{
+			return info.FrequencySeconds > 0;
+		}
+
+		return damage.IsDotTick;
 	}
 
 	private void TrackDotStack(DamageEvent damage)

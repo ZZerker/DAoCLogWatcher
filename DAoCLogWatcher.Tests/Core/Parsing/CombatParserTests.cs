@@ -290,6 +290,31 @@ public sealed class CombatParserTests
 	}
 
 	[Fact]
+	public void TryParse_DotNamedHit_IsTaggedAsDotTick()
+	{
+		this.parser.TryParse("[14:12:42] Your Fungal Blight hits Tower Captain for 110 damage!", out _, out _, out _);
+
+		var ev = this.parser.FlushPending();
+		ev!.IsDotTick.Should().BeTrue("the 'Your X hits' format is the DoT/named-tick format");
+	}
+
+	[Fact]
+	public void TryParse_DirectNukeLandingOutsideWindow_IsNotTaggedAsDotTick()
+	{
+		// Regression: a single-target nuke (e.g. Frigid Torment) confirmed by an in-window hit,
+		// then a later hit landing more than 4.5s after the cast falls back to
+		// confirmedDamageSpellName for attribution — but "You hit" is the direct-hit format and
+		// must never be classified as a DoT tick just because it was attributed via fallback.
+		this.parser.TryParse("[17:05:00] You cast a Frigid Torment spell!", out _, out _, out _);
+		this.parser.TryParse("[17:05:02] You hit Vaggoss for 500 damage!", out _, out _, out _);
+		this.parser.TryParse("[17:05:10] You hit Vaggoss for 538 damage!", out _, out _, out _);
+
+		var ev = this.parser.FlushPending();
+		ev!.SpellName.Should().Be("Frigid Torment", "the late hit is still attributed via fallback");
+		ev.IsDotTick.Should().BeFalse("a 'You hit' direct hit is never a DoT tick");
+	}
+
+	[Fact]
 	public void TryParse_DotNamedHitFollowedByCrit_EmitsMergedEvent()
 	{
 		this.parser.TryParse("[14:12:42] Your Fungal Blight hits Tower Captain for 110 damage!", out _, out _, out _);

@@ -396,11 +396,13 @@ public sealed partial class CombatParser
 			return false;
 		}
 
-		var spellName = this.ResolveSpellName(ts, out var isConfirmedFallback);
+		// "You hit {target}" is the direct-hit format — never a DoT tick, regardless of how the
+		// spell name was attributed. DoT/rain ticks use the "Your {spell} hits {target}" format
+		// (TryMatchDealtDotHit). The out-of-window fallback here only recovers the spell *name*.
+		var spellName = this.ResolveSpellName(ts);
 		var isWeaponAttack = spellName == null;
 		var styleName = isWeaponAttack?this.ResolveStyleName(ts):null;
-		var isDotTick = isConfirmedFallback&&!isWeaponAttack;
-		pending = new PendingDamage(ts, match.Groups["target"].Value, int.Parse(match.Groups["dmg"].Value, CultureInfo.InvariantCulture), ParseAbsorbed(match), true, spellName, isWeaponAttack, styleName, isDotTick);
+		pending = new PendingDamage(ts, match.Groups["target"].Value, int.Parse(match.Groups["dmg"].Value, CultureInfo.InvariantCulture), ParseAbsorbed(match), true, spellName, isWeaponAttack, styleName);
 		return true;
 	}
 
@@ -518,13 +520,11 @@ public sealed partial class CombatParser
 	/// 1. Within window of last cast → attribute to that spell and confirm it deals damage.
 	///    Keeps pendingSpellName alive for AE (multiple simultaneous hits from one cast).
 	/// 2. Outside window (or no pending cast) → fall back to confirmedDamageSpellName.
-	///    Covers DoT/rain ticks that arrive long after the cast.
+	///    Covers direct hits that land late (slow projectile, lag) or repeated nukes.
 	///    Buff casts never get confirmed (no hit within window), so they don't pollute.
 	/// </summary>
-	private string? ResolveSpellName(TimeOnly hitTimestamp, out bool isConfirmedFallback)
+	private string? ResolveSpellName(TimeOnly hitTimestamp)
 	{
-		isConfirmedFallback = false;
-
 		// Bow shots have priority — check before spell cast (pet summons etc. cast between fire and hit must not win)
 		if(this.pendingBowShotName != null)
 		{
@@ -546,7 +546,6 @@ public sealed partial class CombatParser
 			}
 		}
 
-		isConfirmedFallback = this.confirmedDamageSpellName != null;
 		return this.confirmedDamageSpellName;
 	}
 

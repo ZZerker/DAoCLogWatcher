@@ -12,12 +12,17 @@ public static class NpcFilter
 			                                                        "Guardian",
 			                                                        "Supply Commander",
 			                                                        "Armsman",
+			                                                        "Armswoman",
+			                                                        "Cleric",
 			                                                        "Druid",
 			                                                        "Eldritch",
 			                                                        "Hunter",
 			                                                        "Huscarl",
 			                                                        "Nightshade",
 			                                                        "Ranger",
+			                                                        "Realm Enhancer",
+			                                                        "Scout",
+			                                                        "Tower Captain",
 			                                                        "Training Dummy"
 	                                                        };
 

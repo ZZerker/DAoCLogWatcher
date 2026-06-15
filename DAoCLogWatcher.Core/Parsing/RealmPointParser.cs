@@ -17,15 +17,22 @@ public sealed partial class RealmPointParser
 		AwaitingFairFight
 	}
 
+	// A kill/capture confirmation can be separated from its RP line by unrelated
+	// chatter (spell-cast notices, etc.). Skip up to this many such lines before
+	// giving up and classifying the pending entry as Misc.
+	private const int MAX_PARTICIPATION_SKIPS = 6;
+
 	private RealmPointEntry? pendingEntry;
 	private RealmPointEntry? bufferedEntry;
 	private ParserState state = ParserState.Idle;
+	private int participationSkips;
 
 	public void Reset()
 	{
 		this.pendingEntry = null;
 		this.bufferedEntry = null;
 		this.state = ParserState.Idle;
+		this.participationSkips = 0;
 	}
 
 	public bool TryParse(string line, out RealmPointEntry? entry)
@@ -77,7 +84,7 @@ public sealed partial class RealmPointParser
 				return false;
 			}
 
-			RealmPointSource pendingSource;
+			RealmPointSource? pendingSource = null;
 			if(line.Contains("have captured"))
 			{
 				pendingSource = RealmPointSource.Siege;
@@ -86,16 +93,24 @@ public sealed partial class RealmPointParser
 			{
 				pendingSource = RealmPointSource.PlayerKill;
 			}
-			else
+
+			// The confirmation can be separated from the RP line by unrelated chatter
+			// (e.g. a spell-cast notice between the RP gain and the keep-capture
+			// broadcast). Skip a bounded number of such lines before giving up — but
+			// never skip another RP line, which must be parsed in its own right.
+			if(pendingSource == null&&!RealmPointRegex.IsMatch(line)&&this.participationSkips < MAX_PARTICIPATION_SKIPS)
 			{
-				pendingSource = RealmPointSource.Misc;
+				this.participationSkips++;
+				return false;
 			}
+
+			this.participationSkips = 0;
 
 			entry = new RealmPointEntry
 			        {
 					        Timestamp = this.pendingEntry.Timestamp,
 					        Points = this.pendingEntry.Points,
-					        Source = pendingSource,
+					        Source = pendingSource ?? RealmPointSource.Misc,
 					        RawLine = this.pendingEntry.RawLine
 			        };
 

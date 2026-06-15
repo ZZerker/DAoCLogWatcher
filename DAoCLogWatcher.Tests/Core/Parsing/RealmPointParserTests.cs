@@ -66,14 +66,46 @@ public sealed class RealmPointParserTests
 		firstResult.Should().BeFalse();
 		firstEntry.Should().BeNull();
 
-		// Act - Unrelated next line cannot confirm kill or capture
-		var secondResult = parser.TryParse("[12:34:57] Some unrelated log line.", out var secondEntry);
+		// Act - Unrelated chatter is skipped while awaiting a confirmation, up to the
+		// bounded budget; once exhausted the pending entry flushes as Misc.
+		RealmPointEntry? lastEntry = null;
+		var emitted = false;
+		for(var i = 0; i < 8; i++)
+		{
+			if(parser.TryParse($"[12:34:57] Some unrelated log line {i}.", out var e))
+			{
+				emitted = true;
+				lastEntry = e;
+				break;
+			}
+		}
 
 		// Assert
-		secondResult.Should().BeTrue();
-		secondEntry.Should().NotBeNull();
-		secondEntry!.Points.Should().Be(1234);
-		secondEntry.Source.Should().Be(RealmPointSource.Misc);
+		emitted.Should().BeTrue();
+		lastEntry.Should().NotBeNull();
+		lastEntry.Points.Should().Be(1234);
+		lastEntry.Source.Should().Be(RealmPointSource.Misc);
+	}
+
+	[Fact]
+	public void TryParse_CaptureSeparatedFromRpByChatter_ClassifiesAsSiege()
+	{
+		// Arrange
+		var parser = new RealmPointParser();
+
+		// Act - Bare RP line is buffered pending a confirmation
+		parser.TryParse("[13:11:42] You get 1470 realm points!", out _).Should().BeFalse();
+
+		// A spell-cast notice lands between the RP line and the capture broadcast
+		parser.TryParse("[13:11:42] You are already casting a spell! You prepare this spell as a follow up!", out _).Should().BeFalse();
+
+		var result = parser.TryParse("[13:11:42] The forces of Hibernia led by Pilzpower have captured Dun Crimthain!", out var entry);
+
+		// Assert
+		result.Should().BeTrue();
+		entry.Should().NotBeNull();
+		entry.Points.Should().Be(1470);
+		entry.Source.Should().Be(RealmPointSource.Siege);
 	}
 
 	[Fact]
