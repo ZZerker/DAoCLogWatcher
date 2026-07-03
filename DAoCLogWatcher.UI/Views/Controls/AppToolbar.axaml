@@ -29,7 +29,7 @@
                                            FontSize="10" FontWeight="SemiBold"
                                            Foreground="{DynamicResource AppTextMuted}"
                                            Margin="8,6,8,4" />
-                                <ItemsControl ItemsSource="{Binding RecentSessions}">
+                                <ItemsControl ItemsSource="{Binding SessionPicker.RecentSessions}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate x:DataType="models:RecentSessionEntry">
                                             <Button Command="{Binding OpenCommand}"

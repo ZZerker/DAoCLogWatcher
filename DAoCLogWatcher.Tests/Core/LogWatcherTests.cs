@@ -570,6 +570,38 @@ public sealed class LogWatcherTests: IDisposable
 	}
 
 	[Fact]
+	public async Task WatchAsync_MultiByteChar_SplitAcrossReadBoundary_DecodesIntact()
+	{
+		// Arrange – build a single line whose multi-byte 'ü' (0xC3 0xBC) straddles the 4096-byte
+		// read boundary: 4095 ASCII bytes place the first byte of 'ü' at offset 4095 (last byte of
+		// the first read), the continuation byte 0xBC lands in the second read. A per-chunk
+		// Encoding.UTF8.GetString would emit U+FFFD garbage; a persistent Decoder buffers it.
+		var padding = new string('x', 4095);
+		var content = padding + "ü was just killed by Linkx in Emain Macha.\n";
+		Encoding.UTF8.GetByteCount(padding).Should().Be(4095);
+
+		await File.WriteAllTextAsync(this.testLogFilePath, content, new UTF8Encoding(false), TestContext.Current.CancellationToken);
+
+		var watcher = new LogWatcher(this.testLogFilePath, enableTimeFiltering: false);
+		using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+
+		LogLine? yielded = null;
+
+		// Act
+		await foreach(var line in watcher.WatchAsync(cts.Token))
+		{
+			yielded = line;
+			cts.Cancel();
+			break;
+		}
+
+		// Assert
+		yielded.Should().NotBeNull();
+		yielded!.Text.Should().Be(padding + "ü was just killed by Linkx in Emain Macha.");
+		yielded.Text.Should().NotContain("�");
+	}
+
+	[Fact]
 	public void Constructor_NullOrEmptyPath_ThrowsArgumentException()
 	{
 		// Act & Assert

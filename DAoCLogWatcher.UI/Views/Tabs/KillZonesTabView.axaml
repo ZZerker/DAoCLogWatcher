@@ -16,8 +16,8 @@
                            Foreground="{DynamicResource AppTextSecondary}"
                            VerticalAlignment="Center" />
                 <ComboBox Width="140"
-                          ItemsSource="{Binding ZoneKillWindowOptions}"
-                          SelectedItem="{Binding SelectedZoneKillWindow}"
+                          ItemsSource="{Binding ZoneActivity.ZoneKillWindowOptions}"
+                          SelectedItem="{Binding ZoneActivity.SelectedZoneKillWindow}"
                           FontSize="13">
                     <ComboBox.ItemTemplate>
                         <DataTemplate>
@@ -27,7 +27,7 @@
                 </ComboBox>
             </StackPanel>
             <TextBlock
-                Text="{Binding RecentZoneKillCount, StringFormat='Total recent kills: {0}'}"
+                Text="{Binding ZoneActivity.RecentZoneKillCount, StringFormat='Total recent kills: {0}'}"
                 Foreground="{DynamicResource AppTextSecondary}" FontSize="13" />
         </StackPanel>
 
@@ -51,7 +51,7 @@
 
         <Border Grid.Row="1" Background="{DynamicResource AppCardBackground}"
                 CornerRadius="6" Padding="10" Margin="0,10,0,0">
-            <ItemsControl ItemsSource="{Binding ZoneKills}">
+            <ItemsControl ItemsSource="{Binding ZoneActivity.ZoneKills}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <Border BorderBrush="{DynamicResource AppRowBorder}"

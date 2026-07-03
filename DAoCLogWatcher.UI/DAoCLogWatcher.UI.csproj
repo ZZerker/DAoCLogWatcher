@@ -3,6 +3,8 @@
 		<TargetFrameworks>net10.0;net10.0-windows10.0.17763</TargetFrameworks>
 		<Nullable>enable</Nullable>
 		<AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+		<!-- Default version for local/dev builds. CI overrides this with -p:Version=<git tag> at release time. -->
+		<Version>0.4.4</Version>
 	</PropertyGroup>
 
 	<!-- Flatpak/Flathub builds update through the store, so the in-app Velopack updater is compiled out. Set via -p:Flatpak=true. -->

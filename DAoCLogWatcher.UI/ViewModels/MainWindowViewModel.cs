@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -23,12 +22,8 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 {
 	private const int PARSING_DEBOUNCE_INTERVAL_MS = 1000;
 	private const int SEND_NOTIFICATION_MAX_AGE_SECONDS = 60;
-	private const int COMBAT_CHART_DEBOUNCE_MS = 250;
 
 	private readonly System.Timers.Timer parsingDebounceTimer;
-	private readonly System.Timers.Timer combatChartDebounceTimer;
-
-	public event EventHandler? CombatChartsUpdateNeeded;
 
 	private readonly IWatchSession watchSession;
 	private readonly IUpdateService updateService;
@@ -48,48 +43,10 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 	partial void OnCurrentFilePathChanged(string? value)
 	{
 		this.OnPropertyChanged(nameof(this.CurrentFileName));
-		_ = this.LoadRecentSessionsFromPathAsync(value);
+		_ = this.SessionPicker.LoadRecentSessionsFromPathAsync(value);
 	}
 
-	public ObservableCollection<RecentSessionEntry> RecentSessions { get; } = new();
-
-	private CancellationTokenSource? sessionLoadCts;
-
-	[RelayCommand]
-	private Task LoadRecentSessions()
-	{
-		return this.LoadRecentSessionsFromPathAsync(this.CurrentFilePath ?? this.GetLogPath());
-	}
-
-	private async Task LoadRecentSessionsFromPathAsync(string? path)
-	{
-		if(string.IsNullOrWhiteSpace(path)||!File.Exists(path))
-		{
-			return;
-		}
-
-		this.sessionLoadCts?.Cancel();
-		this.sessionLoadCts = new CancellationTokenSource();
-		var ct = this.sessionLoadCts.Token;
-
-		var sessions = await Task.Run(() => LogSessionScanner.Scan(path));
-		if(ct.IsCancellationRequested)
-		{
-			return;
-		}
-
-		this.RecentSessions.Clear();
-		foreach(var s in sessions.Take(3))
-		{
-			var label = s.CharacterName != null?$"{s.StartTime:MMM d, HH:mm} — {s.CharacterName}":s.StartTime.ToString("MMM d, HH:mm");
-			this.RecentSessions.Add(new RecentSessionEntry
-			                        {
-					                        Label = label,
-					                        Sublabel = s.DurationFormatted,
-					                        OpenCommand = new AsyncRelayCommand(() => this.OpenRecentSessionCoreAsync(path, s))
-			                        });
-		}
-	}
+	public SessionPickerViewModel SessionPicker { get; }
 
 	[RelayCommand]
 	private async Task OpenLastSession()
@@ -233,71 +190,13 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 
 	public SettingsPopupViewModel SettingsPopup { get; }
 
-	public ObservableCollection<HealStatEntry> DashboardTopTargets { get; } = new();
-
-	public ObservableCollection<HealStatEntry> DashboardTopSpells { get; } = new();
-
-	public ObservableCollection<HealStatEntry> DashboardTopHealers { get; } = new();
-
-	public ObservableCollection<HealStatEntry> DashboardTopDamageTaken { get; } = [];
-
-	public ObservableCollection<HealStatEntry> DashboardTopHealsDone { get; } = [];
+	public CombatStatsViewModel CombatStats { get; }
 
 	public FrontierMapData FrontierMap { get; private set; } = null!;
 
 	public IReadOnlyDictionary<string, int> CurrentZoneKills => this.processor.CurrentZoneKills;
 
-	public IReadOnlyList<TimeWindowOption> ZoneKillWindowOptions { get; } = new[]
-	                                                                        {
-			                                                                        new TimeWindowOption
-			                                                                        {
-					                                                                        Label = "2 min",
-					                                                                        Value = TimeSpan.FromMinutes(2)
-			                                                                        },
-			                                                                        new TimeWindowOption
-			                                                                        {
-					                                                                        Label = "5 min",
-					                                                                        Value = TimeSpan.FromMinutes(5)
-			                                                                        },
-			                                                                        new TimeWindowOption
-			                                                                        {
-					                                                                        Label = "10 min",
-					                                                                        Value = TimeSpan.FromMinutes(10)
-			                                                                        },
-			                                                                        new TimeWindowOption
-			                                                                        {
-					                                                                        Label = "20 min",
-					                                                                        Value = TimeSpan.FromMinutes(20)
-			                                                                        },
-			                                                                        new TimeWindowOption
-			                                                                        {
-					                                                                        Label = "30 min",
-					                                                                        Value = TimeSpan.FromMinutes(30)
-			                                                                        },
-			                                                                        new TimeWindowOption
-			                                                                        {
-					                                                                        Label = "60 min",
-					                                                                        Value = TimeSpan.FromMinutes(60)
-			                                                                        }
-	                                                                        };
-
-	public ObservableCollection<ZoneKillSummary> ZoneKills { get; } = new();
-
-	[ObservableProperty] private TimeWindowOption selectedZoneKillWindow = null!;
-
-	[ObservableProperty] private int recentZoneKillCount;
-
-	[ObservableProperty] private ZoneKillSummary? hottestZone;
-
-	public ObservableCollection<KillActivityPoint> KillActivityPoints { get; } = new();
-
-	public IReadOnlyList<KillActivityPoint> GetSessionKillActivityPoints()
-	{
-		var sessionStart = this.Summary.SessionStartTime ?? DateTime.Now;
-		return this.processor.GetSessionActivityPoints(sessionStart, DateTime.Now);
-	}
-
-	public event EventHandler? KillActivityUpdated;
+	public ZoneActivityViewModel ZoneActivity { get; }
 
 	[ObservableProperty] private bool showSendNotifications;
 
@@ -305,15 +204,6 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 	{
 		this.settings.ShowSendNotifications = value;
 		this.settingsService.Save(this.settings);
-	}
-
-	partial void OnSelectedZoneKillWindowChanged(TimeWindowOption value)
-	{
-		this.settings.ZoneKillWindowMinutes = (int)value.Value.TotalMinutes;
-		this.settingsService.Save(this.settings);
-		this.processor.SetZoneKillWindow(value.Value);
-		this.UpdateZoneKills();
-		this.UpdateKillActivity();
 	}
 
 	public SendNotificationController SendNotification { get; } = new();
@@ -365,28 +255,6 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 	}
 
 	public FilteredCollection<RealmPointLogEntry> RpLog { get; } = new(static (e, f) => string.IsNullOrWhiteSpace(f)||e.Details.Contains(f, StringComparison.OrdinalIgnoreCase)||e.Source.Contains(f, StringComparison.OrdinalIgnoreCase));
-
-	public FilteredCollection<HealLogEntry> HealLog { get; } = new(static (e, f) =>
-			                                                               string.IsNullOrWhiteSpace(f)||(e.Who ?? string.Empty).Contains(f, StringComparison.OrdinalIgnoreCase)||
-			                                                               e.DirectionLabel.Contains(f, StringComparison.OrdinalIgnoreCase));
-
-	public FilteredCollection<CombatLogEntry> CombatLog { get; } = new(static (e, f) => string.IsNullOrWhiteSpace(f)||e.Opponent.Contains(f, StringComparison.OrdinalIgnoreCase)||e.Source.Contains(f, StringComparison.OrdinalIgnoreCase));
-
-	public ObservableCollection<HealStatEntry> HealsByHealerStats { get; } = new();
-
-	public ObservableCollection<HealStatEntry> HealsByTargetStats { get; } = new();
-
-	public ObservableCollection<HealStatEntry> DamageTakenByAttackerStats { get; } = new();
-
-	public ObservableCollection<AttackTypeRow> AttackTypeStats { get; } = new();
-
-	public ToggleState CombatLogOutgoing { get; private set; } = null!;
-
-	public ToggleState CombatLogIncoming { get; private set; } = null!;
-
-	public ToggleState CombatLogAoe { get; private set; } = null!;
-
-	public ToggleState CombatLogDot { get; private set; } = null!;
 
 	public RealmPointSummary Summary { get; }
 
@@ -450,19 +318,12 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 		                                  });
 		this.Dashboard = new DashboardViewModel(this.settings, this.settingsService);
 		this.SettingsPopup = new SettingsPopupViewModel(this.settings, this.settingsService);
-		this.CombatLogOutgoing = new ToggleState(true, _ => this.RefreshCombatLogFilter());
-		this.CombatLogIncoming = new ToggleState(true, _ => this.RefreshCombatLogFilter());
-		this.CombatLogAoe = new ToggleState(true, _ => this.RefreshCombatLogFilter());
-		this.CombatLogDot = new ToggleState(true, _ => this.RefreshCombatLogFilter());
+		this.SessionPicker = new SessionPickerViewModel(() => this.CurrentFilePath ?? this.GetLogPath(), this.OpenRecentSessionCoreAsync, msg => this.WatchError = msg);
+		this.CombatStats = new CombatStatsViewModel(this.combatProcessor, this.CombatSummary);
 		this.FrontierMap = frontierMapService.Load();
-		this.SelectedZoneKillWindow = this.ZoneKillWindowOptions.FirstOrDefault(option => option.Value.TotalMinutes == this.settings.ZoneKillWindowMinutes) ?? this.ZoneKillWindowOptions[1];
+		this.ZoneActivity = new ZoneActivityViewModel(this.processor, this.settings, this.settingsService, () => this.Summary.SessionStartTime);
 		this.processor.EntryProcessed += this.OnEntryProcessed;
-		this.processor.ZoneKillsUpdated += this.OnZoneKillsUpdated;
 		this.processor.MultiKillDetected += this.OnMultiKillDetected;
-		this.combatProcessor.DamageLogged += this.OnDamageLogged;
-		this.combatProcessor.HealLogged += this.OnHealLogged;
-		this.combatProcessor.MultiHitDetected += this.OnMultiHitDetected;
-		this.CombatSummary.PropertyChanged += this.OnCombatSummaryPropertyChanged;
 		this.TimeFilter.FilterChanged += this.OnTimeFilterChanged;
 		this.watchSession.ErrorOccurred += this.OnWatchSessionError;
 		this.updateService.ErrorOccurred += this.OnUpdateError;
@@ -471,18 +332,13 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 				                            AutoReset = false
 		                            };
 		this.parsingDebounceTimer.Elapsed += (_, _) => Dispatcher.UIThread.InvokeAsync(() => this.IsParsing = false);
-		this.combatChartDebounceTimer = new System.Timers.Timer(COMBAT_CHART_DEBOUNCE_MS)
-		                                {
-				                                AutoReset = false
-		                                };
-		this.combatChartDebounceTimer.Elapsed += (_, _) =>
-		                                         {
-			                                         this.CombatChartsUpdateNeeded?.Invoke(this, EventArgs.Empty);
-			                                         Dispatcher.UIThread.InvokeAsync((Action)this.RefreshHealStats);
-			                                         Dispatcher.UIThread.InvokeAsync((Action)this.RefreshAttackTypeStats);
-		                                         };
-		this.FireAndForget(this.LoadRecentSessions());
 		this.FireAndForget(this.CheckForUpdatesAsync());
+	}
+
+	/// <summary>Forwards to <see cref="SessionPicker"/>'s window-activation rescan debounce.</summary>
+	public bool OnWindowActivated()
+	{
+		return this.SessionPicker.OnWindowActivated();
 	}
 
 	private void FireAndForget(Task task)
@@ -506,17 +362,6 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 	private void OnUpdateError(object? sender, string message)
 	{
 		Dispatcher.UIThread.InvokeAsync(() => this.UpdateError = message);
-	}
-
-	private void OnCombatSummaryPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
-	{
-		if(e.PropertyName is not ("TotalHealsReceived" or "TotalDamageDealt" or "TotalDamageTaken" or "TotalHealingDone"))
-		{
-			return;
-		}
-
-		this.combatChartDebounceTimer.Stop();
-		this.combatChartDebounceTimer.Start();
 	}
 
 	private async Task RestartAsync()
@@ -694,62 +539,6 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 		this.RpLog.Add(e);
 	}
 
-	private void OnDamageLogged(object? sender, CombatLogEntry e)
-	{
-		this.CombatLog.Add(e);
-	}
-
-	private void OnHealLogged(object? sender, HealLogEntry e)
-	{
-		this.HealLog.Add(e);
-	}
-
-	private void OnZoneKillsUpdated(object? sender, EventArgs e)
-	{
-		this.UpdateZoneKills();
-	}
-
-	private void OnMultiHitDetected(object? sender, CombatLogEntry e)
-	{
-		this.CombatLog.Add(e);
-	}
-
-	private void UpdateZoneKills()
-	{
-		var zoneCounts = this.processor.CurrentZoneKills.Where(kv => kv.Value > 1).OrderByDescending(kv => kv.Value).ThenBy(kv => kv.Key, StringComparer.OrdinalIgnoreCase).Take(20).ToList();
-
-		var totalCount = zoneCounts.Sum(kv => kv.Value);
-		var maxCount = zoneCounts.Count > 0?zoneCounts.Max(kv => kv.Value):1;
-
-		this.ZoneKills.Clear();
-		foreach(var kv in zoneCounts)
-		{
-			var heatRatio = maxCount == 0?0.0:(double)kv.Value / maxCount;
-			this.ZoneKills.Add(new ZoneKillSummary
-			                   {
-					                   Zone = kv.Key,
-					                   KillCount = kv.Value,
-					                   Percentage = totalCount == 0?0.0:(double)kv.Value / totalCount * 100.0,
-					                   HeatColor = ColorUtil.GetZoneHeatColor(heatRatio)
-			                   });
-		}
-
-		this.RecentZoneKillCount = totalCount;
-		this.HottestZone = this.ZoneKills.Count > 0?this.ZoneKills[0]:null;
-		this.UpdateKillActivity();
-	}
-
-	private void UpdateKillActivity()
-	{
-		this.KillActivityPoints.Clear();
-		foreach(var point in this.processor.KillActivityPoints)
-		{
-			this.KillActivityPoints.Add(point);
-		}
-
-		this.KillActivityUpdated?.Invoke(this, EventArgs.Empty);
-	}
-
 	[RelayCommand]
 	private async Task StartWatching()
 	{
@@ -813,13 +602,16 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 	private void CleanupWatchState()
 	{
 		this.parsingDebounceTimer.Stop();
-		this.combatChartDebounceTimer.Stop();
+		this.CombatStats.StopChartDebounce();
 		this.IsParsing = false;
 		this.IsWatching = false;
 		this.Summary.IsLive = false;
 		this.Summary.RefreshRpsPerHour();
-		this.RefreshHealStats();
-		this.RefreshAttackTypeStats();
+		this.CombatStats.RefreshHealStats();
+		this.CombatStats.RefreshAttackTypeStats();
+
+		// A watch loop just finished — rescan so the completed session appears in the list.
+		this.SessionPicker.RescanAfterWatchStopped();
 	}
 
 	[RelayCommand]
@@ -827,104 +619,18 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 	{
 		this.watchController.Stop();
 		this.IsWatching = false;
-		this.ResetAllState();
-	}
-
-	private void RefreshHealStats()
-	{
-		RefreshStatCollection(this.HealsByHealerStats, this.CombatSummary.HealsByHealer);
-		RefreshStatCollection(this.HealsByTargetStats, this.CombatSummary.HealsByTarget);
-		RefreshStatCollection(this.DamageTakenByAttackerStats, this.CombatSummary.DamageTakenByAttacker);
-		this.RefreshDashboardTopStats();
-	}
-
-	private void RefreshDashboardTopStats()
-	{
-		RefreshStatCollection(this.DashboardTopTargets, this.CombatSummary.DamageByTarget, 3);
-
-		var spellTotalsById = this.CombatSummary.DamageBySpell.ToDictionary(kv => kv.Key, kv => kv.Value.TotalDamage);
-		RefreshStatCollection(this.DashboardTopSpells, spellTotalsById, 3);
-
-		RefreshStatCollection(this.DashboardTopHealers, this.CombatSummary.HealsByHealer, 5);
-		RefreshStatCollection(this.DashboardTopDamageTaken, this.CombatSummary.DamageTakenByAttacker, 5);
-		RefreshStatCollection(this.DashboardTopHealsDone, this.CombatSummary.HealsByTarget, 5);
-	}
-
-	private void RefreshAttackTypeStats()
-	{
-		this.AttackTypeStats.Clear();
-		var source = this.CombatSummary.DamageBySpell;
-
-		var rows = source.Where(kv => kv.Value.HitCount > 0).Select(kv => (kv.Key, kv.Value.HitCount, kv.Value.CritCount, Avg: kv.Value.TotalDamage / kv.Value.HitCount)).OrderByDescending(r => r.Avg).ToList();
-
-		if(rows.Count == 0)
-		{
-			return;
-		}
-
-		var maxAvg = rows[0].Avg;
-
-		foreach(var r in rows)
-		{
-			this.AttackTypeStats.Add(new AttackTypeRow
-			                         {
-					                         Name = r.Key,
-					                         AvgDamage = r.Avg,
-					                         HitCount = r.HitCount,
-					                         CritCount = r.CritCount,
-					                         Percentage = (double)r.Avg / maxAvg * 100.0
-			                         });
-		}
-	}
-
-	private void RefreshCombatLogFilter()
-	{
-		this.CombatLog.SetTypeFilter(e => (this.CombatLogOutgoing.Value&&e.ShowDealtLabel)||(this.CombatLogIncoming.Value&&!e.IsDealt)||(this.CombatLogAoe.Value&&e.IsMultiHit)||(this.CombatLogDot.Value&&e.IsDotTick));
-	}
-
-	private static void RefreshStatCollection(ObservableCollection<HealStatEntry> collection, Dictionary<string, int> source, int count = int.MaxValue)
-	{
-		collection.Clear();
-		var total = source.Values.Sum();
-		if(total == 0)
-		{
-			return;
-		}
-
-		foreach(var kv in source.OrderByDescending(kv => kv.Value).Take(count))
-		{
-			collection.Add(new HealStatEntry
-			               {
-					               Name = kv.Key,
-					               Total = kv.Value,
-					               Percentage = (double)kv.Value / total * 100.0
-			               });
-		}
 	}
 
 	private void ResetAllState()
 	{
 		this.Summary.Reset();
 		this.RpLog.Clear();
-		this.HealLog.Clear();
-		this.CombatLog.Clear();
-		this.HealsByHealerStats.Clear();
-		this.HealsByTargetStats.Clear();
-		this.DamageTakenByAttackerStats.Clear();
-		this.AttackTypeStats.Clear();
 		this.ChartData.Reset();
 		this.CombatSummary.Reset();
 		this.processor.Reset();
 		this.combatProcessor.Reset();
-		this.DashboardTopTargets.Clear();
-		this.DashboardTopSpells.Clear();
-		this.DashboardTopHealers.Clear();
-		this.DashboardTopDamageTaken.Clear();
-		this.DashboardTopHealsDone.Clear();
-		this.ZoneKills.Clear();
-		this.HottestZone = null;
-		this.KillActivityPoints.Clear();
-		this.RecentZoneKillCount = 0;
+		this.CombatStats.Reset();
+		this.ZoneActivity.Reset();
 		this.DetectedCharacterName = null;
 		this.Kills = 0;
 		this.Deaths = 0;
@@ -955,21 +661,15 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 	{
 		this.processor.EntryProcessed -= this.OnEntryProcessed;
 		this.processor.MultiKillDetected -= this.OnMultiKillDetected;
-		this.processor.ZoneKillsUpdated -= this.OnZoneKillsUpdated;
-		this.combatProcessor.DamageLogged -= this.OnDamageLogged;
-		this.combatProcessor.HealLogged -= this.OnHealLogged;
-		this.combatProcessor.MultiHitDetected -= this.OnMultiHitDetected;
-		this.CombatSummary.PropertyChanged -= this.OnCombatSummaryPropertyChanged;
+		this.ZoneActivity.Dispose();
+		this.CombatStats.Dispose();
 		this.TimeFilter.FilterChanged -= this.OnTimeFilterChanged;
 		this.watchSession.ErrorOccurred -= this.OnWatchSessionError;
 		this.updateService.ErrorOccurred -= this.OnUpdateError;
 		this.watchController.Stop();
+		this.SessionPicker.Dispose();
 		this.parsingDebounceTimer.Stop();
 		this.parsingDebounceTimer.Dispose();
-		this.combatChartDebounceTimer.Stop();
-		this.combatChartDebounceTimer.Dispose();
-		this.sessionLoadCts?.Cancel();
-		this.sessionLoadCts?.Dispose();
 		this.SendNotification.Dispose();
 		GC.SuppressFinalize(this);
 	}

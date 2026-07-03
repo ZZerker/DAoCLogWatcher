@@ -99,7 +99,7 @@
                                         Classes="btn-ghost"
                                         HorizontalAlignment="Right" FontSize="14" />
                             </Grid>
-                            <ItemsControl ItemsSource="{Binding AttackTypeStats}"
+                            <ItemsControl ItemsSource="{Binding CombatStats.AttackTypeStats}"
                                           IsVisible="{Binding AvgDmgChart.Value}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate x:DataType="models:AttackTypeRow">
@@ -121,7 +121,7 @@
                                            ToggleIcon="{Binding DmgByAttackerChart.Icon}"
                                            ToggleCommand="{Binding DmgByAttackerChart.ToggleCommand}"
                                            IsChartVisible="{Binding DmgByAttackerChart.Value}"
-                                           ItemsSource="{Binding DamageTakenByAttackerStats}"
+                                           ItemsSource="{Binding CombatStats.DamageTakenByAttackerStats}"
                                            BarColor="{DynamicResource AppDanger}" />
 
                     <controls:BarChartCard Title="Heals Received"
@@ -131,7 +131,7 @@
                                            ToggleIcon="{Binding HealsByHealerChart.Icon}"
                                            ToggleCommand="{Binding HealsByHealerChart.ToggleCommand}"
                                            IsChartVisible="{Binding HealsByHealerChart.Value}"
-                                           ItemsSource="{Binding HealsByHealerStats}"
+                                           ItemsSource="{Binding CombatStats.HealsByHealerStats}"
                                            BarColor="{DynamicResource AppPositive}" />
 
                     <controls:BarChartCard Title="Heals Done"
@@ -141,7 +141,7 @@
                                            ToggleIcon="{Binding HealsByTargetChart.Icon}"
                                            ToggleCommand="{Binding HealsByTargetChart.ToggleCommand}"
                                            IsChartVisible="{Binding HealsByTargetChart.Value}"
-                                           ItemsSource="{Binding HealsByTargetStats}"
+                                           ItemsSource="{Binding CombatStats.HealsByTargetStats}"
                                            BarColor="{DynamicResource AppPositive}" />
 
                 </StackPanel>

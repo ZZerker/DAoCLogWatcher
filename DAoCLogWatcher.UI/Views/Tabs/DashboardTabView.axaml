@@ -230,23 +230,23 @@
                         <TextBlock Text="HOTTEST ZONE" FontSize="10" FontWeight="SemiBold"
                                    Foreground="{DynamicResource AppTextMuted}" />
                         <StackPanel Spacing="5"
-                                    IsVisible="{Binding HottestZone, Converter={x:Static ObjectConverters.IsNotNull}}">
-                            <TextBlock Text="{Binding HottestZone.Zone}" FontSize="22" FontWeight="Bold"
-                                       Foreground="{Binding HottestZone.HeatColor}"
+                                    IsVisible="{Binding ZoneActivity.HottestZone, Converter={x:Static ObjectConverters.IsNotNull}}">
+                            <TextBlock Text="{Binding ZoneActivity.HottestZone.Zone}" FontSize="22" FontWeight="Bold"
+                                       Foreground="{Binding ZoneActivity.HottestZone.HeatColor}"
                                        TextTrimming="CharacterEllipsis" />
                             <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                                <Border Width="10" Height="10" Background="{Binding HottestZone.HeatColor}"
+                                <Border Width="10" Height="10" Background="{Binding ZoneActivity.HottestZone.HeatColor}"
                                         CornerRadius="5" VerticalAlignment="Center" />
-                                <TextBlock Text="{Binding HottestZone.KillCount, StringFormat='{}{0} kills'}"
+                                <TextBlock Text="{Binding ZoneActivity.HottestZone.KillCount, StringFormat='{}{0} kills'}"
                                            FontSize="13" FontWeight="SemiBold"
                                            Foreground="{DynamicResource AppTextSecondary}" />
-                                <TextBlock Text="{Binding HottestZone.Percentage, StringFormat='{}{0:F1}%'}"
+                                <TextBlock Text="{Binding ZoneActivity.HottestZone.Percentage, StringFormat='{}{0:F1}%'}"
                                            FontSize="12" Foreground="{DynamicResource AppTextMuted}" />
                             </StackPanel>
                         </StackPanel>
                         <TextBlock Text="No zone activity yet" FontSize="11"
                                    Foreground="{DynamicResource AppTextDim}"
-                                   IsVisible="{Binding HottestZone, Converter={x:Static ObjectConverters.IsNull}}" />
+                                   IsVisible="{Binding ZoneActivity.HottestZone, Converter={x:Static ObjectConverters.IsNull}}" />
                     </StackPanel>
                 </Border>
 
@@ -358,7 +358,7 @@
                     <StackPanel Spacing="10">
                         <TextBlock Text="TOP TARGETS" FontSize="11" FontWeight="SemiBold"
                                    Foreground="{DynamicResource AppTextMuted}" />
-                        <ItemsControl ItemsSource="{Binding DashboardTopTargets}">
+                        <ItemsControl ItemsSource="{Binding CombatStats.DashboardTopTargets}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="models:HealStatEntry">
                                     <controls:StatBarRow Label="{Binding Name}" Value="{Binding Total}"
@@ -369,7 +369,7 @@
                         </ItemsControl>
                         <TextBlock Text="No combat data yet" FontSize="12"
                                    Foreground="{DynamicResource AppTextDim}"
-                                   IsVisible="{Binding !DashboardTopTargets.Count}" />
+                                   IsVisible="{Binding !CombatStats.DashboardTopTargets.Count}" />
                     </StackPanel>
                 </Border>
 
@@ -381,7 +381,7 @@
                     <StackPanel Spacing="10">
                         <TextBlock Text="TOP SPELLS / ATTACKS" FontSize="11" FontWeight="SemiBold"
                                    Foreground="{DynamicResource AppTextMuted}" />
-                        <ItemsControl ItemsSource="{Binding DashboardTopSpells}">
+                        <ItemsControl ItemsSource="{Binding CombatStats.DashboardTopSpells}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="models:HealStatEntry">
                                     <controls:StatBarRow Label="{Binding Name}" Value="{Binding Total}"
@@ -392,7 +392,7 @@
                         </ItemsControl>
                         <TextBlock Text="No combat data yet" FontSize="12"
                                    Foreground="{DynamicResource AppTextDim}"
-                                   IsVisible="{Binding !DashboardTopSpells.Count}" />
+                                   IsVisible="{Binding !CombatStats.DashboardTopSpells.Count}" />
                     </StackPanel>
                 </Border>
 
@@ -404,7 +404,7 @@
                     <StackPanel Spacing="10">
                         <TextBlock Text="TOP HEALERS RECEIVED" FontSize="11" FontWeight="SemiBold"
                                    Foreground="{DynamicResource AppTextMuted}" />
-                        <ItemsControl ItemsSource="{Binding DashboardTopHealers}">
+                        <ItemsControl ItemsSource="{Binding CombatStats.DashboardTopHealers}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="models:HealStatEntry">
                                     <controls:StatBarRow Label="{Binding Name}" Value="{Binding Total}"
@@ -415,7 +415,7 @@
                         </ItemsControl>
                         <TextBlock Text="No heal data yet" FontSize="12"
                                    Foreground="{DynamicResource AppTextDim}"
-                                   IsVisible="{Binding !DashboardTopHealers.Count}" />
+                                   IsVisible="{Binding !CombatStats.DashboardTopHealers.Count}" />
                     </StackPanel>
                 </Border>
 
@@ -427,7 +427,7 @@
                     <StackPanel Spacing="10">
                         <TextBlock Text="DAMAGE TAKEN BY" FontSize="11" FontWeight="SemiBold"
                                    Foreground="{DynamicResource AppTextMuted}" />
-                        <ItemsControl ItemsSource="{Binding DashboardTopDamageTaken}">
+                        <ItemsControl ItemsSource="{Binding CombatStats.DashboardTopDamageTaken}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="models:HealStatEntry">
                                     <controls:StatBarRow Label="{Binding Name}" Value="{Binding Total}"
@@ -438,7 +438,7 @@
                         </ItemsControl>
                         <TextBlock Text="No combat data yet" FontSize="12"
                                    Foreground="{DynamicResource AppTextDim}"
-                                   IsVisible="{Binding !DashboardTopDamageTaken.Count}" />
+                                   IsVisible="{Binding !CombatStats.DashboardTopDamageTaken.Count}" />
                     </StackPanel>
                 </Border>
 
@@ -450,7 +450,7 @@
                     <StackPanel Spacing="10">
                         <TextBlock Text="HEALS DONE TO" FontSize="11" FontWeight="SemiBold"
                                    Foreground="{DynamicResource AppTextMuted}" />
-                        <ItemsControl ItemsSource="{Binding DashboardTopHealsDone}">
+                        <ItemsControl ItemsSource="{Binding CombatStats.DashboardTopHealsDone}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="models:HealStatEntry">
                                     <controls:StatBarRow Label="{Binding Name}" Value="{Binding Total}"
@@ -461,7 +461,7 @@
                         </ItemsControl>
                         <TextBlock Text="No heal data yet" FontSize="12"
                                    Foreground="{DynamicResource AppTextDim}"
-                                   IsVisible="{Binding !DashboardTopHealsDone.Count}" />
+                                   IsVisible="{Binding !CombatStats.DashboardTopHealsDone.Count}" />
                     </StackPanel>
                 </Border>
 
@@ -473,7 +473,7 @@
                     <StackPanel Spacing="10">
                         <TextBlock Text="ZONE ACTIVITY" FontSize="11" FontWeight="SemiBold"
                                    Foreground="{DynamicResource AppTextMuted}" />
-                        <ItemsControl ItemsSource="{Binding ZoneKills}">
+                        <ItemsControl ItemsSource="{Binding ZoneActivity.ZoneKills}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="models:ZoneKillSummary">
                                     <Border BorderBrush="{DynamicResource AppRowBorder}"
@@ -501,7 +501,7 @@
                         </ItemsControl>
                         <TextBlock Text="No zone activity yet" FontSize="12"
                                    Foreground="{DynamicResource AppTextDim}"
-                                   IsVisible="{Binding !ZoneKills.Count}" />
+                                   IsVisible="{Binding !ZoneActivity.ZoneKills.Count}" />
                     </StackPanel>
                 </Border>
 
@@ -578,7 +578,7 @@
                         <TextBlock Text="RECENT HEAL LOG" FontSize="11" FontWeight="SemiBold"
                                    Foreground="{DynamicResource AppTextMuted}" />
                         <ScrollViewer MaxHeight="168" VerticalScrollBarVisibility="Auto">
-                            <ItemsControl ItemsSource="{Binding HealLog.Items}">
+                            <ItemsControl ItemsSource="{Binding CombatStats.HealLog.Items}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate x:DataType="models:HealLogEntry">
                                         <Border BorderBrush="{DynamicResource AppRowBorder}"
@@ -603,7 +603,7 @@
                         </ScrollViewer>
                         <TextBlock Text="No heal data yet" FontSize="12"
                                    Foreground="{DynamicResource AppTextDim}"
-                                   IsVisible="{Binding !HealLog.Items.Count}" />
+                                   IsVisible="{Binding !CombatStats.HealLog.Items.Count}" />
                     </StackPanel>
                 </Border>
 
@@ -616,7 +616,7 @@
                         <TextBlock Text="RECENT COMBAT LOG" FontSize="11" FontWeight="SemiBold"
                                    Foreground="{DynamicResource AppTextMuted}" />
                         <ScrollViewer MaxHeight="168" VerticalScrollBarVisibility="Auto">
-                            <ItemsControl ItemsSource="{Binding CombatLog.Items}">
+                            <ItemsControl ItemsSource="{Binding CombatStats.CombatLog.Items}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate x:DataType="models:CombatLogEntry">
                                         <Border BorderBrush="{DynamicResource AppRowBorder}"
@@ -639,7 +639,7 @@
                         </ScrollViewer>
                         <TextBlock Text="No combat data yet" FontSize="12"
                                    Foreground="{DynamicResource AppTextDim}"
-                                   IsVisible="{Binding !CombatLog.Items.Count}" />
+                                   IsVisible="{Binding !CombatStats.CombatLog.Items.Count}" />
                     </StackPanel>
                 </Border>
 

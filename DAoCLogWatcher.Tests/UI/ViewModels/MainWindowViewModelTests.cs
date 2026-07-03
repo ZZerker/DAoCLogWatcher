@@ -175,11 +175,13 @@ public sealed class MainWindowViewModelTests: IDisposable
 	}
 
 	[Fact]
-	public void StopWatching_ResetsCollections()
+	public void StopWatching_KeepsCollections()
 	{
 		var vm = this.Build();
 
-		// Add a fake entry to verify Reset clears it
+		// Stopping should freeze the current session's data on screen; state is only
+		// reset when a new watch starts (onStarted), not eagerly on Stop. This avoids
+		// an in-flight watch loop repopulating "reset" collections with stale lines.
 		vm.RpLog.Items.Add(new RealmPointLogEntry
 		                   {
 				                   Timestamp = "20:00:00",
@@ -190,7 +192,7 @@ public sealed class MainWindowViewModelTests: IDisposable
 
 		vm.StopWatchingCommand.Execute(null);
 
-		vm.RpLog.Items.Should().BeEmpty();
+		vm.RpLog.Items.Should().HaveCount(1);
 	}
 
 	// ── Path discovery ────────────────────────────────────────────────────────
@@ -294,6 +296,27 @@ public sealed class MainWindowViewModelTests: IDisposable
 		await Task.Yield();
 
 		await this.mockSession.Received(1).StopAndWaitAsync();
+	}
+
+	// ── Window-activation rescan debounce ────────────────────────────────────
+
+	[Fact]
+	public void OnWindowActivated_FirstCall_LaunchesRescan()
+	{
+		var vm = this.Build();
+
+		vm.OnWindowActivated().Should().BeTrue();
+	}
+
+	[Fact]
+	public void OnWindowActivated_WithinDebounceWindow_SkipsRescan()
+	{
+		var vm = this.Build();
+
+		vm.OnWindowActivated().Should().BeTrue();
+
+		// Immediate second activation is inside the 30s debounce window
+		vm.OnWindowActivated().Should().BeFalse();
 	}
 
 	// ── Dashboard drag-to-arrange (Phase 1) ──────────────────────────────────

@@ -26,38 +26,38 @@
                                Margin="0,0,15,0"
                                Foreground="{DynamicResource AppTextPrimary}" />
                     <TextBlock
-                        Text="{Binding CombatLog.Filtered.Count, StringFormat='({0} entries)'}"
+                        Text="{Binding CombatStats.CombatLog.Filtered.Count, StringFormat='({0} entries)'}"
                         FontSize="14" VerticalAlignment="Center"
                         Foreground="{DynamicResource AppTextMuted}" />
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Spacing="6">
                     <Button Content="Outgoing"
                             Classes="btn-toggle"
-                            Classes.active="{Binding CombatLogOutgoing.Value}"
-                            Command="{Binding CombatLogOutgoing.ToggleCommand}" />
+                            Classes.active="{Binding CombatStats.CombatLogOutgoing.Value}"
+                            Command="{Binding CombatStats.CombatLogOutgoing.ToggleCommand}" />
                     <Button Content="Incoming"
                             Classes="btn-toggle"
-                            Classes.active="{Binding CombatLogIncoming.Value}"
-                            Command="{Binding CombatLogIncoming.ToggleCommand}" />
+                            Classes.active="{Binding CombatStats.CombatLogIncoming.Value}"
+                            Command="{Binding CombatStats.CombatLogIncoming.ToggleCommand}" />
                     <Button Content="AoE"
                             Classes="btn-toggle"
-                            Classes.active="{Binding CombatLogAoe.Value}"
-                            Command="{Binding CombatLogAoe.ToggleCommand}" />
+                            Classes.active="{Binding CombatStats.CombatLogAoe.Value}"
+                            Command="{Binding CombatStats.CombatLogAoe.ToggleCommand}" />
                     <Button Content="DoT"
                             Classes="btn-toggle"
-                            Classes.active="{Binding CombatLogDot.Value}"
-                            Command="{Binding CombatLogDot.ToggleCommand}" />
+                            Classes.active="{Binding CombatStats.CombatLogDot.Value}"
+                            Command="{Binding CombatStats.CombatLogDot.ToggleCommand}" />
                 </StackPanel>
                 <Grid ColumnDefinitions="*,Auto">
                     <TextBox Grid.Column="0"
-                             Text="{Binding CombatLog.FilterText}"
+                             Text="{Binding CombatStats.CombatLog.FilterText}"
                              Watermark="Filter by target or source…"
                              FontSize="13" />
                     <Button Grid.Column="1"
                             Content="✕"
                             Classes="btn-ghost"
-                            Command="{Binding CombatLog.ClearFilterCommand}"
-                            IsVisible="{Binding CombatLog.FilterText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                            Command="{Binding CombatStats.CombatLog.ClearFilterCommand}"
+                            IsVisible="{Binding CombatStats.CombatLog.FilterText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                             Margin="6,0,0,0" />
                 </Grid>
             </StackPanel>
@@ -65,7 +65,7 @@
             <ScrollViewer Background="{DynamicResource AppCardBackground}" CornerRadius="6"
                           Padding="10"
                           HorizontalScrollBarVisibility="Disabled">
-                <ItemsControl ItemsSource="{Binding CombatLog.Filtered}">
+                <ItemsControl ItemsSource="{Binding CombatStats.CombatLog.Filtered}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <Border BorderBrush="{DynamicResource AppRowBorder}"

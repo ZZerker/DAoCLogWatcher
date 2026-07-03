@@ -27,7 +27,7 @@ public partial class KillZonesTabView: UserControl
 		                           {
 			                           if(this.vm != null)
 			                           {
-				                           this.vm.KillActivityUpdated -= this.OnKillActivityUpdated;
+				                           this.vm.ZoneActivity.KillActivityUpdated -= this.OnKillActivityUpdated;
 				                           this.vm.SettingsPopup.PropertyChanged -= this.OnViewModelPropertyChanged;
 				                           this.vm = null;
 			                           }
@@ -35,7 +35,7 @@ public partial class KillZonesTabView: UserControl
 			                           if(this.DataContext is MainWindowViewModel newVm)
 			                           {
 				                           this.vm = newVm;
-				                           newVm.KillActivityUpdated += this.OnKillActivityUpdated;
+				                           newVm.ZoneActivity.KillActivityUpdated += this.OnKillActivityUpdated;
 				                           newVm.SettingsPopup.PropertyChanged += this.OnViewModelPropertyChanged;
 				                           ChartHelper.ApplyTheme(newVm.SettingsPopup.IsDarkTheme, this.GlobalActivityChart);
 			                           }
@@ -54,7 +54,7 @@ public partial class KillZonesTabView: UserControl
 			return;
 		}
 
-		var points = this.vm.GetSessionKillActivityPoints().Select(p => (p.Time, (double)p.KillCount)).ToList();
+		var points = this.vm.ZoneActivity.GetSessionKillActivityPoints().Select(p => (p.Time, (double)p.KillCount)).ToList();
 		(this.globalActivityScatter, this.globalActivityHighlight, this.globalActivityTooltip) =
 				ChartHelper.UpdateActivityChart(this.GlobalActivityChart, points, this.vm.Summary.SessionStartTime, "#7CDAFF");
 	}

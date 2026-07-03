@@ -61,7 +61,7 @@ public partial class KillHeatmapTabView: UserControl
 		                           {
 			                           if(this.vm != null)
 			                           {
-				                           this.vm.KillActivityUpdated -= this.OnKillActivityUpdated;
+				                           this.vm.ZoneActivity.KillActivityUpdated -= this.OnKillActivityUpdated;
 				                           this.vm.SettingsPopup.PropertyChanged -= this.OnViewModelPropertyChanged;
 				                           this.vm = null;
 			                           }
@@ -83,7 +83,7 @@ public partial class KillHeatmapTabView: UserControl
 
 			                           this.InitKillHeatmapChart();
 			                           ChartHelper.ApplyTheme(newVm.SettingsPopup.IsDarkTheme, this.KillHeatmapPlot);
-			                           newVm.KillActivityUpdated += this.OnKillActivityUpdated;
+			                           newVm.ZoneActivity.KillActivityUpdated += this.OnKillActivityUpdated;
 			                           newVm.SettingsPopup.PropertyChanged += this.OnViewModelPropertyChanged;
 		                           };
 

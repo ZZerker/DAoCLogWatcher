@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Threading.Tasks;
 using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -17,6 +18,23 @@ public sealed partial class SettingsPopupViewModel: ObservableObject
 		this.settings = settings;
 		this.settingsService = settingsService;
 		this.customChatLogPath = settings.CustomChatLogPath;
+	}
+
+	public string AppVersion { get; } = ReadAppVersion();
+
+	private static string ReadAppVersion()
+	{
+		var assembly = Assembly.GetExecutingAssembly();
+		var informational = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+		if(!string.IsNullOrWhiteSpace(informational))
+		{
+			// Strip the "+<commit hash>" source-revision suffix appended by the build.
+			var plusIndex = informational.IndexOf('+');
+			return $"v{(plusIndex >= 0?informational[..plusIndex]:informational)}";
+		}
+
+		var version = assembly.GetName().Version;
+		return version != null?$"v{version.ToString(3)}":"unknown";
 	}
 
 	[ObservableProperty] private bool isSettingsPopupVisible;

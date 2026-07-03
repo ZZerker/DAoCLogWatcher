@@ -21,6 +21,8 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 	private readonly string logFilePath;
 	private readonly double maxHistoryHours;
 	private readonly byte[] readBuffer;
+	private readonly char[] charBuffer;
+	private readonly Decoder utf8Decoder = Encoding.UTF8.GetDecoder();
 	private FileStream? fileStream;
 	private readonly StringBuilder incompleteLineBuffer;
 	private DateTime? lastLogClosed;
@@ -37,6 +39,7 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 		this.logFilePath = logFilePath;
 		this.LastPosition = startPosition;
 		this.readBuffer = new byte[BUFFER_SIZE];
+		this.charBuffer = new char[BUFFER_SIZE];
 		this.incompleteLineBuffer = new StringBuilder();
 		this.skipOldEntries = enableTimeFiltering&&startPosition == 0;
 		this.maxHistoryHours = filterHours;
@@ -253,7 +256,8 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 
 	private string DecodeBytes(int byteCount)
 	{
-		return Encoding.UTF8.GetString(this.readBuffer, 0, byteCount);
+		var charCount = this.utf8Decoder.GetChars(this.readBuffer, 0, byteCount, this.charBuffer, 0);
+		return new string(this.charBuffer, 0, charCount);
 	}
 
 	private string[] ExtractCompleteLines()

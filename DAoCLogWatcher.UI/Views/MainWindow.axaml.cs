@@ -21,6 +21,8 @@ public partial class MainWindow: Window
 
 		this.Toolbar.ScreenshotRequested += async (s, e) => await this.OnScreenshotClickAsync();
 
+		this.Activated += (s, e) => this.vm?.OnWindowActivated();
+
 		this.DataContextChanged += (s, e) =>
 		                           {
 			                           if(this.vm != null)

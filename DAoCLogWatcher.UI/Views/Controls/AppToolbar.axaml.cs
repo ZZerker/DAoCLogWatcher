@@ -38,7 +38,7 @@ public partial class AppToolbar: UserControl
 	{
 		FlyoutBase.ShowAttachedFlyout(this.BrowseSessionsSplitGrid);
 		var vm = (MainWindowViewModel)this.DataContext!;
-		_ = vm.LoadRecentSessionsCommand.ExecuteAsync(null);
+		_ = vm.SessionPicker.LoadRecentSessionsCommand.ExecuteAsync(null);
 	}
 
 	private void OnOpenLogChevronClick(object? sender, RoutedEventArgs e)

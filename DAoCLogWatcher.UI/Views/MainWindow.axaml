@@ -9,7 +9,7 @@
         x:Class="DAoCLogWatcher.UI.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/logo.ico"
-        Title="DAoC Log Watcher"
+        Title="{Binding SettingsPopup.AppVersion, StringFormat='DAoC Log Watcher {0}'}"
         Width="1535" Height="1268"
         Background="{DynamicResource AppWindowBackground}"
         Classes.highlight-multikills="{Binding HighlightMultiKills}"
@@ -366,6 +366,11 @@
                              FontSize="10"
                              Padding="6,4" />
                 </StackPanel>
+                <Rectangle Fill="{DynamicResource AppBorderBrush}" Height="1" />
+                <TextBlock Text="{Binding SettingsPopup.AppVersion, StringFormat='DAoC Log Watcher {0}'}"
+                           FontSize="10"
+                           Foreground="{DynamicResource AppTextMuted}"
+                           HorizontalAlignment="Center" />
             </StackPanel>
         </Border>
 

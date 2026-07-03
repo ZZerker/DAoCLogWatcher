@@ -33,6 +33,7 @@ public static class NpcFilter
 	private static readonly string[] NpcTitlePrefixes =
 	{
 		"Lord ",
+		"Lady ",
 		"Jarl ",
 		"Chieftain "
 	};

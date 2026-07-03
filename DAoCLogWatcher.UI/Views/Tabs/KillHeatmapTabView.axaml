@@ -22,12 +22,12 @@
                           Foreground="{DynamicResource AppTextSecondary}" FontSize="13"
                           VerticalAlignment="Center" />
                 <TextBlock
-                    Text="{Binding RecentZoneKillCount, StringFormat='Total: {0} kills'}"
+                    Text="{Binding ZoneActivity.RecentZoneKillCount, StringFormat='Total: {0} kills'}"
                     Foreground="{DynamicResource AppTextSecondary}" FontSize="13"
                     VerticalAlignment="Center" />
                 <ComboBox Width="140"
-                          ItemsSource="{Binding ZoneKillWindowOptions}"
-                          SelectedItem="{Binding SelectedZoneKillWindow}"
+                          ItemsSource="{Binding ZoneActivity.ZoneKillWindowOptions}"
+                          SelectedItem="{Binding ZoneActivity.SelectedZoneKillWindow}"
                           FontSize="13">
                     <ComboBox.ItemTemplate>
                         <DataTemplate>

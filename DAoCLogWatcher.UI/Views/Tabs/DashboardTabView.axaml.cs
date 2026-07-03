@@ -129,7 +129,7 @@ public partial class DashboardTabView: UserControl
 			                           {
 				                           this.vm.Dashboard.DashboardWidgets.CollectionChanged -= this.OnWidgetsCollectionChanged;
 				                           this.vm.MinimapLocationChanged -= this.OnMinimapLocationChanged;
-				                           this.vm.KillActivityUpdated -= this.OnKillActivityUpdated;
+				                           this.vm.ZoneActivity.KillActivityUpdated -= this.OnKillActivityUpdated;
 				                           this.vm.SettingsPopup.PropertyChanged -= this.OnVmPropertyChanged;
 				                           this.vm.Dashboard.PropertyChanged -= this.OnDashboardPropertyChanged;
 				                           foreach(var w in this.vm.Dashboard.DashboardWidgets)
@@ -160,7 +160,7 @@ public partial class DashboardTabView: UserControl
 
 			                           this.vm.Dashboard.DashboardWidgets.CollectionChanged += this.OnWidgetsCollectionChanged;
 			                           this.vm.MinimapLocationChanged += this.OnMinimapLocationChanged;
-			                           this.vm.KillActivityUpdated += this.OnKillActivityUpdated;
+			                           this.vm.ZoneActivity.KillActivityUpdated += this.OnKillActivityUpdated;
 			                           this.vm.SettingsPopup.PropertyChanged += this.OnVmPropertyChanged;
 			                           this.vm.Dashboard.PropertyChanged += this.OnDashboardPropertyChanged;
 			                           foreach(var w in this.vm.Dashboard.DashboardWidgets)
@@ -328,7 +328,7 @@ public partial class DashboardTabView: UserControl
 			return;
 		}
 
-		var points = this.vm.GetSessionKillActivityPoints().Select(p => (p.Time, (double)p.KillCount)).ToList();
+		var points = this.vm.ZoneActivity.GetSessionKillActivityPoints().Select(p => (p.Time, (double)p.KillCount)).ToList();
 		(this.globalActivityScatter, this.globalActivityHighlight, this.globalActivityTooltip) =
 				ChartHelper.UpdateActivityChart(this.GlobalActivityPlot, points, this.vm.Summary.SessionStartTime, "#7CDAFF");
 	}

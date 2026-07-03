@@ -33,13 +33,17 @@ public sealed class WatchSession: IWatchSession
 
 	public DateTime? CurrentSessionStart => this.currentWatcher?.CurrentSessionStart;
 
-	public Task RunAsync(LogWatcher watcher, Action onRpsRefresh, Func<LogLine, Task> onLine)
+	public async Task RunAsync(LogWatcher watcher, Action onRpsRefresh, Func<LogLine, Task> onLine)
 	{
+		// Serialize against any in-flight run so a Stop/Start (or back-to-back Start)
+		// cannot leave two watch loops draining concurrently.
+		await this.StopAndWaitAsync();
+
 		var cts = new CancellationTokenSource();
 		this.cancellationTokenSource = cts;
 		this.currentWatcher = watcher;
 		this.currentTask = this.RunCoreAsync(watcher, cts, onRpsRefresh, onLine);
-		return this.currentTask;
+		await this.currentTask;
 	}
 
 	private async Task RunCoreAsync(LogWatcher watcher, CancellationTokenSource cts, Action onRpsRefresh, Func<LogLine, Task> onLine)
