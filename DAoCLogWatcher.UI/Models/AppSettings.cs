@@ -27,4 +27,18 @@ public class AppSettings
 	public Dictionary<string, List<DashboardWidgetConfig>> DashboardProfiles { get; set; } = new();
 
 	public string? ActiveDashboardProfile { get; set; }
+
+	public bool OverlayEnabled { get; set; }
+
+	public double? OverlayX { get; set; }
+
+	public double? OverlayY { get; set; }
+
+	public bool OverlayShowRp { get; set; } = true;
+
+	public bool OverlayShowKd { get; set; } = true;
+
+	public bool OverlayShowKillFeed { get; set; } = true;
+
+	public double OverlayOpacity { get; set; } = 0.85;
 }

@@ -91,8 +91,7 @@ public partial class RealmPointSummary: ObservableObject
 			}
 
 			var end = this.IsLive?DateTime.Now:this.LastEntryTime ?? DateTime.Now;
-			var d = end - start.Value;
-			return d.TotalHours >= 1?$"{(int)d.TotalHours}h {d.Minutes}m":$"{(int)d.TotalMinutes}m";
+			return DurationFormat.Short(end - start.Value);
 		}
 	}
 

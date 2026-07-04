@@ -33,6 +33,8 @@ public partial class App: Application
 			var services = new ServiceCollection();
 			services.AddSingleton<ISettingsService, SettingsService>();
 			services.AddSingleton(sp => sp.GetRequiredService<ISettingsService>().Load());
+			services.AddSingleton<ISessionHistoryService, SessionHistoryService>();
+			services.AddSingleton<SessionHistoryRecorder>();
 			services.AddSingleton<ILogWatcherFactory, LogWatcherFactory>();
 			services.AddSingleton(_ => SpellRegistry.LoadFromEmbedded());
 			services.AddSingleton<RealmPointSummary>();

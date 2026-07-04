@@ -22,6 +22,7 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 {
 	private const int PARSING_DEBOUNCE_INTERVAL_MS = 1000;
 	private const int SEND_NOTIFICATION_MAX_AGE_SECONDS = 60;
+	private const int SESSION_HISTORY_FLUSH_INTERVAL_SECONDS = 60;
 
 	private readonly System.Timers.Timer parsingDebounceTimer;
 
@@ -35,6 +36,18 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 	private readonly IRealmPointProcessor processor;
 	private readonly ICombatProcessor combatProcessor;
 	private readonly WatchController watchController;
+	private readonly ISessionHistoryService sessionHistoryService;
+	private readonly SessionHistoryRecorder sessionHistoryRecorder;
+	private DateTime? sessionHistoryStartTime;
+	private DateTime lastSessionHistoryFlushUtc = DateTime.MinValue;
+	private readonly OverlayViewModel overlay;
+	private OverlayWindow? overlayWindow;
+
+	public bool IsOverlaySupported => OperatingSystem.IsWindows()||OperatingSystem.IsLinux();
+
+	public OverlayViewModel Overlay => this.overlay;
+
+	[ObservableProperty] private bool isOverlayOpen;
 
 	[ObservableProperty] private string? currentFilePath;
 
@@ -235,7 +248,7 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 		this.MinimapLocationChanged?.Invoke(this, EventArgs.Empty);
 	}
 
-	public double KdRatio => this.Deaths > 0?(double)this.Kills / this.Deaths:this.Kills;
+	public double KdRatio => StatMath.KdRatio(this.Kills, this.Deaths);
 
 	public bool HasBestMultiKill => this.BestMultiKill > 0;
 
@@ -274,7 +287,9 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 	                           RealmPointSummary summary,
 	                           RpsChartData chartData,
 	                           CombatSummary combatSummary,
-	                           IFrontierMapService frontierMapService)
+	                           IFrontierMapService frontierMapService,
+	                           ISessionHistoryService sessionHistoryService,
+	                           SessionHistoryRecorder sessionHistoryRecorder)
 	{
 		this.watchSession = watchSession;
 		this.notificationService = notificationService;
@@ -285,10 +300,13 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 		this.settingsService = settingsService;
 		this.logWatcherFactory = logWatcherFactory;
 		this.settings = settings;
+		this.sessionHistoryService = sessionHistoryService;
+		this.sessionHistoryRecorder = sessionHistoryRecorder;
 		this.watchController = new WatchController(watchSession);
 		this.Summary = summary;
 		this.ChartData = chartData;
 		this.CombatSummary = combatSummary;
+		this.overlay = new OverlayViewModel(summary, settings);
 		this.highlightMultiKills = this.settings.HighlightMultiKills;
 		this.highlightMultiHits = this.settings.HighlightMultiHits;
 		this.showSendNotifications = this.settings.ShowSendNotifications;
@@ -426,6 +444,75 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 	}
 
 	[RelayCommand]
+	private async Task OpenSessionHistory(Window? ownerWindow)
+	{
+		if(ownerWindow == null)
+		{
+			return;
+		}
+
+		var records = this.sessionHistoryService.Load();
+		var dialog = new SessionHistoryDialog(new SessionHistoryViewModel(records));
+		await dialog.ShowDialog(ownerWindow);
+	}
+
+	[RelayCommand]
+	private void ToggleOverlay()
+	{
+		if(!this.IsOverlaySupported)
+		{
+			return;
+		}
+
+		if(this.overlayWindow != null)
+		{
+			this.overlayWindow.Close();
+			this.settings.OverlayEnabled = false;
+			this.settingsService.Save(this.settings);
+			return;
+		}
+
+		this.ShowOverlay();
+		this.settings.OverlayEnabled = true;
+		this.settingsService.Save(this.settings);
+	}
+
+	private void ShowOverlay()
+	{
+		if(this.overlayWindow != null)
+		{
+			return;
+		}
+
+		this.overlay.IsLive = this.Summary.IsLive;
+		this.overlay.CharacterName = this.DetectedCharacterName;
+		this.overlay.Kills = this.Kills;
+		this.overlay.Deaths = this.Deaths;
+		this.overlayWindow = new OverlayWindow(this.overlay, this.settings, this.settingsService);
+		this.overlayWindow.Closed += (_, _) =>
+		{
+			this.overlayWindow = null;
+			this.IsOverlayOpen = false;
+		};
+		this.overlayWindow.Show();
+		this.IsOverlayOpen = true;
+	}
+
+	// Closes the window without touching OverlayEnabled so the overlay reopens next start.
+	public void CloseOverlay()
+	{
+		this.overlayWindow?.Close();
+	}
+
+	public void AutoOpenOverlayIfEnabled()
+	{
+		if(this.IsOverlaySupported&&this.settings.OverlayEnabled)
+		{
+			this.ShowOverlay();
+		}
+	}
+
+	[RelayCommand]
 	private async Task OpenSessionPicker(Window? ownerWindow)
 	{
 		if(ownerWindow == null)
@@ -472,7 +559,7 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 		this.TimeFilter.SetIndexSilent(0);
 		var endPos = session.EndTime.HasValue?session.EndFilePosition:-1;
 		var watcher = this.logWatcherFactory.Create(this.CurrentFilePath, session.FilePosition, false, endPosition: endPos);
-		await this.RunWatchLoop(watcher);
+		await this.RunWatchLoop(watcher, session.StartTime);
 	}
 
 	private void ProcessLogLine(LogLine logLine)
@@ -486,12 +573,15 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 		if(characterChanged)
 		{
 			this.DetectedCharacterName = this.processor.DetectedCharacterName;
+			this.overlay.CharacterName = this.DetectedCharacterName;
 		}
 
 		if(killStatsChanged)
 		{
 			this.Kills = this.processor.Kills;
 			this.Deaths = this.processor.Deaths;
+			this.overlay.Kills = this.Kills;
+			this.overlay.Deaths = this.Deaths;
 		}
 
 		if(logLine is RegionLogLine { Event: var region })
@@ -531,12 +621,20 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 	private void OnEntryProcessed(object? sender, RealmPointLogEntry e)
 	{
 		this.RpLog.Add(e);
+		this.overlay.AddKillFeedEntry(FormatKillFeed(e));
 	}
 
 	private void OnMultiKillDetected(object? sender, RealmPointLogEntry e)
 	{
 		this.BestMultiKill = Math.Max(this.BestMultiKill, e.KillCount);
 		this.RpLog.Add(e);
+		this.overlay.AddKillFeedEntry(FormatKillFeed(e));
+	}
+
+	private static string FormatKillFeed(RealmPointLogEntry e)
+	{
+		var who = string.IsNullOrWhiteSpace(e.VictimName)?e.Source:e.VictimName;
+		return $"{who} +{e.Points} RP";
 	}
 
 	[RelayCommand]
@@ -577,7 +675,7 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 		return true;
 	}
 
-	private Task RunWatchLoop(LogWatcher watcher)
+	private Task RunWatchLoop(LogWatcher watcher, DateTime? sessionStartTimeOverride = null)
 	{
 		return this.watchController.RunAsync(watcher,
 		                                     () =>
@@ -585,11 +683,14 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 			                                     this.IsWatching = true;
 			                                     this.ResetAllState();
 			                                     this.Summary.IsLive = true;
+			                                     this.sessionHistoryStartTime = sessionStartTimeOverride ?? DateTime.Now;
+			                                     this.lastSessionHistoryFlushUtc = DateTime.MinValue;
 		                                     },
 		                                     () =>
 		                                     {
 			                                     this.Summary.RefreshRpsPerHour();
 			                                     this.processor.RefreshZoneKills();
+			                                     this.FlushSessionHistoryThrottled();
 		                                     },
 		                                     line =>
 		                                     {
@@ -597,6 +698,36 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 			                                     return Task.CompletedTask;
 		                                     },
 		                                     this.CleanupWatchState);
+	}
+
+	private void FlushSessionHistoryThrottled()
+	{
+		if((DateTime.UtcNow - this.lastSessionHistoryFlushUtc).TotalSeconds < SESSION_HISTORY_FLUSH_INTERVAL_SECONDS)
+		{
+			return;
+		}
+
+		this.FlushSessionHistory(endTime: null);
+	}
+
+	private void FlushSessionHistory(DateTime? endTime)
+	{
+		if(!this.sessionHistoryStartTime.HasValue)
+		{
+			return;
+		}
+
+		this.lastSessionHistoryFlushUtc = DateTime.UtcNow;
+		var record = this.sessionHistoryRecorder.BuildRecord(this.sessionHistoryStartTime.Value, this.DetectedCharacterName, endTime, this.BestMultiKill);
+		if(endTime.HasValue)
+		{
+			this.sessionHistoryService.Upsert(record);
+		}
+		else
+		{
+			// Periodic flush: keep the file write off the UI thread; the service lock serializes writers.
+			Task.Run(() => this.sessionHistoryService.Upsert(record));
+		}
 	}
 
 	private void CleanupWatchState()
@@ -609,6 +740,7 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 		this.Summary.RefreshRpsPerHour();
 		this.CombatStats.RefreshHealStats();
 		this.CombatStats.RefreshAttackTypeStats();
+		this.FlushSessionHistory(DateTime.Now);
 
 		// A watch loop just finished — rescan so the completed session appears in the list.
 		this.SessionPicker.RescanAfterWatchStopped();

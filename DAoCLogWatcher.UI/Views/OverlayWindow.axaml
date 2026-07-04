@@ -1,0 +1,112 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:DAoCLogWatcher.UI.ViewModels"
+        x:Class="DAoCLogWatcher.UI.Views.OverlayWindow"
+        x:DataType="vm:OverlayViewModel"
+        SystemDecorations="None"
+        Topmost="True"
+        ShowInTaskbar="False"
+        ShowActivated="False"
+        CanResize="False"
+        TransparencyLevelHint="Transparent"
+        Background="Transparent"
+        SizeToContent="WidthAndHeight">
+
+    <Border Background="{Binding CardBackground}"
+            CornerRadius="8"
+            MinWidth="200"
+            Padding="0">
+        <StackPanel>
+
+            <!-- Header strip (drag + opacity + lock) — only visible while unlocked -->
+            <Grid x:Name="HeaderStrip"
+                  ColumnDefinitions="*,Auto,Auto"
+                  Background="#20FFFFFF"
+                  Height="26"
+                  IsVisible="{Binding !IsLocked}"
+                  PointerPressed="OnHeaderPointerPressed"
+                  PointerReleased="OnHeaderPointerReleased">
+                <TextBlock Grid.Column="0"
+                           Text="Drag to move"
+                           FontSize="10"
+                           Foreground="{DynamicResource AppOverlayTextMuted}"
+                           VerticalAlignment="Center"
+                           Margin="8,0,8,0" />
+                <Slider Grid.Column="1"
+                        Width="80"
+                        Minimum="0.2" Maximum="1"
+                        Value="{Binding BackgroundOpacity}"
+                        ToolTip.Tip="Background opacity"
+                        VerticalAlignment="Center"
+                        Margin="0,0,4,0" />
+                <Button Grid.Column="2"
+                        Command="{Binding ToggleLockCommand}"
+                        ToolTip.Tip="Lock overlay (click-through)"
+                        Classes="btn-icon"
+                        Width="22" Height="22"
+                        Padding="0"
+                        Margin="0,0,2,0">
+                    <Viewbox Width="12" Height="12">
+                        <Canvas Width="24" Height="24">
+                            <Path Fill="White"
+                                  Data="M18,8A2,2 0 0,1 20,10V20A2,2 0 0,1 18,22H6C4.89,22 4,21.1 4,20V10A2,2 0 0,1 6,8H15V6A3,3 0 0,0 12,3A3,3 0 0,0 9,6H7A5,5 0 0,1 12,1A5,5 0 0,1 17,6V8H18M12,17A2,2 0 0,0 14,15A2,2 0 0,0 12,13A2,2 0 0,0 10,15A2,2 0 0,0 12,17Z" />
+                        </Canvas>
+                    </Viewbox>
+                </Button>
+            </Grid>
+
+            <StackPanel Margin="12,10" Spacing="6">
+
+                <!-- Character + live dot -->
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <Ellipse Width="8" Height="8" VerticalAlignment="Center"
+                             Fill="{DynamicResource AppOverlayAccent}"
+                             IsVisible="{Binding IsLive}" />
+                    <TextBlock Text="{Binding CharacterName}"
+                               FontSize="13" FontWeight="SemiBold"
+                               Foreground="{DynamicResource AppOverlayText}"
+                               VerticalAlignment="Center" />
+                </StackPanel>
+
+                <!-- RP total + RP/hr -->
+                <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding ShowRp}">
+                    <TextBlock Text="{Binding Summary.TotalRealmPoints}"
+                               FontSize="15" FontWeight="Bold"
+                               Foreground="{DynamicResource AppOverlayAccent}"
+                               VerticalAlignment="Center" />
+                    <TextBlock Text="RP" FontSize="11"
+                               Foreground="{DynamicResource AppOverlayTextMuted}"
+                               VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding Summary.RpsPerHour, StringFormat={}{0:N0}/hr}"
+                               FontSize="12"
+                               Foreground="{DynamicResource AppOverlayAccentPurple}"
+                               VerticalAlignment="Center" />
+                </StackPanel>
+
+                <!-- K/D -->
+                <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding ShowKd}">
+                    <TextBlock Text="{Binding Kills}" FontSize="13" FontWeight="SemiBold"
+                               Foreground="{DynamicResource AppOverlayPositive}" VerticalAlignment="Center" />
+                    <TextBlock Text="/" FontSize="12" Foreground="{DynamicResource AppOverlayTextDim}" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding Deaths}" FontSize="13" FontWeight="SemiBold"
+                               Foreground="{DynamicResource AppOverlayDanger}" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding KdRatio, StringFormat={}{0:F2} K/D}" FontSize="12"
+                               Foreground="{DynamicResource AppOverlayWarning}" VerticalAlignment="Center" />
+                </StackPanel>
+
+                <!-- Kill feed -->
+                <ItemsControl ItemsSource="{Binding KillFeed}" IsVisible="{Binding ShowKillFeed}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource AppOverlayTextSecondary}"
+                                       TextTrimming="CharacterEllipsis" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</Window>

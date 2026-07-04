@@ -67,12 +67,28 @@ public partial class MainWindow: Window
 		DwmSetWindowAttribute(hwnd, CAPTION_COLOR, ref captionColor, 4u);
 	}
 
+	protected override void OnClosed(EventArgs e)
+	{
+		base.OnClosed(e);
+
+		// The overlay has no Owner; close it explicitly so the process can shut down.
+		if(this.DataContext is ViewModels.MainWindowViewModel mainVm)
+		{
+			mainVm.CloseOverlay();
+		}
+	}
+
 	protected override void OnOpened(EventArgs e)
 	{
 		base.OnOpened(e);
 
 		this.ApplyDarkTitleBar();
 		this.SelectFirstVisibleTab();
+
+		if(this.DataContext is ViewModels.MainWindowViewModel overlayVm)
+		{
+			overlayVm.AutoOpenOverlayIfEnabled();
+		}
 
 		// Move to a secondary screen if one is available — DAoC typically runs full-screen
 		// on the primary monitor, so prefer any non-primary screen for the log watcher.

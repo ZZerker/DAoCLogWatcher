@@ -1,0 +1,132 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="DAoCLogWatcher.UI.Views.SessionHistoryDialog"
+        x:CompileBindings="False"
+        Title="Session History"
+        Width="880" Height="560"
+        WindowStartupLocation="CenterOwner"
+        CanResize="True"
+        Background="{DynamicResource AppWindowBackground}">
+
+    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" Margin="16">
+
+        <!-- Header -->
+        <TextBlock Grid.Row="0"
+                   Text="Session History"
+                   FontSize="18" FontWeight="SemiBold"
+                   Foreground="{DynamicResource AppTextPrimary}"
+                   Margin="0,0,0,8" />
+
+        <!-- Aggregates strip -->
+        <Grid Grid.Row="1" ColumnDefinitions="*,*,*,*" Margin="0,0,0,10">
+            <Border Grid.Column="0" Background="{DynamicResource AppCardBackground}"
+                    BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1"
+                    CornerRadius="6" Padding="12,8" Margin="0,0,6,0">
+                <StackPanel Spacing="2">
+                    <TextBlock Text="Total RP" FontSize="11" Foreground="{DynamicResource AppTextMuted}" />
+                    <TextBlock Text="{Binding TotalRealmPoints}" FontSize="16" FontWeight="SemiBold"
+                               Foreground="{DynamicResource AppAccentCyan}" />
+                </StackPanel>
+            </Border>
+            <Border Grid.Column="1" Background="{DynamicResource AppCardBackground}"
+                    BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1"
+                    CornerRadius="6" Padding="12,8" Margin="0,0,6,0">
+                <StackPanel Spacing="2">
+                    <TextBlock Text="Best Session RP" FontSize="11" Foreground="{DynamicResource AppTextMuted}" />
+                    <TextBlock Text="{Binding BestSessionRealmPoints}" FontSize="16" FontWeight="SemiBold"
+                               Foreground="{DynamicResource AppAccentCyan}" />
+                </StackPanel>
+            </Border>
+            <Border Grid.Column="2" Background="{DynamicResource AppCardBackground}"
+                    BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1"
+                    CornerRadius="6" Padding="12,8" Margin="0,0,6,0">
+                <StackPanel Spacing="2">
+                    <TextBlock Text="Best RP/hr" FontSize="11" Foreground="{DynamicResource AppTextMuted}" />
+                    <TextBlock Text="{Binding BestRpPerHour, StringFormat={}{0:N0}}" FontSize="16" FontWeight="SemiBold"
+                               Foreground="{DynamicResource AppAccentPurple}" />
+                </StackPanel>
+            </Border>
+            <Border Grid.Column="3" Background="{DynamicResource AppCardBackground}"
+                    BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1"
+                    CornerRadius="6" Padding="12,8">
+                <StackPanel Spacing="2">
+                    <TextBlock Text="Avg Duration" FontSize="11" Foreground="{DynamicResource AppTextMuted}" />
+                    <TextBlock Text="{Binding AverageDurationText}" FontSize="16" FontWeight="SemiBold"
+                               Foreground="{DynamicResource AppTextPrimary}" />
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- Character filter -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8" VerticalAlignment="Center">
+            <TextBlock Text="Character:" Foreground="{DynamicResource AppTextSecondary}" VerticalAlignment="Center" />
+            <ComboBox ItemsSource="{Binding CharacterFilters}"
+                      SelectedItem="{Binding SelectedCharacterFilter}"
+                      MinWidth="160" />
+        </StackPanel>
+
+        <!-- Session list -->
+        <Grid Grid.Row="3" RowDefinitions="Auto,*">
+            <Grid Grid.Row="0" ColumnDefinitions="150,110,80,80,70,60,60,70,*" Margin="8,0,8,4">
+                <TextBlock Grid.Column="0" Text="Date" FontWeight="SemiBold" FontSize="12" Foreground="{DynamicResource AppTextMuted}" />
+                <TextBlock Grid.Column="1" Text="Character" FontWeight="SemiBold" FontSize="12" Foreground="{DynamicResource AppTextMuted}" />
+                <TextBlock Grid.Column="2" Text="Duration" FontWeight="SemiBold" FontSize="12" Foreground="{DynamicResource AppTextMuted}" />
+                <TextBlock Grid.Column="3" Text="RP" FontWeight="SemiBold" FontSize="12" Foreground="{DynamicResource AppTextMuted}" />
+                <TextBlock Grid.Column="4" Text="RP/hr" FontWeight="SemiBold" FontSize="12" Foreground="{DynamicResource AppTextMuted}" />
+                <TextBlock Grid.Column="5" Text="Kills" FontWeight="SemiBold" FontSize="12" Foreground="{DynamicResource AppTextMuted}" />
+                <TextBlock Grid.Column="6" Text="Deaths" FontWeight="SemiBold" FontSize="12" Foreground="{DynamicResource AppTextMuted}" />
+                <TextBlock Grid.Column="7" Text="Best MK" FontWeight="SemiBold" FontSize="12" Foreground="{DynamicResource AppTextMuted}" />
+                <TextBlock Grid.Column="8" Text="Top Zone" FontWeight="SemiBold" FontSize="12" Foreground="{DynamicResource AppTextMuted}" />
+            </Grid>
+
+            <ListBox Grid.Row="1"
+                     ItemsSource="{Binding Sessions}"
+                     BorderThickness="1"
+                     BorderBrush="{DynamicResource AppBorderBrush}"
+                     CornerRadius="6"
+                     Background="{DynamicResource AppPanelBackground}">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <Grid ColumnDefinitions="150,110,80,80,70,60,60,70,*">
+                            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding DateText}"
+                                           Foreground="{DynamicResource AppTextPrimary}" FontSize="13" />
+                                <TextBlock Text="live" FontSize="11" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource AppAccentCyan}"
+                                           IsVisible="{Binding IsLive}" />
+                            </StackPanel>
+                            <TextBlock Grid.Column="1" Text="{Binding CharacterName}"
+                                       Foreground="{DynamicResource AppTextPrimary}" FontSize="13" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="2" Text="{Binding DurationText}"
+                                       Foreground="{DynamicResource AppTextSecondary}" FontSize="13" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="3" Text="{Binding RealmPoints}"
+                                       Foreground="{DynamicResource AppPositive}" FontSize="13" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="4" Text="{Binding RpPerHourText}"
+                                       Foreground="{DynamicResource AppPositive}" FontSize="13" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="5" Text="{Binding Kills}"
+                                       Foreground="{DynamicResource AppPositive}" FontSize="13" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="6" Text="{Binding Deaths}"
+                                       Foreground="{DynamicResource AppDanger}" FontSize="13" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="7" Text="{Binding BestMultiKill}"
+                                       Foreground="{DynamicResource AppMultiKill}" FontSize="13" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="8" Text="{Binding TopZone}"
+                                       Foreground="{DynamicResource AppTextSecondary}" FontSize="13" VerticalAlignment="Center" />
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Grid>
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="4"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Spacing="10"
+                    Margin="0,12,0,0">
+            <Button Content="Close"
+                    Name="CloseButton"
+                    Classes="btn-secondary"
+                    Click="OnCloseClick" />
+        </StackPanel>
+    </Grid>
+</Window>

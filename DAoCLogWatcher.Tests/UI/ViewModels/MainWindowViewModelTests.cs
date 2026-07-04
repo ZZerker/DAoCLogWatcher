@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using DAoCLogWatcher.Core;
 using DAoCLogWatcher.Core.Models;
 using DAoCLogWatcher.UI.Models;
@@ -25,12 +26,14 @@ public sealed class MainWindowViewModelTests: IDisposable
 	private readonly ISettingsService mockSettingsService = Substitute.For<ISettingsService>();
 	private readonly ILogWatcherFactory mockLogWatcherFactory = Substitute.For<ILogWatcherFactory>();
 	private readonly IFrontierMapService mockFrontierMapService = Substitute.For<IFrontierMapService>();
+	private readonly ISessionHistoryService mockSessionHistoryService = Substitute.For<ISessionHistoryService>();
 
 	public MainWindowViewModelTests()
 	{
 		// Prevent null-task from CheckForUpdatesAsync fire-and-forget in constructor
 		this.mockUpdateService.CheckForUpdatesAsync().Returns(Task.FromResult<(string?, bool)>((null, false)));
 		this.mockFrontierMapService.Load().Returns(new FrontierMapData([], []));
+		this.mockProcessor.CurrentZoneKills.Returns(new Dictionary<string, int>());
 
 		// Default: RunAsync completes immediately so no Dispatcher is touched
 		this.mockSession.RunAsync(Arg.Any<LogWatcher>(), Arg.Any<Action>(), Arg.Any<Func<LogLine, Task>>()).Returns(Task.CompletedTask);
@@ -38,6 +41,9 @@ public sealed class MainWindowViewModelTests: IDisposable
 
 	private MainWindowViewModel Build(AppSettings? settings = null)
 	{
+		var summary = new RealmPointSummary();
+		var combatSummary = new CombatSummary();
+		var recorder = new SessionHistoryRecorder(this.mockProcessor, summary, combatSummary);
 		return new MainWindowViewModel(this.mockSession,
 		                               this.mockProcessor,
 		                               this.mockCombat,
@@ -47,10 +53,12 @@ public sealed class MainWindowViewModelTests: IDisposable
 		                               this.mockSettingsService,
 		                               this.mockLogWatcherFactory,
 		                               settings ?? new AppSettings(),
-		                               new RealmPointSummary(),
+		                               summary,
 		                               new RpsChartData(),
-		                               new CombatSummary(),
-		                               this.mockFrontierMapService);
+		                               combatSummary,
+		                               this.mockFrontierMapService,
+		                               this.mockSessionHistoryService,
+		                               recorder);
 	}
 
 	public void Dispose()

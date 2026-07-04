@@ -59,6 +59,16 @@
                     <SolidColorBrush x:Key="AppRealmAlb">#FF5555</SolidColorBrush>
                     <SolidColorBrush x:Key="AppRealmMid">#3FAFFF</SolidColorBrush>
                     <SolidColorBrush x:Key="AppRealmHib">#55DD77</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppOverlayCardBg">#D8000000</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppOverlayText">#FFFFFF</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppOverlayTextSecondary">#CCCCCC</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppOverlayTextMuted">#999999</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppOverlayTextDim">#777777</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppOverlayPositive">#00D968</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppOverlayDanger">#FF5A66</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppOverlayWarning">#FFAA00</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppOverlayAccent">#00D9FF</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppOverlayAccentPurple">#AA88FF</SolidColorBrush>
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Light">
                     <SolidColorBrush x:Key="AppWindowBackground">#F0F0F0</SolidColorBrush>
@@ -98,6 +108,16 @@
                     <SolidColorBrush x:Key="AppRealmAlb">#CC2222</SolidColorBrush>
                     <SolidColorBrush x:Key="AppRealmMid">#1F8ACC</SolidColorBrush>
                     <SolidColorBrush x:Key="AppRealmHib">#228844</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppOverlayCardBg">#D8000000</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppOverlayText">#FFFFFF</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppOverlayTextSecondary">#CCCCCC</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppOverlayTextMuted">#999999</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppOverlayTextDim">#777777</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppOverlayPositive">#00D968</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppOverlayDanger">#FF5A66</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppOverlayWarning">#FFAA00</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppOverlayAccent">#00D9FF</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppOverlayAccentPurple">#AA88FF</SolidColorBrush>
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
         </ResourceDictionary>

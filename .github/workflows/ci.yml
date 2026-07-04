@@ -142,6 +142,7 @@ jobs:
             -f net10.0 \
             -r linux-x64 \
             --self-contained true \
+            -p:Flatpak=true \
             -p:Version="$VERSION" \
             -o publish/flatpak
 
