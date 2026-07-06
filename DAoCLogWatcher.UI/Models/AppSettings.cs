@@ -40,5 +40,5 @@ public class AppSettings
 
 	public bool OverlayShowKillFeed { get; set; } = true;
 
-	public double OverlayOpacity { get; set; } = 0.85;
+	public double OverlayOpacity { get; set; } = 0.6;
 }

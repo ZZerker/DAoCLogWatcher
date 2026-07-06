@@ -10,10 +10,6 @@ public static class OverlayInteropX11
 	// X11/extensions/shape.h — the input shape controls which pixels receive pointer events.
 	private const int ShapeInput = 2;
 
-	// Xlib: XA_ATOM predefined atom id and XChangeProperty replace mode.
-	private static readonly IntPtr AtomType = new(4);
-	private const int PropModeReplace = 0;
-
 	private delegate int XErrorHandler(IntPtr display, IntPtr errorEvent);
 
 	// Kept alive in a static field so the GC never collects the delegate Xlib holds a pointer to.
@@ -35,12 +31,6 @@ public static class OverlayInteropX11
 	[DllImport("libX11.so.6")]
 	private static extern int XRaiseWindow(IntPtr display, IntPtr window);
 
-	[DllImport("libX11.so.6", CharSet = CharSet.Ansi)]
-	private static extern IntPtr XInternAtom(IntPtr display, string atomName, bool onlyIfExists);
-
-	[DllImport("libX11.so.6")]
-	private static extern int XChangeProperty(IntPtr display, IntPtr window, IntPtr property, IntPtr type, int format, int mode, IntPtr[] data, int nelements);
-
 	[DllImport("libXfixes.so.3")]
 	private static extern bool XFixesQueryExtension(IntPtr display, out int eventBase, out int errorBase);
 
@@ -52,26 +42,6 @@ public static class OverlayInteropX11
 
 	[DllImport("libXfixes.so.3")]
 	private static extern void XFixesSetWindowShapeRegion(IntPtr display, IntPtr window, int shapeKind, int xOff, int yOff, IntPtr region);
-
-	// KWin stacks OSD-type windows above even a focused fullscreen window — this is how
-	// KDE's own volume/brightness OSDs work. Other WMs ignore the KDE atom and use the
-	// "normal" fallback, so setting it is harmless everywhere else.
-	public static void MarkAsOnScreenDisplay(IntPtr xid)
-	{
-		WithDisplay(xid, (display, window) =>
-		{
-			var windowTypeAtom = XInternAtom(display, "_NET_WM_WINDOW_TYPE", false);
-			var osdAtom = XInternAtom(display, "_KDE_NET_WM_WINDOW_TYPE_ON_SCREEN_DISPLAY", false);
-			var normalAtom = XInternAtom(display, "_NET_WM_WINDOW_TYPE_NORMAL", false);
-			if(windowTypeAtom == IntPtr.Zero||osdAtom == IntPtr.Zero||normalAtom == IntPtr.Zero)
-			{
-				return;
-			}
-
-			var types = new[] { osdAtom, normalAtom };
-			XChangeProperty(display, window, windowTypeAtom, AtomType, 32, PropModeReplace, types, types.Length);
-		});
-	}
 
 	// The WM restacks a game window above us whenever it re-renders/raises itself;
 	// call periodically to stay on top.

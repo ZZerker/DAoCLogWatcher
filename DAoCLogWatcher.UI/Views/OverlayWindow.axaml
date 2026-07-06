@@ -83,15 +83,20 @@
                                VerticalAlignment="Center" />
                 </StackPanel>
 
-                <!-- K/D -->
-                <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding ShowKd}">
-                    <TextBlock Text="{Binding Kills}" FontSize="13" FontWeight="SemiBold"
-                               Foreground="{DynamicResource AppOverlayPositive}" VerticalAlignment="Center" />
-                    <TextBlock Text="/" FontSize="12" Foreground="{DynamicResource AppOverlayTextDim}" VerticalAlignment="Center" />
-                    <TextBlock Text="{Binding Deaths}" FontSize="13" FontWeight="SemiBold"
-                               Foreground="{DynamicResource AppOverlayDanger}" VerticalAlignment="Center" />
-                    <TextBlock Text="{Binding KdRatio, StringFormat={}{0:F2} K/D}" FontSize="12"
-                               Foreground="{DynamicResource AppOverlayWarning}" VerticalAlignment="Center" />
+                <!-- Damage / Heal (bigger total first) -->
+                <StackPanel Orientation="Horizontal" Spacing="12" IsVisible="{Binding CombatRowVisible}">
+                    <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding PrimaryVisible}">
+                        <TextBlock Text="{Binding PrimaryLabel}" FontSize="11"
+                                   Foreground="{Binding PrimaryBrush}" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding PrimaryValue}" FontSize="13" FontWeight="SemiBold"
+                                   Foreground="{Binding PrimaryBrush}" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding SecondaryVisible}">
+                        <TextBlock Text="{Binding SecondaryLabel}" FontSize="11"
+                                   Foreground="{Binding SecondaryBrush}" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding SecondaryValue}" FontSize="13" FontWeight="SemiBold"
+                                   Foreground="{Binding SecondaryBrush}" VerticalAlignment="Center" />
+                    </StackPanel>
                 </StackPanel>
 
                 <!-- Kill feed -->

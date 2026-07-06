@@ -40,14 +40,80 @@ public sealed class OverlayViewModelTests
 		var settings = new AppSettings
 		               {
 				               OverlayShowRp = true,
-				               OverlayShowKd = false,
 				               OverlayShowKillFeed = true
 		               };
 
 		var vm = new OverlayViewModel(new RealmPointSummary(), settings);
 
 		vm.ShowRp.Should().BeTrue();
-		vm.ShowKd.Should().BeFalse();
 		vm.ShowKillFeed.Should().BeTrue();
+	}
+
+	[Fact]
+	public void CombatRow_HiddenWhenBothTotalsZero()
+	{
+		var vm = Create();
+
+		vm.CombatRowVisible.Should().BeFalse();
+		vm.PrimaryVisible.Should().BeFalse();
+		vm.SecondaryVisible.Should().BeFalse();
+	}
+
+	[Fact]
+	public void CombatRow_DamageOnly_ShowsSingleDamageEntry()
+	{
+		var vm = Create();
+
+		vm.DamageTotal = 1500;
+
+		vm.CombatRowVisible.Should().BeTrue();
+		vm.PrimaryVisible.Should().BeTrue();
+		vm.PrimaryLabel.Should().Be("Dmg");
+		vm.PrimaryValue.Should().Be(1500L.ToString("N0"));
+		vm.SecondaryVisible.Should().BeFalse();
+	}
+
+	[Fact]
+	public void CombatRow_HealOnly_ShowsSingleHealEntry()
+	{
+		var vm = Create();
+
+		vm.HealTotal = 900;
+
+		vm.CombatRowVisible.Should().BeTrue();
+		vm.PrimaryVisible.Should().BeTrue();
+		vm.PrimaryLabel.Should().Be("Heal");
+		vm.PrimaryValue.Should().Be(900L.ToString("N0"));
+		vm.SecondaryVisible.Should().BeFalse();
+	}
+
+	[Fact]
+	public void CombatRow_BothWithHealBigger_HealFirst()
+	{
+		var vm = Create();
+
+		vm.DamageTotal = 400;
+		vm.HealTotal = 2200;
+
+		vm.PrimaryLabel.Should().Be("Heal");
+		vm.PrimaryValue.Should().Be(2200L.ToString("N0"));
+		vm.SecondaryLabel.Should().Be("Dmg");
+		vm.SecondaryValue.Should().Be(400L.ToString("N0"));
+		vm.PrimaryVisible.Should().BeTrue();
+		vm.SecondaryVisible.Should().BeTrue();
+	}
+
+	[Fact]
+	public void CombatRow_BothWithDamageBigger_DamageFirst()
+	{
+		var vm = Create();
+
+		vm.DamageTotal = 5000;
+		vm.HealTotal = 300;
+
+		vm.PrimaryLabel.Should().Be("Dmg");
+		vm.PrimaryValue.Should().Be(5000L.ToString("N0"));
+		vm.SecondaryLabel.Should().Be("Heal");
+		vm.SecondaryValue.Should().Be(300L.ToString("N0"));
 	}
 }

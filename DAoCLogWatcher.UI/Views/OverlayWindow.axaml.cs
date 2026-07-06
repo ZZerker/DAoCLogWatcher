@@ -48,12 +48,6 @@ public partial class OverlayWindow: Window
 		base.OnOpened(e);
 		this.RestorePosition();
 		this.ApplyClickThrough();
-		if(OperatingSystem.IsLinux()&&this.TryGetPlatformHandle() is { HandleDescriptor: X11_HANDLE_DESCRIPTOR } handle)
-		{
-			// Lets KWin (Plasma/Wayland via XWayland) stack us above a focused fullscreen game.
-			OverlayInteropX11.MarkAsOnScreenDisplay(handle.Handle);
-		}
-
 		this.topmostTimer.Start();
 	}
 

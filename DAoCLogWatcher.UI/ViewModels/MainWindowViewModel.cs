@@ -486,8 +486,7 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 
 		this.overlay.IsLive = this.Summary.IsLive;
 		this.overlay.CharacterName = this.DetectedCharacterName;
-		this.overlay.Kills = this.Kills;
-		this.overlay.Deaths = this.Deaths;
+		this.SyncOverlayCombatTotals();
 		this.overlayWindow = new OverlayWindow(this.overlay, this.settings, this.settingsService);
 		this.overlayWindow.Closed += (_, _) =>
 		{
@@ -569,6 +568,7 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 		this.processor.Process(logLine, this.watchSession.CurrentSessionStart, out var characterChanged, out var killStatsChanged);
 
 		this.combatProcessor.Process(logLine);
+		this.SyncOverlayCombatTotals();
 
 		if(characterChanged)
 		{
@@ -580,8 +580,6 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 		{
 			this.Kills = this.processor.Kills;
 			this.Deaths = this.processor.Deaths;
-			this.overlay.Kills = this.Kills;
-			this.overlay.Deaths = this.Deaths;
 		}
 
 		if(logLine is RegionLogLine { Event: var region })
@@ -629,6 +627,12 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 		this.BestMultiKill = Math.Max(this.BestMultiKill, e.KillCount);
 		this.RpLog.Add(e);
 		this.overlay.AddKillFeedEntry(FormatKillFeed(e));
+	}
+
+	private void SyncOverlayCombatTotals()
+	{
+		this.overlay.DamageTotal = this.CombatSummary.TotalDamageDealt;
+		this.overlay.HealTotal = this.CombatSummary.TotalHealingDone;
 	}
 
 	private static string FormatKillFeed(RealmPointLogEntry e)
