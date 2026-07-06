@@ -4,6 +4,7 @@ using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 using DAoCLogWatcher.UI.Models;
 using DAoCLogWatcher.UI.Services;
@@ -19,6 +20,7 @@ public partial class OverlayWindow: Window
 	private readonly OverlayViewModel viewModel;
 	private readonly AppSettings settings;
 	private readonly ISettingsService settingsService;
+	private readonly DispatcherTimer topmostTimer;
 
 	public OverlayWindow()
 	{
@@ -26,6 +28,9 @@ public partial class OverlayWindow: Window
 		this.viewModel = null!;
 		this.settings = null!;
 		this.settingsService = null!;
+		// The game restacks itself above us on re-render; re-assert topmost on a slow tick.
+		this.topmostTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+		this.topmostTimer.Tick += (_, _) => this.AssertTopmost();
 	}
 
 	public OverlayWindow(OverlayViewModel viewModel, AppSettings settings, ISettingsService settingsService)
@@ -43,10 +48,12 @@ public partial class OverlayWindow: Window
 		base.OnOpened(e);
 		this.RestorePosition();
 		this.ApplyClickThrough();
+		this.topmostTimer.Start();
 	}
 
 	protected override void OnClosing(WindowClosingEventArgs e)
 	{
+		this.topmostTimer.Stop();
 		this.SavePosition();
 		this.viewModel.PropertyChanged -= this.OnViewModelPropertyChanged;
 		base.OnClosing(e);
@@ -96,6 +103,23 @@ public partial class OverlayWindow: Window
 		{
 			// On Wayland the descriptor isn't "XID", so this stays a no-op — the overlay still works, just without click-through.
 			OverlayInteropX11.SetClickThrough(handle.Handle, this.viewModel.IsLocked);
+		}
+	}
+
+	private void AssertTopmost()
+	{
+		if(this.TryGetPlatformHandle() is not { } handle)
+		{
+			return;
+		}
+
+		if(OperatingSystem.IsWindows())
+		{
+			OverlayInterop.AssertTopmost(handle.Handle);
+		}
+		else if(OperatingSystem.IsLinux()&&handle.HandleDescriptor == X11_HANDLE_DESCRIPTOR)
+		{
+			OverlayInteropX11.Raise(handle.Handle);
 		}
 	}
 

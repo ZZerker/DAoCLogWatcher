@@ -28,6 +28,9 @@ public static class OverlayInteropX11
 	[DllImport("libX11.so.6")]
 	private static extern IntPtr XSetErrorHandler(XErrorHandler handler);
 
+	[DllImport("libX11.so.6")]
+	private static extern int XRaiseWindow(IntPtr display, IntPtr window);
+
 	[DllImport("libXfixes.so.3")]
 	private static extern bool XFixesQueryExtension(IntPtr display, out int eventBase, out int errorBase);
 
@@ -40,7 +43,45 @@ public static class OverlayInteropX11
 	[DllImport("libXfixes.so.3")]
 	private static extern void XFixesSetWindowShapeRegion(IntPtr display, IntPtr window, int shapeKind, int xOff, int yOff, IntPtr region);
 
+	// The WM restacks a game window above us whenever it re-renders/raises itself;
+	// call periodically to stay on top.
+	public static void Raise(IntPtr xid)
+	{
+		WithDisplay(xid, (display, window) =>
+		{
+			XRaiseWindow(display, window);
+		});
+	}
+
 	public static void SetClickThrough(IntPtr xid, bool enabled)
+	{
+		WithDisplay(xid, (display, window) =>
+		{
+			if(!XFixesQueryExtension(display, out _, out _))
+			{
+				return;
+			}
+
+			if(enabled)
+			{
+				var region = XFixesCreateRegion(display, IntPtr.Zero, 0);
+				if(region == IntPtr.Zero)
+				{
+					return;
+				}
+
+				XFixesSetWindowShapeRegion(display, window, ShapeInput, 0, 0, region);
+				XFixesDestroyRegion(display, region);
+			}
+			else
+			{
+				// region = None restores the window's default input shape.
+				XFixesSetWindowShapeRegion(display, window, ShapeInput, 0, 0, IntPtr.Zero);
+			}
+		});
+	}
+
+	private static void WithDisplay(IntPtr xid, Action<IntPtr, IntPtr> action)
 	{
 		if(xid == IntPtr.Zero)
 		{
@@ -50,7 +91,7 @@ public static class OverlayInteropX11
 		try
 		{
 			// Xlib's default error handler calls exit() on async protocol errors (e.g. BadWindow
-			// from a stale xid) — install a no-op handler so a failed shape request can't kill the app.
+			// from a stale xid) — install a no-op handler so a failed request can't kill the app.
 			if(!errorHandlerInstalled)
 			{
 				XSetErrorHandler(ignoreErrors);
@@ -65,28 +106,7 @@ public static class OverlayInteropX11
 
 			try
 			{
-				if(!XFixesQueryExtension(display, out _, out _))
-				{
-					return;
-				}
-
-				if(enabled)
-				{
-					var region = XFixesCreateRegion(display, IntPtr.Zero, 0);
-					if(region == IntPtr.Zero)
-					{
-						return;
-					}
-
-					XFixesSetWindowShapeRegion(display, xid, ShapeInput, 0, 0, region);
-					XFixesDestroyRegion(display, region);
-				}
-				else
-				{
-					// region = None restores the window's default input shape.
-					XFixesSetWindowShapeRegion(display, xid, ShapeInput, 0, 0, IntPtr.Zero);
-				}
-
+				action(display, xid);
 				XFlush(display);
 			}
 			finally
