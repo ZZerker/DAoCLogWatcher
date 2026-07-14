@@ -5,7 +5,7 @@
 ![CI](https://img.shields.io/github/actions/workflow/status/ZZerker/DAoCLogWatcher/ci.yml?branch=main)
 [![Discord](https://img.shields.io/badge/Discord-Join-5865F2?logo=discord&logoColor=white)](https://discord.gg/V7Z5y3Ke9v)
 
-A real-time tracker for **Dark Age of Camelot (Eden)**. Load your `chat.log` and instantly see how many RPs you're earning, where they're coming from, how fast they're rolling in, your kill/death stats, live combat metrics, and a server-wide frontier kill heatmap with live keep ownership and fight locations pulled from the warmap — all updated as you play.
+A real-time tracker for **Dark Age of Camelot (Eden)**. Load your `chat.log` and instantly see how many RPs you're earning, where they're coming from, how fast they're rolling in, live combat metrics, and a server-wide frontier kill heatmap with live keep ownership and fight locations pulled from the warmap — all updated as you play.
 
 ## TL;DR — Getting Started
 
@@ -26,17 +26,24 @@ A real-time tracker for **Dark Age of Camelot (Eden)**. Load your `chat.log` and
   - Siege (Tower & Keep Captures), Assault Orders
   - Support Activity, Relic Captures, Timed Missions
 - **RP/h meter** — rolling realm points per hour, updated every 5 seconds
-- **Time filters** — limit the log to a preset window (1h–1 week) or a custom hours/minutes value
+- **Time filters** — start reading the log from a point in the past ("1h ago" up to "1 week ago", or a custom hours/minutes value)
 
 ### 📊 Dashboard & Visualization
-- **Customizable dashboard** — show/hide each widget, set its size (Small / Medium / Large), and reorder with Move Up / Move Down; save the result as a named layout profile
+- **Customizable dashboard** — show/hide each widget, drag tiles to rearrange them, and drag the corner grip to resize through five sizes (XS–XL); save the result as a named layout profile
   - Supported widgets: RP stats, Combat stats, Kill/death ratio, Best multi-kill, Hottest zone, RP sources, Damage output, Top opponents/spells/healers, Damage taken, Heals done, Zone activity, Logs, Minimap
   - Save multiple profiles for different characters or playstyles and switch between them from the profile dropdown
 - **Charts** — cumulative RP over time and rolling RP/h graph, both collapsible and interactive
 - **Session browser** — pick any past play session directly from your `chat.log` by date and time range, instead of guessing time filter windows; selecting the current session keeps the app tailing the file live as usual
+- **Session history** — every watched session is recorded automatically; a history dialog shows total RP, best session, best RP/h, and average duration, plus a per-session list (duration, RP, RP/h, kills, deaths, best multi-kill, top zone) filterable by character
+
+### 🖥️ In-Game Overlay (OSD)
+- **Always-on-top overlay** while you play: character name with live indicator, total RP + RP/h, damage & heal totals (the bigger one shown first), and a feed of your last kills
+- **Lock / unlock** — locked, the overlay is click-through so it never eats your mouse input; unlocked, drag it anywhere and set its background transparency with a slider. Toggle the lock from the main window toolbar
+- Position and opacity are remembered; the overlay reopens automatically on the next start if it was active
+- **Platform support:** full on Windows and Linux/X11. On **Wayland** (e.g. KDE Plasma default session) the overlay works, but the compositor doesn't let it stay above the game or be click-through — use a KWin "keep above" window rule or log into the X11 session instead
 
 ### 👤 Character & Combat Tracking
-- **Character detection** — type `/stats` in-game and the app identifies your character name and displays it in the sidebar alongside live kills, deaths, and K/D ratio
+- **Character detection** — type `/stats` in-game and the app identifies your character name and displays it in the sidebar with live session stats
 - **Combat tracking** — a dedicated Combat tab shows stats parsed live from your combat log:
   - **Damage dealt** — total, hit count, average per hit, and crit count / crit rate
   - **Damage taken** — total received and breakdown by attacker
@@ -125,43 +132,19 @@ Type `/stats` in-game at any point. DAoC writes a line like:
 Statistics for Caranthir this Session:
 ```
 
-The app detects this and displays your character name in the sidebar with live kill/death/K/D stats. Any kill or death events that occurred earlier in the session are retroactively counted once your name is known.
+The app detects this and displays your character name in the sidebar with live session stats. Events that occurred earlier in the session are retroactively attributed once your name is known.
 
 ---
 
 ## Time Filters
 
-| Filter | What it shows |
-|---|---|
-| **All time** | Everything in the log file |
-| **Last 1 week** | Only entries from the past 7 days |
-| **Last 48h / 24h / 12h / 6h / 3h / 2h / 1h** | Rolling window of that duration |
-| **Custom…** | Opens a dialog — enter any number of hours and minutes |
-
-Filters are applied from the moment you open a log — useful when your `chat.log` spans many days and you only care about recent activity. Changing the filter while the app is already watching automatically restarts the session with the new window.
-
-For a specific past play session, use **Browse Sessions** instead of a rolling window — it lets you pick the exact session by date and time range straight from your `chat.log`, rather than guessing how many hours back to filter. Selecting the current session keeps the app tailing the file live as usual.
+For a specific past play session, use **Browse Sessions** — it lets you pick the exact session by date and time range straight from your `chat.log`. Time filters are the complement for live tailing: they set a starting point in the past ("1h ago" up to "1 week ago", or a custom hours/minutes value) and include everything from there on — useful when your `chat.log` spans days and you only care about recent activity. Changing the filter while watching automatically restarts the session with the new starting point.
 
 ---
 
-## Character Detection & Kill Tracking
+## Character Detection
 
-The app detects your character by watching for the `/stats` output block in the log:
-
-```
-Statistics for Caranthir this Session:
-Total RP: ...
-```
-
-Once detected, your character name appears at the top of the sidebar with:
-- **Kills** — times you appeared as the killer in a kill line
-- **Deaths** — times you appeared as the victim
-- **K/D** — kill/death ratio
-
-**Notes:**
-- Kill and death events are buffered and retroactively counted as soon as your name is detected.
-- If you check another player with `/stats player <name>`, the app uses a frequency heuristic to ignore one-off lookups and keep your character name correct.
-- Stats reset each time you click **Open DAoC Log**.
+Type `/stats` in-game at any point — the app detects the `Statistics for <name> this Session:` line and shows your character in the sidebar. Events from earlier in the session are retroactively attributed once your name is known, and checking other players with `/stats player <name>` won't confuse the detection. Stats reset each time you open a log.
 
 ---
 
@@ -169,7 +152,7 @@ Once detected, your character name appears at the top of the sidebar with:
 
 Save and load custom widget layouts for different characters or playstyles:
 
-1. On the Dashboard tab, show/hide each widget, set its size (Small / Medium / Large), and reorder it with Move Up / Move Down
+1. On the Dashboard tab, enter Customize mode — drag tiles to rearrange them, drag the corner grip to resize (XS–XL), and show/hide widgets from the list
 2. Click **Save Profile** and enter a name (e.g., "Solo Caster", "RvR Grind", "Heal Support")
 3. Switch layouts with the profile dropdown — all widget state is preserved per profile
 4. Click **Save As** to duplicate a profile, or **Delete** to remove it
@@ -197,7 +180,7 @@ If **Open DAoC Log** can't find the file automatically, use **Open Log File** to
 
 Combat parsing covers weapon attacks, melee styles, spells, crits, heals, misses, blocks, and resists. All data is attributed using:
 
-- **Spell data-driven detection** — DoT spells and AoE nukes are resolved against a built-in spell database for maximum accuracy
+- **Spell data-driven detection** — DoT spells and AoE nukes are looked up in a bundled database of spell data, so ticks and multi-target hits are attributed to the right spell
 - **Two-tier spell attribution** — pending spells (last 4.5s window) vs. confirmed hits ensure multi-hit abilities and DoT ticks are correctly assigned
 - **Comprehensive log coverage** — results depend on log line formats; edge cases are continuously improved based on community log samples
 
@@ -210,6 +193,7 @@ Combat parsing covers weapon attacks, melee styles, spells, crits, heals, misses
 | Feature | Status |
 |---|---|
 | Combat parsing | Combat and heal tracking depend on log line formats and edge cases may require updates for uncommon classes or abilities — [report issues](https://github.com/ZZerker/DAoCLogWatcher/issues) with log examples |
+| Overlay on Linux/Wayland | Wayland compositors don't allow apps to keep a window above the game or make it click-through. The overlay works fully on X11 (e.g. Linux Mint); on Wayland (e.g. Nobara/KDE default session) use a KWin "keep above" window rule or the X11 login session |
 
 ---
 
