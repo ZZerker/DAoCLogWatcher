@@ -602,6 +602,40 @@ public sealed class LogWatcherTests: IDisposable
 	}
 
 	[Fact]
+	public async Task WatchAsync_InvalidLeadByteAtReadBoundary_FollowedByFullChunk_DoesNotThrow()
+	{
+		// Regression for BUG-001: byte 0xE4 (a valid UTF-8 3-byte lead, 'ä' in the ANSI logs DAoC
+		// actually writes) as the LAST byte of the first 4096-byte read is held pending by the
+		// persistent Decoder. The next full 4096-byte ASCII read proves it invalid, so the fallback
+		// flushes one U+FFFD ON TOP of 4096 decoded chars — 4097 chars overflowed the old
+		// 4096-char buffer and killed the watch loop with ArgumentException (Parameter 'chars').
+		var bytes = new byte[8192];
+		Array.Fill(bytes, (byte)'x', 0, 4095);
+		bytes[4095] = 0xE4;
+		Array.Fill(bytes, (byte)'y', 4096, 4095);
+		bytes[8191] = (byte)'\n';
+		await File.WriteAllBytesAsync(this.testLogFilePath, bytes, TestContext.Current.CancellationToken);
+
+		var watcher = new LogWatcher(this.testLogFilePath, enableTimeFiltering: false);
+		using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+
+		LogLine? yielded = null;
+
+		// Act – must not throw; the invalid lead byte degrades to a single replacement char.
+		await foreach(var line in watcher.WatchAsync(cts.Token))
+		{
+			yielded = line;
+			cts.Cancel();
+			break;
+		}
+
+		// Assert
+		yielded.Should().NotBeNull();
+		yielded!.Text.Should().HaveLength(8191);
+		yielded.Text.Should().Be(new string('x', 4095) + "�" + new string('y', 4095));
+	}
+
+	[Fact]
 	public void Constructor_NullOrEmptyPath_ThrowsArgumentException()
 	{
 		// Act & Assert

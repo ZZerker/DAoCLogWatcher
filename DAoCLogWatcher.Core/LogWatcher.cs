@@ -39,7 +39,9 @@ public sealed partial class LogWatcher: IDisposable, IAsyncDisposable
 		this.logFilePath = logFilePath;
 		this.LastPosition = startPosition;
 		this.readBuffer = new byte[BUFFER_SIZE];
-		this.charBuffer = new char[BUFFER_SIZE];
+		// GetMaxCharCount, not BUFFER_SIZE: the persistent Decoder can flush a pending
+		// invalid multi-byte prefix as U+FFFD on top of a full chunk's chars (BUG-001).
+		this.charBuffer = new char[Encoding.UTF8.GetMaxCharCount(BUFFER_SIZE)];
 		this.incompleteLineBuffer = new StringBuilder();
 		this.skipOldEntries = enableTimeFiltering&&startPosition == 0;
 		this.maxHistoryHours = filterHours;

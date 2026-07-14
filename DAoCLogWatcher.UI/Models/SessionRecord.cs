@@ -6,6 +6,7 @@ public sealed record SessionRecord
 {
 	public required DateTime StartTime { get; init; }
 	public DateTime? EndTime { get; init; }
+	public DateTime LastUpdated { get; init; }
 	public string? CharacterName { get; init; }
 	public long RealmPoints { get; init; }
 	public double RpPerHour { get; init; }

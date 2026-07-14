@@ -75,11 +75,18 @@ public sealed partial class SessionHistoryViewModel: ViewModelBase
 
 public sealed class SessionHistoryRowViewModel(SessionRecord record)
 {
+	// A record with no EndTime is only genuinely "live" if it was flushed recently — the
+	// periodic flush runs every 60s, so anything older was abandoned (e.g. app killed
+	// under the debugger) rather than left running.
+	private static readonly TimeSpan LiveThreshold = TimeSpan.FromMinutes(3);
+
 	public string DateText => record.StartTime.ToString("yyyy-MM-dd HH:mm");
 
 	public string? CharacterName => record.CharacterName;
 
-	public string DurationText => DurationFormat.Short((record.EndTime ?? DateTime.Now) - record.StartTime);
+	public bool IsLive => !record.EndTime.HasValue&&DateTime.Now - record.LastUpdated < LiveThreshold;
+
+	public string DurationText => DurationFormat.Short((record.EndTime ?? (this.IsLive?DateTime.Now:record.LastUpdated)) - record.StartTime);
 
 	public long RealmPoints => record.RealmPoints;
 
@@ -92,6 +99,4 @@ public sealed class SessionHistoryRowViewModel(SessionRecord record)
 	public int BestMultiKill => record.BestMultiKill;
 
 	public string? TopZone => record.TopZone;
-
-	public bool IsLive => !record.EndTime.HasValue;
 }
