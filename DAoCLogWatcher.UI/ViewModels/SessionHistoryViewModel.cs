@@ -62,22 +62,21 @@ public sealed partial class SessionHistoryViewModel: ViewModelBase
 
 	private static string ComputeAverageDurationText(List<SessionRecord> records)
 	{
-		var completed = records.Where(r => r.EndTime.HasValue).ToList();
-		if(completed.Count == 0)
+		var timed = records.Where(r => r.Duration > TimeSpan.Zero).ToList();
+		if(timed.Count == 0)
 		{
 			return "--";
 		}
 
-		var averageTicks = (long)completed.Average(r => (r.EndTime!.Value - r.StartTime).Ticks);
+		var averageTicks = (long)timed.Average(r => r.Duration.Ticks);
 		return DurationFormat.Short(TimeSpan.FromTicks(averageTicks));
 	}
 }
 
 public sealed class SessionHistoryRowViewModel(SessionRecord record)
 {
-	// A record with no EndTime is only genuinely "live" if it was flushed recently — the
-	// periodic flush runs every 60s, so anything older was abandoned (e.g. app killed
-	// under the debugger) rather than left running.
+	// The periodic flush runs every 60s, so a record with no EndTime that is older than this was
+	// abandoned (app killed) rather than left running.
 	private static readonly TimeSpan LiveThreshold = TimeSpan.FromMinutes(3);
 
 	public string DateText => record.StartTime.ToString("yyyy-MM-dd HH:mm");
@@ -86,7 +85,7 @@ public sealed class SessionHistoryRowViewModel(SessionRecord record)
 
 	public bool IsLive => !record.EndTime.HasValue&&DateTime.Now - record.LastUpdated < LiveThreshold;
 
-	public string DurationText => DurationFormat.Short((record.EndTime ?? (this.IsLive?DateTime.Now:record.LastUpdated)) - record.StartTime);
+	public string DurationText => DurationFormat.Short(record.Duration);
 
 	public long RealmPoints => record.RealmPoints;
 

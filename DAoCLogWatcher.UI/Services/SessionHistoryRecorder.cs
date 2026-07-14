@@ -28,6 +28,7 @@ public sealed class SessionHistoryRecorder
 				       StartTime = startTime,
 				       EndTime = endTime,
 				       LastUpdated = DateTime.Now,
+				       DurationSeconds = this.summary.SessionDuration.TotalSeconds,
 				       CharacterName = characterName,
 				       RealmPoints = this.summary.TotalRealmPoints,
 				       RpPerHour = this.summary.RpsPerHour,

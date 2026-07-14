@@ -80,18 +80,34 @@ public partial class RealmPointSummary: ObservableObject
 		}
 	}
 
-	public string SessionDurationText
+	/// <summary>
+	/// Elapsed session time, measured to the last RP entry rather than the wall clock: a chat log
+	/// session can stay open for days across which only a couple of hours were actually played.
+	/// </summary>
+	public TimeSpan SessionDuration
 	{
 		get
 		{
 			var start = this.SessionStartTime ?? this.FirstEntryTime;
 			if(!start.HasValue)
 			{
-				return "";
+				return TimeSpan.Zero;
 			}
 
 			var end = this.IsLive?DateTime.Now:this.LastEntryTime ?? DateTime.Now;
-			return DurationFormat.Short(end - start.Value);
+			var duration = end - start.Value;
+
+			return duration > TimeSpan.Zero?duration:TimeSpan.Zero;
+		}
+	}
+
+	public string SessionDurationText
+	{
+		get
+		{
+			var start = this.SessionStartTime ?? this.FirstEntryTime;
+
+			return start.HasValue?DurationFormat.Short(this.SessionDuration):"";
 		}
 	}
 
@@ -104,14 +120,7 @@ public partial class RealmPointSummary: ObservableObject
 				return 0;
 			}
 
-			var startTime = this.SessionStartTime ?? this.FirstEntryTime;
-			if(!startTime.HasValue)
-			{
-				return 0;
-			}
-
-			var endTime = this.IsLive?DateTime.Now:this.LastEntryTime ?? DateTime.Now;
-			var duration = endTime - startTime.Value;
+			var duration = this.SessionDuration;
 
 			if(duration.TotalHours <= 0)
 			{

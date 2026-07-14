@@ -196,20 +196,30 @@ jobs:
           magick -background none DAoCLogWatcher.UI/Assets/icon2.svg -resize 256x256 icon2.png
           magick icon2.png -define icon:auto-resize="256,128,64,48,32,16" DAoCLogWatcher.UI/Assets/icon2.ico
 
+      # Velopack rejects anything that is not 3-part SemVer2, so a "v0.5" tag must become "0.5.0".
+      - name: Resolve pack version
+        run: |
+          $tag = "${{ github.ref_name }}".TrimStart('v')
+          $core, $suffix = $tag -split '-', 2
+          $parts = $core -split '\.'
+          while ($parts.Count -lt 3) { $parts += '0' }
+          $version = ($parts[0..2] -join '.')
+          if ($suffix) { $version = "$version-$suffix" }
+          "PACK_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append
+          Write-Host "Pack version: $version"
+
       - name: Publish win-x64 for Velopack
         run: |
-          $version = "${{ github.ref_name }}".TrimStart('v')
           dotnet publish DAoCLogWatcher.UI/DAoCLogWatcher.UI.csproj `
             -c Release -f net10.0-windows10.0.17763 -r win-x64 --self-contained true `
-            -p:Version="$version" `
+            -p:Version="$env:PACK_VERSION" `
             -o publish/win-x64
 
       - name: Pack with Velopack
         run: |
-          $version = "${{ github.ref_name }}".TrimStart('v')
           vpk pack `
             --packId DAoCLogWatcher `
-            --packVersion $version `
+            --packVersion $env:PACK_VERSION `
             --packDir publish/win-x64 `
             --mainExe DAoCLogWatcher.UI.exe `
             --icon DAoCLogWatcher.UI/Assets/icon2.ico `
