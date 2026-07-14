@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace DAoCLogWatcher.UI.Services;
@@ -18,7 +17,7 @@ public sealed class NotificationService: INotificationService
 		}
 		catch (Exception ex)
 		{
-			Debug.WriteLine($"[NotificationService.ShowToast] {ex.GetType().Name}: {ex.Message}");
+			AppLog.Exception("NotificationService.ShowToast", ex);
 		}
 #endif
 	}
@@ -34,7 +33,7 @@ public sealed class NotificationService: INotificationService
 			}
 			catch(Exception ex)
 			{
-				Debug.WriteLine($"[NotificationService.PlayNotificationSound] {ex.GetType().Name}: {ex.Message}");
+				AppLog.Exception("NotificationService.PlayNotificationSound", ex);
 			}
 		}
 	}

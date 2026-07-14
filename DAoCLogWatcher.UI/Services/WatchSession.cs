@@ -68,7 +68,7 @@ public sealed class WatchSession: IWatchSession
 		}
 		catch(Exception ex)
 		{
-			Trace.WriteLine($"[WatchSession] {ex}");
+			AppLog.Exception("WatchSession.RunAsync", ex);
 			this.ErrorOccurred?.Invoke(this, $"{ex.GetType().Name}: {ex.Message}");
 		}
 		finally

@@ -11,7 +11,6 @@ public sealed class UpdateService: IUpdateService
 {
 	private const string GITHUB_URL = "https://github.com/ZZerker/DAoCLogWatcher";
 
-	private static readonly string LogPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DAoCLogWatcher", "update.log");
 
 #if !FLATPAK
 	private UpdateInfo? pendingUpdate;
@@ -110,19 +109,7 @@ public sealed class UpdateService: IUpdateService
 
 	private void ReportError(string context, Exception ex)
 	{
-		var detail = $"{ex.GetType().Name}: {ex.Message}";
-		Debug.WriteLine($"[UpdateService.{context}] {detail}");
-
-		try
-		{
-			Directory.CreateDirectory(Path.GetDirectoryName(LogPath)!);
-			File.AppendAllText(LogPath, $"{DateTime.Now:u} [{context}] {detail}{Environment.NewLine}{ex}{Environment.NewLine}{Environment.NewLine}");
-		}
-		catch(Exception logEx)
-		{
-			Debug.WriteLine($"[UpdateService.log] {logEx.GetType().Name}: {logEx.Message}");
-		}
-
+		AppLog.Exception($"UpdateService.{context}", ex);
 		this.RaiseError($"Update {context} failed: {ex.Message}");
 	}
 

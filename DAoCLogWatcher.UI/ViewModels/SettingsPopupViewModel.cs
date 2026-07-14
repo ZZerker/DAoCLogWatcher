@@ -91,6 +91,12 @@ public sealed partial class SettingsPopupViewModel: ObservableObject
 	}
 
 	[RelayCommand]
+	private void OpenLogFolder()
+	{
+		AppLog.OpenLogFolder();
+	}
+
+	[RelayCommand]
 	private void ClearChatLogPath()
 	{
 		this.CustomChatLogPath = null;

@@ -1,5 +1,7 @@
-﻿using Avalonia;
+using Avalonia;
 using System;
+using System.Threading.Tasks;
+using DAoCLogWatcher.UI.Services;
 using Velopack;
 
 namespace DAoCLogWatcher.UI;
@@ -12,10 +14,22 @@ internal sealed class Program
 	[STAThread]
 	public static void Main(string[] args)
 	{
+		AppLog.Initialize();
+		AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
+		TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
+
 		// Must be called before anything else to handle Velopack install/uninstall hooks
 		VelopackApp.Build().Run();
 
-		BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+		try
+		{
+			BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+		}
+		catch(Exception ex)
+		{
+			AppLog.Exception("Program.Main", ex);
+			throw;
+		}
 	}
 
 	// Avalonia configuration, don't remove; also used by visual designer.
@@ -29,5 +43,24 @@ internal sealed class Program
 		                       {
 				                       WmClass = "io.github.zzerker.DAoCLogWatcher"
 		                       });
+	}
+
+	private static void OnUnhandledException(object sender, UnhandledExceptionEventArgs e)
+	{
+		if(e.ExceptionObject is Exception ex)
+		{
+			AppLog.Exception($"AppDomain.UnhandledException (terminating: {e.IsTerminating})", ex);
+		}
+		else
+		{
+			AppLog.Warning("AppDomain.UnhandledException", $"Non-Exception object thrown: {e.ExceptionObject}");
+		}
+	}
+
+	// Faulted fire-and-forget tasks reach the finalizer unobserved; without this they vanish silently.
+	private static void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
+	{
+		AppLog.Exception("TaskScheduler.UnobservedTaskException", e.Exception);
+		e.SetObserved();
 	}
 }

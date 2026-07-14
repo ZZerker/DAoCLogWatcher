@@ -367,6 +367,19 @@
                              Padding="6,4" />
                 </StackPanel>
                 <Rectangle Fill="{DynamicResource AppBorderBrush}" Height="1" />
+                <StackPanel Spacing="4">
+                    <TextBlock Text="Diagnostics"
+                               Foreground="{DynamicResource AppTextPrimary}" FontSize="12" />
+                    <TextBlock Text="Errors are written to a daily log file (kept 7 days)"
+                               Foreground="{DynamicResource AppTextMuted}" FontSize="10"
+                               TextWrapping="Wrap" />
+                    <Button Content="Open log folder"
+                            Classes="btn-secondary"
+                            Command="{Binding SettingsPopup.OpenLogFolderCommand}"
+                            Padding="10,5" FontSize="11"
+                            HorizontalAlignment="Left" Margin="0,2,0,0" />
+                </StackPanel>
+                <Rectangle Fill="{DynamicResource AppBorderBrush}" Height="1" />
                 <TextBlock Text="{Binding SettingsPopup.AppVersion, StringFormat='DAoC Log Watcher {0}'}"
                            FontSize="10"
                            Foreground="{DynamicResource AppTextMuted}"

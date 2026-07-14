@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 using DAoCLogWatcher.UI.Models;
@@ -57,7 +56,7 @@ public sealed class SessionHistoryService: ISessionHistoryService
 			}
 			catch(Exception ex)
 			{
-				Debug.WriteLine($"[SessionHistoryService.Upsert] {ex.GetType().Name}: {ex.Message}");
+				AppLog.Exception("SessionHistoryService.Upsert", ex);
 			}
 		}
 	}
@@ -73,7 +72,7 @@ public sealed class SessionHistoryService: ISessionHistoryService
 		}
 		catch(Exception ex)
 		{
-			Debug.WriteLine($"[SessionHistoryService.Load] {ex.GetType().Name}: {ex.Message}");
+			AppLog.Exception("SessionHistoryService.Load", ex);
 		}
 
 		return [];

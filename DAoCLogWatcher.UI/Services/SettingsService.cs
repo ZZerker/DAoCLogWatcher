@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 using DAoCLogWatcher.UI.Models;
@@ -21,7 +20,7 @@ public sealed class SettingsService: ISettingsService
 		}
 		catch(Exception ex)
 		{
-			Debug.WriteLine($"[SettingsService.Load] {ex.GetType().Name}: {ex.Message}");
+			AppLog.Exception("SettingsService.Load", ex);
 		}
 
 		return new AppSettings();
@@ -41,7 +40,7 @@ public sealed class SettingsService: ISettingsService
 		}
 		catch(Exception ex)
 		{
-			Debug.WriteLine($"[SettingsService.Save] {ex.GetType().Name}: {ex.Message}");
+			AppLog.Exception("SettingsService.Save", ex);
 		}
 	}
 }
