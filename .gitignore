@@ -14,6 +14,11 @@ _ReSharper*/
 # Click-Once directory
 publish/
 
+# AppImage build artifacts
+/build/
+/appimage/.cache/
+*.AppImage
+
 # Build results
 
 [Dd]ebug/

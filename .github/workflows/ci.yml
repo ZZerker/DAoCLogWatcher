@@ -172,6 +172,50 @@ jobs:
           name: DAoCLogWatcher.flatpak
           path: DAoCLogWatcher.flatpak
 
+  # ── Build AppImage (only on version tags) ────────────────────────────────────
+  appimage:
+    name: AppImage
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    # Build inside an Ubuntu 22.04 container: a self-contained publish still links the
+    # host glibc, so building on the oldest supported base (glibc 2.35) keeps the
+    # AppImage runnable on Ubuntu 22.04 / Debian 12 / Mint 21 era distros. A container
+    # is used instead of the ubuntu-22.04 runner label because that label starts
+    # brownouts 2026-09-17 and is retired 2027-04-17.
+    container: ubuntu:22.04
+    permissions:
+      contents: read
+
+    steps:
+      # curl/ca-certificates: appimagetool download; librsvg2-bin: icon rasterizing;
+      # libicu70: .NET runtime; file/desktop-file-utils: used by appimagetool.
+      - name: Install build prerequisites
+        run: |
+          apt-get update -y
+          apt-get install -y curl ca-certificates git librsvg2-bin libicu70 file desktop-file-utils
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Build AppImage
+        env:
+          VERSION: ${{ github.ref_name }}
+          OUTPUT: ${{ github.workspace }}/DAoCLogWatcher-x86_64.AppImage
+        run: |
+          # Strip the leading "v" from the tag (v0.5.0 -> 0.5.0).
+          export VERSION="${VERSION#v}"
+          ./appimage/build-appimage.sh
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DAoCLogWatcher-x86_64.AppImage
+          path: DAoCLogWatcher-x86_64.AppImage
+
   # ── Build Velopack Windows installer (only on version tags) ─────────────────
   velopack-windows:
     name: Velopack Windows
@@ -234,7 +278,7 @@ jobs:
   # ── Create GitHub Release and attach binaries ────────────────────────────────
   release:
     name: Create Release
-    needs: [publish, flatpak, velopack-windows]
+    needs: [publish, flatpak, appimage, velopack-windows]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
@@ -259,6 +303,7 @@ jobs:
           files: |
             DAoCLogWatcher-win-x64.zip
             DAoCLogWatcher-linux-x64.tar.gz
+            DAoCLogWatcher-x86_64.AppImage
             DAoCLogWatcher.flatpak
             velopack-win/*
           generate_release_notes: true
