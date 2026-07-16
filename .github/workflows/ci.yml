@@ -172,6 +172,41 @@ jobs:
           name: DAoCLogWatcher.flatpak
           path: DAoCLogWatcher.flatpak
 
+  # ── Build AppImage (only on version tags) ────────────────────────────────────
+  appimage:
+    name: AppImage
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      # rsvg-convert rasterizes the SVG icon into the AppDir.
+      - name: Install icon tooling
+        run: sudo apt-get update -y && sudo apt-get install -y librsvg2-bin
+
+      - name: Build AppImage
+        env:
+          VERSION: ${{ github.ref_name }}
+          OUTPUT: ${{ github.workspace }}/DAoCLogWatcher-x86_64.AppImage
+        run: |
+          # Strip the leading "v" from the tag (v0.5.0 -> 0.5.0).
+          export VERSION="${VERSION#v}"
+          ./appimage/build-appimage.sh
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DAoCLogWatcher-x86_64.AppImage
+          path: DAoCLogWatcher-x86_64.AppImage
+
   # ── Build Velopack Windows installer (only on version tags) ─────────────────
   velopack-windows:
     name: Velopack Windows
@@ -234,7 +269,7 @@ jobs:
   # ── Create GitHub Release and attach binaries ────────────────────────────────
   release:
     name: Create Release
-    needs: [publish, flatpak, velopack-windows]
+    needs: [publish, flatpak, appimage, velopack-windows]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
@@ -259,6 +294,7 @@ jobs:
           files: |
             DAoCLogWatcher-win-x64.zip
             DAoCLogWatcher-linux-x64.tar.gz
+            DAoCLogWatcher-x86_64.AppImage
             DAoCLogWatcher.flatpak
             velopack-win/*
           generate_release_notes: true
