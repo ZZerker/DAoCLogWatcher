@@ -95,19 +95,27 @@ cp "$ICON_PNG" "$APPDIR/$APP_ID.png"
 cp "$ICON_PNG" "$APPDIR/.DirIcon"
 
 # --- locate appimagetool -----------------------------------------------------
+# Pinned release + checksum so CI never executes an unverified moving binary.
+APPIMAGETOOL_VERSION="1.9.1"
+APPIMAGETOOL_SHA256="ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0"
+
 if [ -n "${APPIMAGETOOL:-}" ]; then
 	TOOL="$APPIMAGETOOL"
 elif command -v appimagetool >/dev/null 2>&1; then
 	TOOL="appimagetool"
 else
-	TOOL="$SCRIPT_DIR/.cache/appimagetool"
+	TOOL="$SCRIPT_DIR/.cache/appimagetool-$APPIMAGETOOL_VERSION"
 	if [ ! -x "$TOOL" ]; then
-		echo ">> downloading appimagetool"
+		echo ">> downloading appimagetool $APPIMAGETOOL_VERSION"
 		mkdir -p "$SCRIPT_DIR/.cache"
 		curl -sSL -o "$TOOL" \
-			https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+			"https://github.com/AppImage/appimagetool/releases/download/$APPIMAGETOOL_VERSION/appimagetool-x86_64.AppImage"
 		chmod +x "$TOOL"
 	fi
+	echo "$APPIMAGETOOL_SHA256  $TOOL" | sha256sum -c - >/dev/null || {
+		echo "error: appimagetool checksum mismatch — delete $TOOL and retry" >&2
+		exit 1
+	}
 fi
 
 # --- build the AppImage ------------------------------------------------------

@@ -178,19 +178,28 @@ jobs:
     needs: test
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
+    # Build inside an Ubuntu 22.04 container: a self-contained publish still links the
+    # host glibc, so building on the oldest supported base (glibc 2.35) keeps the
+    # AppImage runnable on Ubuntu 22.04 / Debian 12 / Mint 21 era distros. A container
+    # is used instead of the ubuntu-22.04 runner label because that label starts
+    # brownouts 2026-09-17 and is retired 2027-04-17.
+    container: ubuntu:22.04
     permissions:
       contents: read
 
     steps:
+      # curl/ca-certificates: appimagetool download; librsvg2-bin: icon rasterizing;
+      # libicu70: .NET runtime; file/desktop-file-utils: used by appimagetool.
+      - name: Install build prerequisites
+        run: |
+          apt-get update -y
+          apt-get install -y curl ca-certificates git librsvg2-bin libicu70 file desktop-file-utils
+
       - uses: actions/checkout@v4
 
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
-
-      # rsvg-convert rasterizes the SVG icon into the AppDir.
-      - name: Install icon tooling
-        run: sudo apt-get update -y && sudo apt-get install -y librsvg2-bin
 
       - name: Build AppImage
         env:
