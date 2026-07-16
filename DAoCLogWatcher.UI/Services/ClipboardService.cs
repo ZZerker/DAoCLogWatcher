@@ -41,7 +41,7 @@ public static class ClipboardService
 			// selection). RenderTargetBitmap would already be disposed by then, so we flush
 			// it to a regular Bitmap backed by its own pixel buffer first.
 			using var ms = new MemoryStream();
-			renderBitmap.Save(ms);
+			renderBitmap.Save(ms, PngBitmapEncoderOptions.Default);
 			ms.Position = 0;
 
 			// clipboardBitmap is intentionally not disposed here — the clipboard holds the
@@ -63,7 +63,7 @@ public static class ClipboardService
 
 		// --- PNG bytes ---
 		using var pngStream = new MemoryStream();
-		avBitmap.Save(pngStream);
+		avBitmap.Save(pngStream, PngBitmapEncoderOptions.Default);
 		var pngBytes = pngStream.ToArray();
 
 		// --- Raw pixels (BGRA on Windows / Skia backend) ---

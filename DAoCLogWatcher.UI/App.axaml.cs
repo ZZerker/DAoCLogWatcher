@@ -1,8 +1,6 @@
 using System;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
-using Avalonia.Data.Core.Plugins;
-using System.Linq;
 using Avalonia.Markup.Xaml;
 using DAoCLogWatcher.Core;
 using DAoCLogWatcher.UI.Models;
@@ -20,16 +18,15 @@ public partial class App: Application
 	public override void Initialize()
 	{
 		AvaloniaXamlLoader.Load(this);
+#if DEBUG
+		this.AttachDeveloperTools();
+#endif
 	}
 
 	public override void OnFrameworkInitializationCompleted()
 	{
 		if(this.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
 		{
-			// Avoid duplicate validations from both Avalonia and the CommunityToolkit.
-			// More info: https://docs.avaloniaui.net/docs/guides/development-guides/data-validation#manage-validationplugins
-			this.DisableAvaloniaDataAnnotationValidation();
-
 			var services = new ServiceCollection();
 			services.AddSingleton<ISettingsService, SettingsService>();
 			services.AddSingleton(sp => sp.GetRequiredService<ISettingsService>().Load());
@@ -65,15 +62,5 @@ public partial class App: Application
 		}
 
 		base.OnFrameworkInitializationCompleted();
-	}
-
-	private void DisableAvaloniaDataAnnotationValidation()
-	{
-		var dataValidationPluginsToRemove = BindingPlugins.DataValidators.OfType<DataAnnotationsValidationPlugin>().ToArray();
-
-		foreach(var plugin in dataValidationPluginsToRemove)
-		{
-			BindingPlugins.DataValidators.Remove(plugin);
-		}
 	}
 }

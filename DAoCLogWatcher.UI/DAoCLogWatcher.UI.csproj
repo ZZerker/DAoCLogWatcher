@@ -30,25 +30,24 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Avalonia" Version="11.3.13" />
-		<PackageReference Include="Avalonia.Controls.DataGrid" Version="11.3.13" />
-		<PackageReference Include="Avalonia.Desktop" Version="11.3.13" />
-		<PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.13" />
-		<PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.13" />
-		<!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
-		<PackageReference Include="Avalonia.Diagnostics" Version="11.3.13">
+		<PackageReference Include="Avalonia" Version="12.1.0" />
+		<PackageReference Include="Avalonia.Controls.DataGrid" Version="12.1.0" />
+		<PackageReference Include="Avalonia.Desktop" Version="12.1.0" />
+		<PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.0" />
+		<PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.0" />
+		<!--Condition below is needed to remove the diagnostics package from build output in Release configuration.-->
+		<PackageReference Include="AvaloniaUI.DiagnosticsSupport" Version="2.2.3">
 			<IncludeAssets Condition="'$(Configuration)' != 'Debug'">None</IncludeAssets>
 			<PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
 		</PackageReference>
 		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.9" />
-		<!-- Pin 0.21.3 (min patched for CVE-2026-39959): same API line as Avalonia 11.3.13's
-		     FreeDesktop (exposes Tmds.DBus.Protocol.Connection). Do NOT bump to 0.9x — that line
-		     renamed the type and crashes X11 IME init on Linux with TypeLoadException. -->
-		<PackageReference Include="Tmds.DBus.Protocol" Version="0.21.3" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.10" />
+		<!-- Avalonia 12.1's FreeDesktop pulls Tmds.DBus.Protocol >= 0.94.1 transitively. Pin 0.94.2
+		     (min patched for CVE-2026-39959) so the CVE fix is enforced above Avalonia's 0.94.1 floor. -->
+		<PackageReference Include="Tmds.DBus.Protocol" Version="0.94.2" />
 		<PackageReference Include="Velopack" Version="1.2.0" />
-		<PackageReference Include="ScottPlot.Avalonia" Version="5.1.58" />
-		<!-- Override ScottPlot's outdated Linux native SkiaSharp assets to match the managed SkiaSharp 3.x used by Avalonia -->
+		<PackageReference Include="ScottPlot.Avalonia" Version="5.1.59" />
+		<!-- Override ScottPlot's outdated Linux native SkiaSharp assets to match the managed SkiaSharp 3.119.4 used by Avalonia 12.1/ScottPlot 5.1.59 -->
 		<PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="3.119.4" />
 		<PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="3.119.4" />
 	</ItemGroup>
@@ -61,6 +60,6 @@
 
 	<ItemGroup Condition="$(TargetFramework.Contains('windows'))">
 		<PackageReference Include="Microsoft.Toolkit.Uwp.Notifications" Version="7.1.3" />
-		<PackageReference Include="System.Drawing.Common" Version="10.0.9" />
+		<PackageReference Include="System.Drawing.Common" Version="10.0.10" />
 	</ItemGroup>
 </Project>
