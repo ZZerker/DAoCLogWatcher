@@ -27,6 +27,10 @@ public partial class App: Application
 	{
 		if(this.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
 		{
+			// On KDE Wayland, install the KWin rule that keeps the (XWayland) overlay above fullscreen
+			// games before any window maps. No-op elsewhere; failures are swallowed and logged.
+			KWinOverlayRuleInstaller.EnsureInstalled();
+
 			var services = new ServiceCollection();
 			services.AddSingleton<ISettingsService, SettingsService>();
 			services.AddSingleton(sp => sp.GetRequiredService<ISettingsService>().Load());
