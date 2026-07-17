@@ -18,6 +18,7 @@ public sealed partial class SettingsPopupViewModel: ObservableObject
 		this.settings = settings;
 		this.settingsService = settingsService;
 		this.customChatLogPath = settings.CustomChatLogPath;
+		this.isKWinRuleInstalled = settings.KWinRuleConsent == KWinRuleConsent.Granted&&!KWinOverlayRuleInstaller.IsNeeded();
 	}
 
 	public string AppVersion { get; } = ReadAppVersion();
@@ -133,5 +134,36 @@ public sealed partial class SettingsPopupViewModel: ObservableObject
 	private void ToggleSidebar()
 	{
 		this.IsSidebarVisible = !this.IsSidebarVisible;
+	}
+
+	// KWin overlay rule (KDE Plasma Wayland only). The section is hidden on every other platform.
+	public bool IsKdeWaylandSession { get; } = KWinOverlayRuleInstaller.IsKdeWaylandSession();
+
+	[ObservableProperty] private bool isKWinRuleInstalled;
+
+	public string KWinRuleStatusText => this.IsKWinRuleInstalled
+			                                    ?"Overlay window rule installed — the overlay stays above fullscreen games."
+			                                    :"Add a KWin rule so the overlay stays above fullscreen games.";
+
+	partial void OnIsKWinRuleInstalledChanged(bool value)
+	{
+		this.OnPropertyChanged(nameof(this.KWinRuleStatusText));
+	}
+
+	[RelayCommand]
+	private void ApplyKWinRule()
+	{
+		this.settings.KWinRuleConsent = KWinRuleConsent.Granted;
+		this.settingsService.Save(this.settings);
+		KWinOverlayRuleInstaller.Install();
+		this.IsKWinRuleInstalled = !KWinOverlayRuleInstaller.IsNeeded();
+	}
+
+	[RelayCommand]
+	private void ResetKWinRuleChoice()
+	{
+		this.settings.KWinRuleConsent = KWinRuleConsent.NotAsked;
+		this.settingsService.Save(this.settings);
+		this.IsKWinRuleInstalled = false;
 	}
 }

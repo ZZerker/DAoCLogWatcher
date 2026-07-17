@@ -41,4 +41,6 @@ public class AppSettings
 	public bool OverlayShowKillFeed { get; set; } = true;
 
 	public double OverlayOpacity { get; set; } = 0.6;
+
+	public KWinRuleConsent KWinRuleConsent { get; set; } = KWinRuleConsent.NotAsked;
 }

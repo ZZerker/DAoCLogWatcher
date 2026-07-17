@@ -23,16 +23,37 @@ internal static class KWinOverlayRuleInstaller
 	private const string OverlayTitle = "DAoC Overlay";
 	private const string WmClass = "io.github.zzerker.DAoCLogWatcher";
 
-	public static void EnsureInstalled()
+	// True when a KWin overlay rule should be written: a KDE Plasma Wayland session, not inside Flatpak
+	// (where ~/.config is the sandbox, not the host), and no matching rule is present yet. Read-only:
+	// never writes anything and never throws — any failure is logged and treated as "not needed".
+	public static bool IsNeeded()
 	{
 		try
 		{
-			// Inside Flatpak, ~/.config is the sandbox config, not the host's — writing there does nothing useful.
 			if(!IsKdeWaylandSession()||Environment.GetEnvironmentVariable("FLATPAK_ID") != null)
 			{
-				return;
+				return false;
 			}
 
+			var path = RulesFilePath();
+			var existing = File.Exists(path)?File.ReadAllText(path):string.Empty;
+
+			// TryBuildWithOverlayRule returns true when the rule had to be appended, i.e. it is not present.
+			return TryBuildWithOverlayRule(existing, () => Guid.NewGuid().ToString(), out _);
+		}
+		catch(Exception ex)
+		{
+			AppLog.Exception("KWinOverlayRuleInstaller.IsNeeded", ex);
+			return false;
+		}
+	}
+
+	// Writes the overlay rule into kwinrulesrc and live-reloads KWin. Idempotent and best-effort:
+	// no-op when a matching rule is already present, any failure is logged rather than thrown.
+	public static void Install()
+	{
+		try
+		{
 			var path = RulesFilePath();
 			var existing = File.Exists(path)?File.ReadAllText(path):string.Empty;
 
@@ -48,7 +69,7 @@ internal static class KWinOverlayRuleInstaller
 		}
 		catch(Exception ex)
 		{
-			AppLog.Exception("KWinOverlayRuleInstaller.EnsureInstalled", ex);
+			AppLog.Exception("KWinOverlayRuleInstaller.Install", ex);
 		}
 	}
 

@@ -1,3 +1,5 @@
+using System.Text.Json;
+using DAoCLogWatcher.UI.Models;
 using DAoCLogWatcher.UI.Services;
 using FluentAssertions;
 
@@ -5,6 +7,31 @@ namespace DAoCLogWatcher.Tests.UI.Services;
 
 public sealed class KWinOverlayRuleInstallerTests
 {
+	[Fact]
+	public void AppSettings_KWinRuleConsent_DefaultsToNotAsked()
+	{
+		new AppSettings().KWinRuleConsent.Should().Be(KWinRuleConsent.NotAsked);
+	}
+
+	[Fact]
+	public void AppSettings_MissingConsentKey_DeserializesAsNotAsked()
+	{
+		// A settings file written before this feature has no KWinRuleConsent key.
+		var settings = JsonSerializer.Deserialize<AppSettings>("{\"OverlayOpacity\":0.6}");
+
+		settings.Should().NotBeNull();
+		settings!.KWinRuleConsent.Should().Be(KWinRuleConsent.NotAsked);
+	}
+
+	[Fact]
+	public void AppSettings_ConsentRoundTripsAsString()
+	{
+		var json = JsonSerializer.Serialize(new AppSettings { KWinRuleConsent = KWinRuleConsent.Granted });
+
+		json.Should().Contain("\"KWinRuleConsent\":\"Granted\"");
+		JsonSerializer.Deserialize<AppSettings>(json)!.KWinRuleConsent.Should().Be(KWinRuleConsent.Granted);
+	}
+
 	private static string Uuid()
 	{
 		return "11111111-2222-3333-4444-555555555555";

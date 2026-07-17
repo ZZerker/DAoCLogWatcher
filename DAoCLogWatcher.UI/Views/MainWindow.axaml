@@ -379,6 +379,26 @@
                             Padding="10,5" FontSize="11"
                             HorizontalAlignment="Left" Margin="0,2,0,0" />
                 </StackPanel>
+                <StackPanel IsVisible="{Binding SettingsPopup.IsKdeWaylandSession}" Spacing="6">
+                    <Rectangle Fill="{DynamicResource AppBorderBrush}" Height="1" />
+                    <TextBlock Text="OVERLAY (KDE WAYLAND)" FontSize="10" FontWeight="SemiBold"
+                               Foreground="{DynamicResource AppTextMuted}" />
+                    <TextBlock Text="{Binding SettingsPopup.KWinRuleStatusText}"
+                               Foreground="{DynamicResource AppTextMuted}" FontSize="10"
+                               TextWrapping="Wrap" />
+                    <Button Content="Apply KWin overlay rule"
+                            Classes="btn-secondary"
+                            Command="{Binding SettingsPopup.ApplyKWinRuleCommand}"
+                            IsVisible="{Binding !SettingsPopup.IsKWinRuleInstalled}"
+                            Padding="10,5" FontSize="11"
+                            HorizontalAlignment="Left" Margin="0,2,0,0" />
+                    <Button Content="Reset choice"
+                            Classes="btn-secondary"
+                            Command="{Binding SettingsPopup.ResetKWinRuleChoiceCommand}"
+                            IsVisible="{Binding SettingsPopup.IsKWinRuleInstalled}"
+                            Padding="10,5" FontSize="11"
+                            HorizontalAlignment="Left" Margin="0,2,0,0" />
+                </StackPanel>
                 <Rectangle Fill="{DynamicResource AppBorderBrush}" Height="1" />
                 <TextBlock Text="{Binding SettingsPopup.AppVersion, StringFormat='DAoC Log Watcher {0}'}"
                            FontSize="10"

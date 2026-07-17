@@ -27,10 +27,6 @@ public partial class App: Application
 	{
 		if(this.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
 		{
-			// On KDE Wayland, install the KWin rule that keeps the (XWayland) overlay above fullscreen
-			// games before any window maps. No-op elsewhere; failures are swallowed and logged.
-			KWinOverlayRuleInstaller.EnsureInstalled();
-
 			var services = new ServiceCollection();
 			services.AddSingleton<ISettingsService, SettingsService>();
 			services.AddSingleton(sp => sp.GetRequiredService<ISettingsService>().Load());
@@ -58,13 +54,62 @@ public partial class App: Application
 			warmap.Start();
 
 			var vm = provider.GetRequiredService<MainWindowViewModel>();
-			desktop.MainWindow = new MainWindow
-			                     {
-					                     DataContext = vm
-			                     };
+			var mainWindow = new MainWindow
+			                 {
+					                 DataContext = vm
+			                 };
+			desktop.MainWindow = mainWindow;
 			desktop.Exit += (_, _) => vm.Dispose();
+
+			// Ask for / apply the KWin overlay rule once the main window is up (KDE Wayland only).
+			mainWindow.Opened += async (_, _) => await RunKWinRuleConsentAsync(mainWindow, provider);
 		}
 
 		base.OnFrameworkInitializationCompleted();
+	}
+
+	// On a KDE Plasma Wayland session, keep the (XWayland) overlay above fullscreen games via a KWin
+	// window rule — but only with the user's consent. No-op elsewhere; failures are logged, not thrown.
+	private static async System.Threading.Tasks.Task RunKWinRuleConsentAsync(Avalonia.Controls.Window owner, IServiceProvider provider)
+	{
+		try
+		{
+			if(!KWinOverlayRuleInstaller.IsNeeded())
+			{
+				return;
+			}
+
+			var settings = provider.GetRequiredService<AppSettings>();
+			var settingsService = provider.GetRequiredService<ISettingsService>();
+
+			if(settings.KWinRuleConsent == KWinRuleConsent.Granted)
+			{
+				KWinOverlayRuleInstaller.Install();
+				return;
+			}
+
+			if(settings.KWinRuleConsent != KWinRuleConsent.NotAsked)
+			{
+				return; // Declined — never ask again.
+			}
+
+			// null = dialog dismissed via titlebar close: save nothing, ask again next launch.
+			var apply = await new KWinRuleConsentDialog().ShowDialog<bool?>(owner);
+			if(apply == true)
+			{
+				settings.KWinRuleConsent = KWinRuleConsent.Granted;
+				settingsService.Save(settings);
+				KWinOverlayRuleInstaller.Install();
+			}
+			else if(apply == false)
+			{
+				settings.KWinRuleConsent = KWinRuleConsent.Declined;
+				settingsService.Save(settings);
+			}
+		}
+		catch(Exception ex)
+		{
+			AppLog.Exception("App.RunKWinRuleConsent", ex);
+		}
 	}
 }
