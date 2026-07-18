@@ -14,9 +14,10 @@ _ReSharper*/
 # Click-Once directory
 publish/
 
-# AppImage build artifacts
+# AppImage / Velopack build artifacts
 /build/
 /appimage/.cache/
+/releases/
 *.AppImage
 
 # Build results

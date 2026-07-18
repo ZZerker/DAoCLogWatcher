@@ -3,6 +3,7 @@
         xmlns:vm="using:DAoCLogWatcher.UI.ViewModels"
         x:Class="DAoCLogWatcher.UI.Views.OverlayWindow"
         x:DataType="vm:OverlayViewModel"
+        Title="DAoC Overlay"
         SystemDecorations="None"
         Topmost="True"
         ShowInTaskbar="False"

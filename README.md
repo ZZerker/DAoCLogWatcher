@@ -40,7 +40,7 @@ A real-time tracker for **Dark Age of Camelot (Eden)**. Load your `chat.log` and
 - **Always-on-top overlay** while you play: character name with live indicator, total RP + RP/h, damage & heal totals (the bigger one shown first), and a feed of your last kills
 - **Lock / unlock** — locked, the overlay is click-through so it never eats your mouse input; unlocked, drag it anywhere and set its background transparency with a slider. Toggle the lock from the main window toolbar
 - Position and opacity are remembered; the overlay reopens automatically on the next start if it was active
-- **Platform support:** full on Windows and Linux/X11. On **Wayland** (e.g. KDE Plasma default session) the overlay works, but the compositor doesn't let it stay above the game or be click-through — use a KWin "keep above" window rule or log into the X11 session instead
+- **Platform support:** full on Windows and Linux/X11. On **Wayland** the app runs via XWayland; on **KDE Plasma (KWin)** import the bundled window rule so the overlay stays above the game even in fullscreen — see [Linux Overlay on Wayland (KDE Plasma)](#linux-overlay-on-wayland-kde-plasma). Other Wayland compositors (GNOME, wlroots) offer no equivalent — use the X11 session there
 
 ### 👤 Character & Combat Tracking
 - **Character detection** — type `/stats` in-game and the app identifies your character name and displays it in the sidebar with live session stats
@@ -83,6 +83,17 @@ A real-time tracker for **Dark Age of Camelot (Eden)**. Load your `chat.log` and
 2. Download [`DAoCLogWatcher-win-Setup.exe`](https://github.com/ZZerker/DAoCLogWatcher/releases/latest/download/DAoCLogWatcher-win-Setup.exe)
 3. Run the installer — the app installs and launches automatically
 4. Future updates are applied from within the app (no re-downloading needed)
+
+### Linux (AppImage)
+
+1. Go to the [Releases](https://github.com/ZZerker/DAoCLogWatcher/releases/latest) page
+2. Download `DAoCLogWatcher.AppImage`
+3. Make it executable and run it:
+   ```bash
+   chmod +x DAoCLogWatcher.AppImage
+   ./DAoCLogWatcher.AppImage
+   ```
+4. Future updates are applied from within the app — it replaces the AppImage in place, no re-downloading needed. To also receive beta builds, enable **Settings → Updates → Use pre-releases**.
 
 ### Linux (Flatpak)
 
@@ -188,12 +199,43 @@ Combat parsing covers weapon attacks, melee styles, spells, crits, heals, misses
 
 ---
 
+## Linux Overlay on Wayland (KDE Plasma)
+
+The app has no native Wayland backend, so on a Wayland session it runs through **XWayland**. On Wayland, a *focused* fullscreen game is stacked above normal always-on-top windows, so the overlay disappears behind the game. On **KDE Plasma (KWin)** a one-time window rule fixes this by raising just the overlay into KWin's on-screen-display layer (above fullscreen) — the game itself is left untouched and still covers the panel normally.
+
+**Import the bundled rule (quickest):**
+
+1. Download [`linux/DAoC-Overlay-KDE-Wayland.kwinrule`](linux/DAoC-Overlay-KDE-Wayland.kwinrule)
+2. **System Settings → Window Management → Window Rules → Import**, choose the file, then **Apply**
+3. Restart the overlay (toggle it off/on from the toolbar) so KWin applies the rule to it
+
+**Or create it by hand** — *System Settings → Window Management → Window Rules → Add New…*:
+
+| Field | Value |
+|---|---|
+| Window class | `io.github.zzerker.DAoCLogWatcher` — Exact Match |
+| Window title | `DAoC Overlay` — Exact Match |
+| Layer | **Force** → `On Screen Display` |
+
+The overlay then stays above the game (including fullscreen) while remaining draggable — unlock it from the toolbar to move it. The AppImage and manual builds even add this rule automatically on first launch when they detect a KDE Plasma Wayland session, so no manual step is needed there. (The Flatpak build is sandboxed and can't reach KWin's config, so Flatpak users should import the rule as shown above.)
+
+### GNOME and other Wayland compositors
+
+Only KDE Plasma (KWin) exposes a window-rule mechanism for this. **GNOME/Mutter** has no window rules, no layer-shell, and does not let applications stay above a fullscreen window, so there is no configuration that keeps the overlay on top there. **wlroots** compositors (Sway, Hyprland) are the same.
+
+On those desktops, **log into an X11 session** instead — the overlay works fully under X11:
+
+- **GNOME:** at the login screen (GDM), click your name, then the ⚙️ gear button and pick **GNOME on Xorg** before entering your password. (If it's missing, your distro may ship Wayland-only; installing the `gnome-session-xorg`/Xorg packages restores it.)
+- Verify with `echo $XDG_SESSION_TYPE` — it should print `x11`.
+
+---
+
 ## Known Quirks
 
 | Feature | Status |
 |---|---|
 | Combat parsing | Combat and heal tracking depend on log line formats and edge cases may require updates for uncommon classes or abilities — [report issues](https://github.com/ZZerker/DAoCLogWatcher/issues) with log examples |
-| Overlay on Linux/Wayland | Wayland compositors don't allow apps to keep a window above the game or make it click-through. The overlay works fully on X11 (e.g. Linux Mint); on Wayland (e.g. Nobara/KDE default session) use a KWin "keep above" window rule or the X11 login session |
+| Overlay on Linux/Wayland | The app runs via XWayland on Wayland, where a focused fullscreen game is stacked above normal always-on-top windows. On **KDE Plasma (KWin)** import the bundled window rule (see [Linux Overlay on Wayland](#linux-overlay-on-wayland-kde-plasma)) and the overlay stays above the game, even in fullscreen. GNOME/Mutter and wlroots compositors have no equivalent — use the X11 session there |
 
 ---
 

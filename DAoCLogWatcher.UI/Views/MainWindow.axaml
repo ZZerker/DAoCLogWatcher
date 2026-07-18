@@ -174,13 +174,23 @@
                             Command="{Binding DismissUpdateCommand}"
                             VerticalAlignment="Top" />
                 </Grid>
+                <!-- Downloading in the background — restart not ready yet -->
+                <TextBlock Text="Downloading the new version…" FontSize="11" TextWrapping="Wrap"
+                           Foreground="{DynamicResource AppTextMuted}"
+                           IsVisible="{Binding !IsRestartRequired}" />
+                <!-- Download finished — only a restart is left to install it -->
+                <TextBlock Text="A restart is required to install the new version."
+                           FontSize="11" TextWrapping="Wrap"
+                           Foreground="{DynamicResource AppTextPrimary}"
+                           IsVisible="{Binding IsRestartRequired}" />
                 <TextBlock Text="{Binding UpdateError}" FontSize="11" TextWrapping="Wrap"
                            Foreground="{DynamicResource AppDanger}"
                            IsVisible="{Binding UpdateError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-                <Button Content="Update"
+                <Button Content="Restart &amp; Update Now"
                         Command="{Binding ApplyUpdateAndRestartCommand}"
                         Classes="btn-primary"
                         Background="{DynamicResource AppUpdate}"
+                        IsEnabled="{Binding IsRestartRequired}"
                         HorizontalAlignment="Stretch" />
             </StackPanel>
         </Border>
@@ -376,6 +386,58 @@
                     <Button Content="Open log folder"
                             Classes="btn-secondary"
                             Command="{Binding SettingsPopup.OpenLogFolderCommand}"
+                            Padding="10,5" FontSize="11"
+                            HorizontalAlignment="Left" Margin="0,2,0,0" />
+                </StackPanel>
+                <StackPanel IsVisible="{Binding SettingsPopup.IsUpdaterAvailable}" Spacing="6">
+                    <Rectangle Fill="{DynamicResource AppBorderBrush}" Height="1" />
+                    <TextBlock Text="UPDATES" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource AppTextMuted}" />
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel VerticalAlignment="Center" Spacing="2">
+                            <TextBlock Text="Use pre-releases"
+                                       Foreground="{DynamicResource AppTextPrimary}" FontSize="12" />
+                            <TextBlock Text="Also offer beta / rc builds (otherwise stable releases only)"
+                                       Foreground="{DynamicResource AppTextMuted}" FontSize="10"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                        <ToggleSwitch Grid.Column="1"
+                                      IsChecked="{Binding SettingsPopup.UsePrereleases}"
+                                      OffContent="" OnContent=""
+                                      VerticalAlignment="Center" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel VerticalAlignment="Center" Spacing="2">
+                            <TextBlock Text="Check interval (minutes)"
+                                       Foreground="{DynamicResource AppTextPrimary}" FontSize="12" />
+                            <TextBlock Text="How often the running app looks for a new release (e.g. 60–240)"
+                                       Foreground="{DynamicResource AppTextMuted}" FontSize="10"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                        <NumericUpDown Grid.Column="1"
+                                       Value="{Binding SettingsPopup.UpdateCheckIntervalMinutes}"
+                                       Minimum="15" Maximum="1440"
+                                       Increment="15" FormatString="0"
+                                       ClipValueToMinMax="True"
+                                       Width="120" VerticalAlignment="Center" />
+                    </Grid>
+                </StackPanel>
+                <StackPanel IsVisible="{Binding SettingsPopup.IsKdeWaylandSession}" Spacing="6">
+                    <Rectangle Fill="{DynamicResource AppBorderBrush}" Height="1" />
+                    <TextBlock Text="OVERLAY (KDE WAYLAND)" FontSize="10" FontWeight="SemiBold"
+                               Foreground="{DynamicResource AppTextMuted}" />
+                    <TextBlock Text="{Binding SettingsPopup.KWinRuleStatusText}"
+                               Foreground="{DynamicResource AppTextMuted}" FontSize="10"
+                               TextWrapping="Wrap" />
+                    <Button Content="Apply KWin overlay rule"
+                            Classes="btn-secondary"
+                            Command="{Binding SettingsPopup.ApplyKWinRuleCommand}"
+                            IsVisible="{Binding !SettingsPopup.IsKWinRuleInstalled}"
+                            Padding="10,5" FontSize="11"
+                            HorizontalAlignment="Left" Margin="0,2,0,0" />
+                    <Button Content="Reset choice"
+                            Classes="btn-secondary"
+                            Command="{Binding SettingsPopup.ResetKWinRuleChoiceCommand}"
+                            IsVisible="{Binding SettingsPopup.IsKWinRuleInstalled}"
                             Padding="10,5" FontSize="11"
                             HorizontalAlignment="Left" Margin="0,2,0,0" />
                 </StackPanel>

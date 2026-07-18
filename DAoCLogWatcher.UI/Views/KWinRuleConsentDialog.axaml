@@ -1,0 +1,39 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="DAoCLogWatcher.UI.Views.KWinRuleConsentDialog"
+        x:CompileBindings="False"
+        Title="KDE Plasma (Wayland) detected"
+        Width="460" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        Background="{DynamicResource AppWindowBackground}">
+
+    <StackPanel Margin="20" Spacing="14">
+
+        <TextBlock Text="KDE Plasma (Wayland) detected"
+                   FontSize="16" FontWeight="SemiBold"
+                   Foreground="{DynamicResource AppTextPrimary}" />
+
+        <TextBlock TextWrapping="Wrap" FontSize="13"
+                   Foreground="{DynamicResource AppTextPrimary}"
+                   Text="To keep the overlay visible above fullscreen games, the app can add a KWin window rule to ~/.config/kwinrulesrc." />
+
+        <TextBlock TextWrapping="Wrap" FontSize="12"
+                   Foreground="{DynamicResource AppTextMuted}"
+                   Text="This affects only the overlay window and can be removed anytime in KDE System Settings → Window Management → Window Rules." />
+
+        <StackPanel Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Spacing="10"
+                    Margin="0,4,0,0">
+            <Button Content="Apply rule"
+                    Name="ApplyButton"
+                    Classes="btn-primary"
+                    Click="OnApplyClick" />
+            <Button Content="Don't ask again"
+                    Name="NotNowButton"
+                    Classes="btn-secondary"
+                    Click="OnNotNowClick" />
+        </StackPanel>
+    </StackPanel>
+</Window>
