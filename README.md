@@ -84,6 +84,17 @@ A real-time tracker for **Dark Age of Camelot (Eden)**. Load your `chat.log` and
 3. Run the installer — the app installs and launches automatically
 4. Future updates are applied from within the app (no re-downloading needed)
 
+### Linux (AppImage)
+
+1. Go to the [Releases](https://github.com/ZZerker/DAoCLogWatcher/releases/latest) page
+2. Download `DAoCLogWatcher.AppImage`
+3. Make it executable and run it:
+   ```bash
+   chmod +x DAoCLogWatcher.AppImage
+   ./DAoCLogWatcher.AppImage
+   ```
+4. Future updates are applied from within the app — it replaces the AppImage in place, no re-downloading needed. To also receive beta builds, enable **Settings → Updates → Use pre-releases**.
+
 ### Linux (Flatpak)
 
 1. Go to the [Releases](https://github.com/ZZerker/DAoCLogWatcher/releases/latest) page

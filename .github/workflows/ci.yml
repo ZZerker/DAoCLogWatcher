@@ -172,9 +172,9 @@ jobs:
           name: DAoCLogWatcher.flatpak
           path: DAoCLogWatcher.flatpak
 
-  # ── Build AppImage (only on version tags) ────────────────────────────────────
+  # ── Build AppImage via Velopack (only on version tags) ───────────────────────
   appimage:
-    name: AppImage
+    name: AppImage (Velopack)
     needs: test
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
@@ -188,12 +188,13 @@ jobs:
       contents: read
 
     steps:
-      # curl/ca-certificates: appimagetool download; librsvg2-bin: icon rasterizing;
-      # libicu70: .NET runtime; file/desktop-file-utils: used by appimagetool.
+      # curl/ca-certificates: tool/runtime downloads; librsvg2-bin: icon rasterizing;
+      # libicu70: .NET runtime; file/desktop-file-utils/squashfs-tools/zsync: used by the
+      # appimagetool that Velopack (vpk) invokes to assemble the AppImage.
       - name: Install build prerequisites
         run: |
           apt-get update -y
-          apt-get install -y curl ca-certificates git librsvg2-bin libicu70 file desktop-file-utils
+          apt-get install -y curl ca-certificates git librsvg2-bin libicu70 file desktop-file-utils squashfs-tools zsync
 
       - uses: actions/checkout@v4
 
@@ -201,20 +202,24 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: Build AppImage
+      - name: Build AppImage (Velopack vpk)
         env:
           VERSION: ${{ github.ref_name }}
-          OUTPUT: ${{ github.workspace }}/DAoCLogWatcher-x86_64.AppImage
+          OUTPUT_DIR: ${{ github.workspace }}/releases/linux
+          # appimagetool needs FUSE otherwise; extract-and-run avoids it in CI.
+          APPIMAGE_EXTRACT_AND_RUN: '1'
         run: |
           # Strip the leading "v" from the tag (v0.5.0 -> 0.5.0).
           export VERSION="${VERSION#v}"
           ./appimage/build-appimage.sh
 
+      # The whole release folder: DAoCLogWatcher.AppImage plus the Velopack update metadata
+      # (releases.linux.json, *-linux-full.nupkg, RELEASES-linux) the in-app updater reads.
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: DAoCLogWatcher-x86_64.AppImage
-          path: DAoCLogWatcher-x86_64.AppImage
+          name: velopack-linux
+          path: releases/linux/
 
   # ── Build Velopack Windows installer (only on version tags) ─────────────────
   velopack-windows:
@@ -291,11 +296,17 @@ jobs:
           pattern: "DAoCLogWatcher*"
           merge-multiple: true
 
-      - name: Download Velopack artifacts
+      - name: Download Velopack Windows artifacts
         uses: actions/download-artifact@v4
         with:
           name: velopack-win
           path: velopack-win
+
+      - name: Download Velopack Linux (AppImage) artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: velopack-linux
+          path: velopack-linux
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -303,8 +314,8 @@ jobs:
           files: |
             DAoCLogWatcher-win-x64.zip
             DAoCLogWatcher-linux-x64.tar.gz
-            DAoCLogWatcher-x86_64.AppImage
             DAoCLogWatcher.flatpak
             velopack-win/*
+            velopack-linux/*
           generate_release_notes: true
           prerelease: ${{ contains(github.ref_name, '-beta') || contains(github.ref_name, '-rc') }}
