@@ -27,6 +27,8 @@ public sealed class UpdateService: IUpdateService
 
 	public event EventHandler<string>? ErrorOccurred;
 
+	public event EventHandler? UpdateReady;
+
 	/// <summary>
 	/// Checks GitHub for a newer release and returns the version label immediately.
 	/// If an update is found, downloads it in the background so it is ready to apply.
@@ -64,6 +66,7 @@ public sealed class UpdateService: IUpdateService
 				                            {
 					                            await mgr.DownloadUpdatesAsync(update);
 					                            this.pendingUpdate = update;
+					                            this.UpdateReady?.Invoke(this, EventArgs.Empty);
 				                            }
 				                            catch(Exception ex)
 				                            {

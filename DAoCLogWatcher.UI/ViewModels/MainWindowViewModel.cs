@@ -227,6 +227,9 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 	[ObservableProperty] private string? updateVersionText;
 	[ObservableProperty] private string? updateError;
 
+	/// <summary>True once the update has downloaded and only a restart is left to install it.</summary>
+	[ObservableProperty] private bool isRestartRequired;
+
 	[ObservableProperty] private string? watchError;
 
 	[RelayCommand]
@@ -345,6 +348,7 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 		this.TimeFilter.FilterChanged += this.OnTimeFilterChanged;
 		this.watchSession.ErrorOccurred += this.OnWatchSessionError;
 		this.updateService.ErrorOccurred += this.OnUpdateError;
+		this.updateService.UpdateReady += this.OnUpdateReady;
 		this.parsingDebounceTimer = new System.Timers.Timer(PARSING_DEBOUNCE_INTERVAL_MS)
 		                            {
 				                            AutoReset = false
@@ -380,6 +384,11 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 	private void OnUpdateError(object? sender, string message)
 	{
 		Dispatcher.UIThread.InvokeAsync(() => this.UpdateError = message);
+	}
+
+	private void OnUpdateReady(object? sender, EventArgs e)
+	{
+		Dispatcher.UIThread.InvokeAsync(() => this.IsRestartRequired = true);
 	}
 
 	private async Task RestartAsync()
@@ -802,6 +811,7 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 		this.TimeFilter.FilterChanged -= this.OnTimeFilterChanged;
 		this.watchSession.ErrorOccurred -= this.OnWatchSessionError;
 		this.updateService.ErrorOccurred -= this.OnUpdateError;
+		this.updateService.UpdateReady -= this.OnUpdateReady;
 		this.watchController.Stop();
 		this.SessionPicker.Dispose();
 		this.parsingDebounceTimer.Stop();

@@ -174,13 +174,23 @@
                             Command="{Binding DismissUpdateCommand}"
                             VerticalAlignment="Top" />
                 </Grid>
+                <!-- Downloading in the background — restart not ready yet -->
+                <TextBlock Text="Downloading the new version…" FontSize="11" TextWrapping="Wrap"
+                           Foreground="{DynamicResource AppTextMuted}"
+                           IsVisible="{Binding !IsRestartRequired}" />
+                <!-- Download finished — only a restart is left to install it -->
+                <TextBlock Text="A restart is required to install the new version."
+                           FontSize="11" TextWrapping="Wrap"
+                           Foreground="{DynamicResource AppTextPrimary}"
+                           IsVisible="{Binding IsRestartRequired}" />
                 <TextBlock Text="{Binding UpdateError}" FontSize="11" TextWrapping="Wrap"
                            Foreground="{DynamicResource AppDanger}"
                            IsVisible="{Binding UpdateError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-                <Button Content="Update"
+                <Button Content="Restart &amp; Update Now"
                         Command="{Binding ApplyUpdateAndRestartCommand}"
                         Classes="btn-primary"
                         Background="{DynamicResource AppUpdate}"
+                        IsEnabled="{Binding IsRestartRequired}"
                         HorizontalAlignment="Stretch" />
             </StackPanel>
         </Border>
