@@ -46,17 +46,23 @@ public sealed class UpdateService: IUpdateService
 #else
 		try
 		{
+			AppLog.Info("UpdateService", $"Checking for updates (prereleases={this.settings.UsePrereleases}).");
+
 			var mgr = new UpdateManager(new GithubSource(GITHUB_URL, null, this.settings.UsePrereleases));
 			if(!mgr.IsInstalled)
 			{
+				AppLog.Info("UpdateService", "Not a Velopack install (IsInstalled=false) — skipping update check. This is expected for dev/`dotnet run` builds; only a packed AppImage/Setup self-updates.");
 				return (null, false);
 			}
 
 			var update = await mgr.CheckForUpdatesAsync();
 			if(update == null)
 			{
+				AppLog.Info("UpdateService", "Already up to date — no newer release found on the selected channel.");
 				return (null, false);
 			}
+
+			AppLog.Info("UpdateService", $"Update found: v{update.TargetFullRelease.Version}. Downloading in the background.");
 
 			// Download in the background — caller gets the banner immediately.
 			// Store the task so ApplyAndRestart can await it if the user clicks before download finishes.
@@ -66,6 +72,7 @@ public sealed class UpdateService: IUpdateService
 				                            {
 					                            await mgr.DownloadUpdatesAsync(update);
 					                            this.pendingUpdate = update;
+					                            AppLog.Info("UpdateService", $"Update v{update.TargetFullRelease.Version} downloaded — restart required to install.");
 					                            this.UpdateReady?.Invoke(this, EventArgs.Empty);
 				                            }
 				                            catch(Exception ex)
