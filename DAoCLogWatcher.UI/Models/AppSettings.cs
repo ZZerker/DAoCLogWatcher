@@ -43,4 +43,7 @@ public class AppSettings
 	public double OverlayOpacity { get; set; } = 0.6;
 
 	public KWinRuleConsent KWinRuleConsent { get; set; } = KWinRuleConsent.NotAsked;
+
+	// When true, the in-app updater also offers pre-release (beta/rc) builds; otherwise only stable releases.
+	public bool UsePrereleases { get; set; }
 }

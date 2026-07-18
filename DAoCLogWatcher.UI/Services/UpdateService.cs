@@ -1,9 +1,10 @@
 using System;
-using System.Diagnostics;
-using System.IO;
 using System.Threading.Tasks;
+using DAoCLogWatcher.UI.Models;
+#if !FLATPAK
 using Velopack;
 using Velopack.Sources;
+#endif
 
 namespace DAoCLogWatcher.UI.Services;
 
@@ -11,12 +12,18 @@ public sealed class UpdateService: IUpdateService
 {
 	private const string GITHUB_URL = "https://github.com/ZZerker/DAoCLogWatcher";
 
+	private readonly AppSettings settings;
 
 #if !FLATPAK
 	private UpdateInfo? pendingUpdate;
 	private Task? downloadTask;
 	private bool downloadFailed;
 #endif
+
+	public UpdateService(AppSettings settings)
+	{
+		this.settings = settings;
+	}
 
 	public event EventHandler<string>? ErrorOccurred;
 
@@ -25,6 +32,11 @@ public sealed class UpdateService: IUpdateService
 	/// If an update is found, downloads it in the background so it is ready to apply.
 	/// Returns (null, false) on any failure or when not installed via Velopack.
 	/// </summary>
+	/// <remarks>
+	/// Velopack handles Windows (Setup.exe) and Linux (AppImage) alike: on Linux <c>UpdateManager</c>
+	/// reads the <c>releases.linux.json</c> channel and applies updates by replacing the running
+	/// AppImage. Flatpak builds update through the store, so the updater is compiled out there.
+	/// </remarks>
 	public async Task<(string? VersionText, bool Available)> CheckForUpdatesAsync()
 	{
 #if FLATPAK
@@ -32,7 +44,7 @@ public sealed class UpdateService: IUpdateService
 #else
 		try
 		{
-			var mgr = new UpdateManager(new GithubSource(GITHUB_URL, null, false));
+			var mgr = new UpdateManager(new GithubSource(GITHUB_URL, null, this.settings.UsePrereleases));
 			if(!mgr.IsInstalled)
 			{
 				return (null, false);
@@ -97,7 +109,7 @@ public sealed class UpdateService: IUpdateService
 
 		try
 		{
-			var mgr = new UpdateManager(new GithubSource(GITHUB_URL, null, false));
+			var mgr = new UpdateManager(new GithubSource(GITHUB_URL, null, this.settings.UsePrereleases));
 			mgr.ApplyUpdatesAndRestart(this.pendingUpdate);
 		}
 		catch(Exception ex)

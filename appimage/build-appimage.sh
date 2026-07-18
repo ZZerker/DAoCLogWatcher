@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Build a self-contained AppImage of DAoCLogWatcher for linux-x64.
+# Build a self-contained AppImage of DAoCLogWatcher for linux-x64 using Velopack (vpk).
+#
+# Velopack produces the .AppImage plus the release metadata (releases.linux.json, *.nupkg,
+# RELEASES-linux) that the in-app updater consumes — the same updater used on Windows. Publishing
+# those files to a GitHub release lets the app self-update by replacing the running AppImage.
 #
 # Usage:
 #   ./appimage/build-appimage.sh              # version read from the .csproj
@@ -9,13 +13,11 @@ set -euo pipefail
 #
 # Requirements:
 #   - .NET 10 SDK on PATH (or installed in ~/.dotnet)
-#   - An SVG rasterizer: rsvg-convert, inkscape, or ImageMagick (magick/convert)
-#   - appimagetool: taken from PATH / $APPIMAGETOOL, otherwise downloaded to
-#     appimage/.cache/ automatically.
+#   - vpk: the Velopack CLI. Installed automatically as a dotnet global tool if missing.
+#   - An SVG rasterizer for the icon: rsvg-convert, inkscape, or ImageMagick (magick/convert).
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-APP_ID="io.github.zzerker.DAoCLogWatcher"
 RID="linux-x64"
 
 cd "$REPO_ROOT"
@@ -43,6 +45,13 @@ if ! command -v dotnet >/dev/null 2>&1 && [ -x "$HOME/.dotnet/dotnet" ]; then
 	export PATH="$HOME/.dotnet:$PATH"
 fi
 command -v dotnet >/dev/null 2>&1 || { echo "error: dotnet SDK not found on PATH" >&2; exit 1; }
+export PATH="$PATH:$HOME/.dotnet/tools"
+
+# --- ensure the Velopack CLI (vpk) is available ------------------------------
+if ! command -v vpk >/dev/null 2>&1; then
+	echo ">> installing Velopack CLI (vpk)"
+	dotnet tool install -g vpk
+fi
 
 # --- resolve version ---------------------------------------------------------
 if [ -z "${VERSION:-}" ]; then
@@ -52,8 +61,9 @@ VERSION="${VERSION:-0.0.0}"
 echo ">> Building DAoCLogWatcher $VERSION ($RID)"
 
 # --- publish self-contained --------------------------------------------------
-# Flatpak=true also disables the Velopack in-app updater, which cannot work in a
-# read-only AppImage — replace the .AppImage file (or use AppImageUpdate) instead.
+# NOTE: no -p:Flatpak=true here — the AppImage keeps the Velopack updater compiled in (that flag is
+# only for the Flatpak build, which updates through the store). vpk bundles the app files itself, so
+# do not use PublishSingleFile.
 PUBLISH_DIR="$REPO_ROOT/publish/appimage"
 rm -rf "$PUBLISH_DIR"
 dotnet publish DAoCLogWatcher.UI/DAoCLogWatcher.UI.csproj \
@@ -61,68 +71,29 @@ dotnet publish DAoCLogWatcher.UI/DAoCLogWatcher.UI.csproj \
 	-f net10.0 \
 	-r "$RID" \
 	--self-contained true \
-	-p:Flatpak=true \
 	-p:Version="$VERSION" \
 	-o "$PUBLISH_DIR"
 
-# --- assemble the AppDir -----------------------------------------------------
-APPDIR="$REPO_ROOT/build/AppDir"
-rm -rf "$APPDIR"
-mkdir -p "$APPDIR/usr/bin" \
-	"$APPDIR/usr/share/applications" \
-	"$APPDIR/usr/share/metainfo" \
-	"$APPDIR/usr/share/icons/hicolor/256x256/apps"
-
-cp -a "$PUBLISH_DIR/." "$APPDIR/usr/bin/"
-chmod +x "$APPDIR/usr/bin/DAoCLogWatcher.UI"
-
-install -Dm755 "$SCRIPT_DIR/AppRun" "$APPDIR/AppRun"
-
-# Desktop entry: both at the standard location and at the AppDir root (appimagetool
-# reads the root one for the Name/Icon keys).
-install -Dm644 "$REPO_ROOT/flatpak/$APP_ID.desktop" "$APPDIR/usr/share/applications/$APP_ID.desktop"
-cp "$APPDIR/usr/share/applications/$APP_ID.desktop" "$APPDIR/$APP_ID.desktop"
-
-# AppStream metainfo, with the release version/date injected (mirrors the CI flatpak job).
-DATE="$(date +%Y-%m-%d)"
-sed -e "s/__VERSION__/$VERSION/g" -e "s/__DATE__/$DATE/g" \
-	"$REPO_ROOT/flatpak/$APP_ID.metainfo.xml" > "$APPDIR/usr/share/metainfo/$APP_ID.metainfo.xml"
-
-# Icon: rasterize the SVG to 256x256 and place it where appimagetool expects it.
-ICON_PNG="$APPDIR/usr/share/icons/hicolor/256x256/apps/$APP_ID.png"
+# --- icon --------------------------------------------------------------------
+ICON_PNG="$REPO_ROOT/build/appimage-icon.png"
+mkdir -p "$(dirname "$ICON_PNG")"
 rasterize "$REPO_ROOT/DAoCLogWatcher.UI/Assets/icon2.svg" "$ICON_PNG" 256
-cp "$ICON_PNG" "$APPDIR/$APP_ID.png"
-cp "$ICON_PNG" "$APPDIR/.DirIcon"
 
-# --- locate appimagetool -----------------------------------------------------
-# Pinned release + checksum so CI never executes an unverified moving binary.
-APPIMAGETOOL_VERSION="1.9.1"
-APPIMAGETOOL_SHA256="ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0"
-
-if [ -n "${APPIMAGETOOL:-}" ]; then
-	TOOL="$APPIMAGETOOL"
-elif command -v appimagetool >/dev/null 2>&1; then
-	TOOL="appimagetool"
-else
-	TOOL="$SCRIPT_DIR/.cache/appimagetool-$APPIMAGETOOL_VERSION"
-	if [ ! -x "$TOOL" ]; then
-		echo ">> downloading appimagetool $APPIMAGETOOL_VERSION"
-		mkdir -p "$SCRIPT_DIR/.cache"
-		curl -sSL -o "$TOOL" \
-			"https://github.com/AppImage/appimagetool/releases/download/$APPIMAGETOOL_VERSION/appimagetool-x86_64.AppImage"
-		chmod +x "$TOOL"
-	fi
-	echo "$APPIMAGETOOL_SHA256  $TOOL" | sha256sum -c - >/dev/null || {
-		echo "error: appimagetool checksum mismatch — delete $TOOL and retry" >&2
-		exit 1
-	}
-fi
-
-# --- build the AppImage ------------------------------------------------------
-OUTPUT="${OUTPUT:-$REPO_ROOT/DAoCLogWatcher-$VERSION-x86_64.AppImage}"
-export ARCH=x86_64
-# Extract-and-run makes appimagetool work on hosts/CI without FUSE.
+# --- pack the AppImage + release metadata with Velopack ----------------------
+OUTPUT_DIR="${OUTPUT_DIR:-$REPO_ROOT/releases/linux}"
+rm -rf "$OUTPUT_DIR"
+# Extract-and-run lets appimagetool (invoked by vpk) work on hosts/CI without FUSE.
 export APPIMAGE_EXTRACT_AND_RUN=1
-"$TOOL" "$APPDIR" "$OUTPUT"
+vpk pack \
+	--packId DAoCLogWatcher \
+	--packVersion "$VERSION" \
+	--packDir "$PUBLISH_DIR" \
+	--mainExe DAoCLogWatcher.UI \
+	--packTitle "DAoC Log Watcher" \
+	--packAuthors "ZZerker" \
+	--categories "Game;Utility" \
+	--icon "$ICON_PNG" \
+	--outputDir "$OUTPUT_DIR"
 
-echo ">> built $OUTPUT"
+echo ">> built Velopack Linux release in $OUTPUT_DIR:"
+ls -1 "$OUTPUT_DIR"

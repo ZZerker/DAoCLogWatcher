@@ -379,6 +379,21 @@
                             Padding="10,5" FontSize="11"
                             HorizontalAlignment="Left" Margin="0,2,0,0" />
                 </StackPanel>
+                <Rectangle Fill="{DynamicResource AppBorderBrush}" Height="1" />
+                <TextBlock Text="UPDATES" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource AppTextMuted}" />
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel VerticalAlignment="Center" Spacing="2">
+                        <TextBlock Text="Use pre-releases"
+                                   Foreground="{DynamicResource AppTextPrimary}" FontSize="12" />
+                        <TextBlock Text="Also offer beta / rc builds (otherwise stable releases only)"
+                                   Foreground="{DynamicResource AppTextMuted}" FontSize="10"
+                                   TextWrapping="Wrap" />
+                    </StackPanel>
+                    <ToggleSwitch Grid.Column="1"
+                                  IsChecked="{Binding SettingsPopup.UsePrereleases}"
+                                  OffContent="" OnContent=""
+                                  VerticalAlignment="Center" />
+                </Grid>
                 <StackPanel IsVisible="{Binding SettingsPopup.IsKdeWaylandSession}" Spacing="6">
                     <Rectangle Fill="{DynamicResource AppBorderBrush}" Height="1" />
                     <TextBlock Text="OVERLAY (KDE WAYLAND)" FontSize="10" FontWeight="SemiBold"

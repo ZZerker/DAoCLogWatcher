@@ -19,6 +19,7 @@ public sealed partial class SettingsPopupViewModel: ObservableObject
 		this.settingsService = settingsService;
 		this.customChatLogPath = settings.CustomChatLogPath;
 		this.isKWinRuleInstalled = settings.KWinRuleConsent == KWinRuleConsent.Granted&&!KWinOverlayRuleInstaller.IsNeeded();
+		this.usePrereleases = settings.UsePrereleases;
 	}
 
 	public string AppVersion { get; } = ReadAppVersion();
@@ -101,6 +102,15 @@ public sealed partial class SettingsPopupViewModel: ObservableObject
 	private void ClearChatLogPath()
 	{
 		this.CustomChatLogPath = null;
+	}
+
+	// Updates: opt in to pre-release (beta/rc) builds. Takes effect on the next update check / restart.
+	[ObservableProperty] private bool usePrereleases;
+
+	partial void OnUsePrereleasesChanged(bool value)
+	{
+		this.settings.UsePrereleases = value;
+		this.settingsService.Save(this.settings);
 	}
 
 	[ObservableProperty] private bool isDarkTheme = true;
