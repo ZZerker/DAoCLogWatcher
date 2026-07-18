@@ -108,6 +108,14 @@ public sealed partial class SettingsPopupViewModel: ObservableObject
 		this.CustomChatLogPath = null;
 	}
 
+	// The in-app updater is compiled out for Flatpak (updates go through the store), so the whole
+	// UPDATES settings section (pre-releases + check interval) is hidden there too.
+#if FLATPAK
+	public bool IsUpdaterAvailable => false;
+#else
+	public bool IsUpdaterAvailable => true;
+#endif
+
 	// Updates: opt in to pre-release (beta/rc) builds. Takes effect on the next update check / restart.
 	[ObservableProperty] private bool usePrereleases;
 
