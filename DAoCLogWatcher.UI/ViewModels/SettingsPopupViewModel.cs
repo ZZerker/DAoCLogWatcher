@@ -20,7 +20,11 @@ public sealed partial class SettingsPopupViewModel: ObservableObject
 		this.customChatLogPath = settings.CustomChatLogPath;
 		this.isKWinRuleInstalled = settings.KWinRuleConsent == KWinRuleConsent.Granted&&!KWinOverlayRuleInstaller.IsNeeded();
 		this.usePrereleases = settings.UsePrereleases;
+		this.updateCheckIntervalMinutes = settings.UpdateCheckIntervalMinutes;
 	}
+
+	/// <summary>Raised when the user changes how often the app polls for updates. Argument is the new interval in minutes.</summary>
+	public event System.EventHandler<int>? UpdateCheckIntervalChanged;
 
 	public string AppVersion { get; } = ReadAppVersion();
 
@@ -111,6 +115,17 @@ public sealed partial class SettingsPopupViewModel: ObservableObject
 	{
 		this.settings.UsePrereleases = value;
 		this.settingsService.Save(this.settings);
+	}
+
+	// Updates: how often (minutes) the running app polls GitHub for a newer release. The floor is enforced by the poll timer.
+	[ObservableProperty] private decimal? updateCheckIntervalMinutes;
+
+	partial void OnUpdateCheckIntervalMinutesChanged(decimal? value)
+	{
+		var minutes = (int)(value ?? this.settings.UpdateCheckIntervalMinutes);
+		this.settings.UpdateCheckIntervalMinutes = minutes;
+		this.settingsService.Save(this.settings);
+		this.UpdateCheckIntervalChanged?.Invoke(this, minutes);
 	}
 
 	[ObservableProperty] private bool isDarkTheme = true;

@@ -46,4 +46,7 @@ public class AppSettings
 
 	// When true, the in-app updater also offers pre-release (beta/rc) builds; otherwise only stable releases.
 	public bool UsePrereleases { get; set; }
+
+	// How often (in minutes) the running app re-checks GitHub for a newer release. A floor is enforced in code.
+	public int UpdateCheckIntervalMinutes { get; set; } = 120;
 }

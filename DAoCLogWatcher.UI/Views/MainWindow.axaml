@@ -404,6 +404,21 @@
                                   OffContent="" OnContent=""
                                   VerticalAlignment="Center" />
                 </Grid>
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel VerticalAlignment="Center" Spacing="2">
+                        <TextBlock Text="Check interval (minutes)"
+                                   Foreground="{DynamicResource AppTextPrimary}" FontSize="12" />
+                        <TextBlock Text="How often the running app looks for a new release (e.g. 60–240)"
+                                   Foreground="{DynamicResource AppTextMuted}" FontSize="10"
+                                   TextWrapping="Wrap" />
+                    </StackPanel>
+                    <NumericUpDown Grid.Column="1"
+                                   Value="{Binding SettingsPopup.UpdateCheckIntervalMinutes}"
+                                   Minimum="15" Maximum="1440"
+                                   Increment="15" FormatString="0"
+                                   ClipValueToMinMax="True"
+                                   Width="120" VerticalAlignment="Center" />
+                </Grid>
                 <StackPanel IsVisible="{Binding SettingsPopup.IsKdeWaylandSession}" Spacing="6">
                     <Rectangle Fill="{DynamicResource AppBorderBrush}" Height="1" />
                     <TextBlock Text="OVERLAY (KDE WAYLAND)" FontSize="10" FontWeight="SemiBold"
