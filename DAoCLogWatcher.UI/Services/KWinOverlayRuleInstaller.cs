@@ -13,9 +13,10 @@ namespace DAoCLogWatcher.UI.Services;
 /// is an XWayland window that KWin otherwise stacks below a focused fullscreen game; the rule lifts
 /// just the overlay above it while leaving the game untouched.
 ///
-/// Idempotent and best-effort: no-op on Windows, on X11, on non-KDE desktops, and inside the Flatpak
-/// sandbox (which can't reach the host KWin config). Never modifies unrelated rules, and any failure is
-/// logged rather than thrown so it can't break startup.
+/// Idempotent and best-effort: no-op on Windows, on X11, and on non-KDE desktops. Works inside the
+/// Flatpak sandbox too: the host home is exposed via --filesystem=home, so the rule is written to the
+/// host's ~/.config/kwinrulesrc (XDG_CONFIG_HOME is sandbox-redirected and KWin never reads it). Never
+/// modifies unrelated rules, and any failure is logged rather than thrown so it can't break startup.
 /// </summary>
 internal static class KWinOverlayRuleInstaller
 {
@@ -23,14 +24,14 @@ internal static class KWinOverlayRuleInstaller
 	private const string OverlayTitle = "DAoC Overlay";
 	private const string WmClass = "io.github.zzerker.DAoCLogWatcher";
 
-	// True when a KWin overlay rule should be written: a KDE Plasma Wayland session, not inside Flatpak
-	// (where ~/.config is the sandbox, not the host), and no matching rule is present yet. Read-only:
+	// True when a KWin overlay rule should be written: a KDE Plasma Wayland session (Flatpak included, as
+	// we target the host ~/.config via RulesFilePath) and no matching rule is present yet. Read-only:
 	// never writes anything and never throws — any failure is logged and treated as "not needed".
 	public static bool IsNeeded()
 	{
 		try
 		{
-			if(!IsKdeWaylandSession()||Environment.GetEnvironmentVariable("FLATPAK_ID") != null)
+			if(!IsKdeWaylandSession())
 			{
 				return false;
 			}
@@ -141,7 +142,11 @@ internal static class KWinOverlayRuleInstaller
 
 	private static string RulesFilePath()
 	{
-		var configHome = Environment.GetEnvironmentVariable("XDG_CONFIG_HOME");
+		// Inside the Flatpak sandbox, XDG_CONFIG_HOME is redirected into the per-app tree
+		// (~/.var/app/<id>/config), which KWin never reads. HOME still points at the real host home
+		// (exposed via --filesystem=home), so write to the host's ~/.config/kwinrulesrc directly.
+		var inFlatpak = Environment.GetEnvironmentVariable("FLATPAK_ID") != null;
+		var configHome = inFlatpak?null:Environment.GetEnvironmentVariable("XDG_CONFIG_HOME");
 		if(string.IsNullOrEmpty(configHome))
 		{
 			configHome = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".config");
