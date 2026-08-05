@@ -14,6 +14,9 @@ public interface IUpdateService
 	/// </summary>
 	event EventHandler? UpdateReady;
 
+	/// <summary>Raised when the background download fails. A later check retries, so callers should resume polling.</summary>
+	event EventHandler? DownloadFailed;
+
 	Task<(string? VersionText, bool Available)> CheckForUpdatesAsync();
 
 	Task ApplyAndRestartAsync();

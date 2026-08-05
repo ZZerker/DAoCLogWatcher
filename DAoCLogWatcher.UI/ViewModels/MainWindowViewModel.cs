@@ -24,14 +24,9 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 	private const int SEND_NOTIFICATION_MAX_AGE_SECONDS = 60;
 	private const int SESSION_HISTORY_FLUSH_INTERVAL_SECONDS = 60;
 
-	/// <summary>Lower bound for the runtime update-check interval, so a mis-set value can't hammer GitHub.</summary>
-	private const int MIN_UPDATE_CHECK_INTERVAL_MINUTES = 15;
-
 	private readonly System.Timers.Timer parsingDebounceTimer;
-	private readonly System.Timers.Timer updateCheckTimer;
 
 	private readonly IWatchSession watchSession;
-	private readonly IUpdateService updateService;
 	private readonly INotificationService notificationService;
 	private readonly IDaocLogPathService daocLogPathService;
 	private readonly AppSettings settings;
@@ -227,12 +222,7 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 
 	[ObservableProperty] private bool isParsing;
 
-	[ObservableProperty] private bool isUpdateAvailable;
-	[ObservableProperty] private string? updateVersionText;
-	[ObservableProperty] private string? updateError;
-
-	/// <summary>True once the update has downloaded and only a restart is left to install it.</summary>
-	[ObservableProperty] private bool isRestartRequired;
+	public UpdateCoordinator Update { get; }
 
 	[ObservableProperty] private string? watchError;
 
@@ -303,7 +293,6 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 		this.daocLogPathService = daocLogPathService;
 		this.processor = processor;
 		this.combatProcessor = combatProcessor;
-		this.updateService = updateService;
 		this.settingsService = settingsService;
 		this.logWatcherFactory = logWatcherFactory;
 		this.settings = settings;
@@ -351,21 +340,12 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 		this.processor.MultiKillDetected += this.OnMultiKillDetected;
 		this.TimeFilter.FilterChanged += this.OnTimeFilterChanged;
 		this.watchSession.ErrorOccurred += this.OnWatchSessionError;
-		this.updateService.ErrorOccurred += this.OnUpdateError;
-		this.updateService.UpdateReady += this.OnUpdateReady;
 		this.parsingDebounceTimer = new System.Timers.Timer(PARSING_DEBOUNCE_INTERVAL_MS)
 		                            {
 				                            AutoReset = false
 		                            };
 		this.parsingDebounceTimer.Elapsed += (_, _) => Dispatcher.UIThread.InvokeAsync(() => this.IsParsing = false);
-		this.updateCheckTimer = new System.Timers.Timer(ResolveUpdateCheckIntervalMs(this.settings.UpdateCheckIntervalMinutes))
-		                        {
-				                        AutoReset = true
-		                        };
-		this.updateCheckTimer.Elapsed += this.OnUpdateCheckTimerElapsed;
-		this.updateCheckTimer.Start();
-		this.SettingsPopup.UpdateCheckIntervalChanged += this.OnUpdateCheckIntervalChanged;
-		this.FireAndForget(this.CheckForUpdatesAsync());
+		this.Update = new UpdateCoordinator(updateService, this.settings, this.SettingsPopup);
 	}
 
 	/// <summary>Forwards to <see cref="SessionPicker"/>'s window-activation rescan debounce.</summary>
@@ -390,43 +370,6 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 	private void OnWatchSessionError(object? sender, string message)
 	{
 		Dispatcher.UIThread.InvokeAsync(() => this.WatchError = message);
-	}
-
-	private void OnUpdateError(object? sender, string message)
-	{
-		Dispatcher.UIThread.InvokeAsync(() => this.UpdateError = message);
-	}
-
-	private void OnUpdateReady(object? sender, EventArgs e)
-	{
-		Dispatcher.UIThread.InvokeAsync(() => this.IsRestartRequired = true);
-	}
-
-	private void OnUpdateCheckTimerElapsed(object? sender, System.Timers.ElapsedEventArgs e)
-	{
-		// Marshal onto the UI thread so the guarded state reads and the property writes
-		// inside CheckForUpdatesAsync stay on the UI thread, matching the startup call.
-		Dispatcher.UIThread.InvokeAsync(() =>
-		                                {
-			                                // An update is already found or downloaded — no point polling further.
-			                                if(this.IsUpdateAvailable||this.IsRestartRequired)
-			                                {
-				                                return;
-			                                }
-
-			                                this.FireAndForget(this.CheckForUpdatesAsync());
-		                                });
-	}
-
-	/// <summary>Applies a settings change to the running poll interval without needing a restart.</summary>
-	private void OnUpdateCheckIntervalChanged(object? sender, int minutes)
-	{
-		this.updateCheckTimer.Interval = ResolveUpdateCheckIntervalMs(minutes);
-	}
-
-	private static double ResolveUpdateCheckIntervalMs(int minutes)
-	{
-		return Math.Max(MIN_UPDATE_CHECK_INTERVAL_MINUTES, minutes) * 60_000.0;
 	}
 
 	private async Task RestartAsync()
@@ -820,31 +763,6 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 		this.BestMultiKill = 0;
 	}
 
-	private async Task CheckForUpdatesAsync()
-	{
-		var (text, available) = await this.updateService.CheckForUpdatesAsync();
-		this.UpdateVersionText = text;
-		this.IsUpdateAvailable = available;
-		if(available)
-		{
-			// Update found and downloading — stop the periodic runtime re-checks.
-			this.updateCheckTimer.Stop();
-		}
-	}
-
-	[RelayCommand]
-	private void DismissUpdate()
-	{
-		this.IsUpdateAvailable = false;
-	}
-
-	[RelayCommand]
-	private Task ApplyUpdateAndRestart()
-	{
-		this.UpdateError = null;
-		return this.updateService.ApplyAndRestartAsync();
-	}
-
 	public void Dispose()
 	{
 		this.processor.EntryProcessed -= this.OnEntryProcessed;
@@ -853,16 +771,11 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 		this.CombatStats.Dispose();
 		this.TimeFilter.FilterChanged -= this.OnTimeFilterChanged;
 		this.watchSession.ErrorOccurred -= this.OnWatchSessionError;
-		this.updateService.ErrorOccurred -= this.OnUpdateError;
-		this.updateService.UpdateReady -= this.OnUpdateReady;
 		this.watchController.Stop();
 		this.SessionPicker.Dispose();
 		this.parsingDebounceTimer.Stop();
 		this.parsingDebounceTimer.Dispose();
-		this.SettingsPopup.UpdateCheckIntervalChanged -= this.OnUpdateCheckIntervalChanged;
-		this.updateCheckTimer.Elapsed -= this.OnUpdateCheckTimerElapsed;
-		this.updateCheckTimer.Stop();
-		this.updateCheckTimer.Dispose();
+		this.Update.Dispose();
 		this.SendNotification.Dispose();
 		GC.SuppressFinalize(this);
 	}

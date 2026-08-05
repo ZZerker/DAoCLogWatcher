@@ -154,7 +154,7 @@
                 ToolTip.Tip="Show Summary" />
 
         <!-- Update available popup -->
-        <Border IsVisible="{Binding IsUpdateAvailable}"
+        <Border IsVisible="{Binding Update.IsUpdateAvailable}"
                 HorizontalAlignment="Right" VerticalAlignment="Bottom"
                 Margin="0,0,30,30"
                 Background="{DynamicResource AppCardBackground}"
@@ -166,31 +166,29 @@
                     <StackPanel Spacing="2">
                         <TextBlock Text="Update Available" FontWeight="SemiBold" FontSize="13"
                                    Foreground="{DynamicResource AppTextPrimary}" />
-                        <TextBlock Text="{Binding UpdateVersionText}" FontSize="12"
+                        <TextBlock Text="{Binding Update.UpdateVersionText}" FontSize="12"
                                    Foreground="{DynamicResource AppUpdate}" />
                     </StackPanel>
                     <Button Grid.Column="1" Content="✕"
                             Classes="btn-ghost"
-                            Command="{Binding DismissUpdateCommand}"
+                            Command="{Binding Update.DismissUpdateCommand}"
                             VerticalAlignment="Top" />
                 </Grid>
-                <!-- Downloading in the background — restart not ready yet -->
                 <TextBlock Text="Downloading the new version…" FontSize="11" TextWrapping="Wrap"
                            Foreground="{DynamicResource AppTextMuted}"
-                           IsVisible="{Binding !IsRestartRequired}" />
-                <!-- Download finished — only a restart is left to install it -->
+                           IsVisible="{Binding Update.IsDownloading}" />
                 <TextBlock Text="A restart is required to install the new version."
                            FontSize="11" TextWrapping="Wrap"
                            Foreground="{DynamicResource AppTextPrimary}"
-                           IsVisible="{Binding IsRestartRequired}" />
-                <TextBlock Text="{Binding UpdateError}" FontSize="11" TextWrapping="Wrap"
+                           IsVisible="{Binding Update.IsRestartRequired}" />
+                <TextBlock Text="{Binding Update.UpdateError}" FontSize="11" TextWrapping="Wrap"
                            Foreground="{DynamicResource AppDanger}"
-                           IsVisible="{Binding UpdateError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                           IsVisible="{Binding Update.UpdateError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                 <Button Content="Restart &amp; Update Now"
-                        Command="{Binding ApplyUpdateAndRestartCommand}"
+                        Command="{Binding Update.ApplyUpdateAndRestartCommand}"
                         Classes="btn-primary"
                         Background="{DynamicResource AppUpdate}"
-                        IsEnabled="{Binding IsRestartRequired}"
+                        IsEnabled="{Binding Update.IsRestartRequired}"
                         HorizontalAlignment="Stretch" />
             </StackPanel>
         </Border>

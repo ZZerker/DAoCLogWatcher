@@ -58,6 +58,14 @@ if [ -z "${VERSION:-}" ]; then
 	VERSION="$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' DAoCLogWatcher.UI/DAoCLogWatcher.UI.csproj | head -1)"
 fi
 VERSION="${VERSION:-0.0.0}"
+
+# Velopack rejects anything that is not 3-part SemVer2, so a "0.5" tag must become "0.5.0"
+# (same normalization the velopack-windows CI job applies).
+CORE="${VERSION%%-*}"
+SUFFIX="${VERSION#"$CORE"}"
+IFS='.' read -r MAJ MIN PATCH _ <<<"$CORE"
+VERSION="${MAJ:-0}.${MIN:-0}.${PATCH:-0}${SUFFIX}"
+
 echo ">> Building DAoCLogWatcher $VERSION ($RID)"
 
 # --- publish self-contained --------------------------------------------------
