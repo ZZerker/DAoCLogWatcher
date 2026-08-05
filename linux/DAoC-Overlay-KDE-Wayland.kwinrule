@@ -1,0 +1,8 @@
+[a0094cbb-d6b1-485d-9d1f-b16aacbe8786]
+Description=DAoC Log Watcher overlay – keep above fullscreen (KDE Wayland)
+layer=osd
+layerrule=2
+title=DAoC Overlay
+titlematch=1
+wmclass=io.github.zzerker.DAoCLogWatcher
+wmclassmatch=1

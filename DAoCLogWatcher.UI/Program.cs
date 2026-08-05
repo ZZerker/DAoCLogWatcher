@@ -35,13 +35,21 @@ internal sealed class Program
 	// Avalonia configuration, don't remove; also used by visual designer.
 	public static AppBuilder BuildAvaloniaApp()
 	{
-		return AppBuilder.Configure<App>().UsePlatformDetect().WithInterFont().LogToTrace()
+		// The X11/XWayland WM_CLASS must equal the StartupWMClass of whichever .desktop file the
+		// running package installed, otherwise the task manager shows a second, unmatched icon
+		// instead of grouping the window under the launcher entry:
+		//   - AppImage: Velopack generates DAoCLogWatcher.desktop with StartupWMClass=DAoCLogWatcher
+		//               (derived from --packId in appimage/build-appimage.sh).
+		//   - Flatpak / dev runs: flatpak/io.github.zzerker.DAoCLogWatcher.desktop.
+		// $APPIMAGE is set only by the AppImage runtime, so use it to select the matching class.
+		var wmClass = Environment.GetEnvironmentVariable("APPIMAGE") is not null
+			              ? "DAoCLogWatcher"
+			              : "io.github.zzerker.DAoCLogWatcher";
 
-		                 // EXPLICITLY SET THE WM_CLASS FOR X11 AND XWAYLAND SESSIONS
-		                 // THIS ENSURES THE DESKTOP ENVIRONMENT RECOGNIZES THE WINDOW
+		return AppBuilder.Configure<App>().UsePlatformDetect().WithInterFont().LogToTrace()
 		                 .With(new X11PlatformOptions
 		                       {
-				                       WmClass = "io.github.zzerker.DAoCLogWatcher"
+				                       WmClass = wmClass
 		                       });
 	}
 

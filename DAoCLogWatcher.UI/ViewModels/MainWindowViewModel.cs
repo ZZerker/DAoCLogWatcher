@@ -27,7 +27,6 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 	private readonly System.Timers.Timer parsingDebounceTimer;
 
 	private readonly IWatchSession watchSession;
-	private readonly IUpdateService updateService;
 	private readonly INotificationService notificationService;
 	private readonly IDaocLogPathService daocLogPathService;
 	private readonly AppSettings settings;
@@ -223,9 +222,7 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 
 	[ObservableProperty] private bool isParsing;
 
-	[ObservableProperty] private bool isUpdateAvailable;
-	[ObservableProperty] private string? updateVersionText;
-	[ObservableProperty] private string? updateError;
+	public UpdateCoordinator Update { get; }
 
 	[ObservableProperty] private string? watchError;
 
@@ -296,7 +293,6 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 		this.daocLogPathService = daocLogPathService;
 		this.processor = processor;
 		this.combatProcessor = combatProcessor;
-		this.updateService = updateService;
 		this.settingsService = settingsService;
 		this.logWatcherFactory = logWatcherFactory;
 		this.settings = settings;
@@ -344,13 +340,12 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 		this.processor.MultiKillDetected += this.OnMultiKillDetected;
 		this.TimeFilter.FilterChanged += this.OnTimeFilterChanged;
 		this.watchSession.ErrorOccurred += this.OnWatchSessionError;
-		this.updateService.ErrorOccurred += this.OnUpdateError;
 		this.parsingDebounceTimer = new System.Timers.Timer(PARSING_DEBOUNCE_INTERVAL_MS)
 		                            {
 				                            AutoReset = false
 		                            };
 		this.parsingDebounceTimer.Elapsed += (_, _) => Dispatcher.UIThread.InvokeAsync(() => this.IsParsing = false);
-		this.FireAndForget(this.CheckForUpdatesAsync());
+		this.Update = new UpdateCoordinator(updateService, this.settings, this.SettingsPopup);
 	}
 
 	/// <summary>Forwards to <see cref="SessionPicker"/>'s window-activation rescan debounce.</summary>
@@ -375,11 +370,6 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 	private void OnWatchSessionError(object? sender, string message)
 	{
 		Dispatcher.UIThread.InvokeAsync(() => this.WatchError = message);
-	}
-
-	private void OnUpdateError(object? sender, string message)
-	{
-		Dispatcher.UIThread.InvokeAsync(() => this.UpdateError = message);
 	}
 
 	private async Task RestartAsync()
@@ -773,26 +763,6 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 		this.BestMultiKill = 0;
 	}
 
-	private async Task CheckForUpdatesAsync()
-	{
-		var (text, available) = await this.updateService.CheckForUpdatesAsync();
-		this.UpdateVersionText = text;
-		this.IsUpdateAvailable = available;
-	}
-
-	[RelayCommand]
-	private void DismissUpdate()
-	{
-		this.IsUpdateAvailable = false;
-	}
-
-	[RelayCommand]
-	private Task ApplyUpdateAndRestart()
-	{
-		this.UpdateError = null;
-		return this.updateService.ApplyAndRestartAsync();
-	}
-
 	public void Dispose()
 	{
 		this.processor.EntryProcessed -= this.OnEntryProcessed;
@@ -801,11 +771,11 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 		this.CombatStats.Dispose();
 		this.TimeFilter.FilterChanged -= this.OnTimeFilterChanged;
 		this.watchSession.ErrorOccurred -= this.OnWatchSessionError;
-		this.updateService.ErrorOccurred -= this.OnUpdateError;
 		this.watchController.Stop();
 		this.SessionPicker.Dispose();
 		this.parsingDebounceTimer.Stop();
 		this.parsingDebounceTimer.Dispose();
+		this.Update.Dispose();
 		this.SendNotification.Dispose();
 		GC.SuppressFinalize(this);
 	}

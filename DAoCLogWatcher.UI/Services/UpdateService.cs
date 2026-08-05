@@ -1,9 +1,10 @@
 using System;
-using System.Diagnostics;
-using System.IO;
 using System.Threading.Tasks;
+using DAoCLogWatcher.UI.Models;
+#if !FLATPAK
 using Velopack;
 using Velopack.Sources;
+#endif
 
 namespace DAoCLogWatcher.UI.Services;
 
@@ -11,6 +12,7 @@ public sealed class UpdateService: IUpdateService
 {
 	private const string GITHUB_URL = "https://github.com/ZZerker/DAoCLogWatcher";
 
+	private readonly AppSettings settings;
 
 #if !FLATPAK
 	private UpdateInfo? pendingUpdate;
@@ -18,11 +20,19 @@ public sealed class UpdateService: IUpdateService
 	private bool downloadFailed;
 #endif
 
+	public UpdateService(AppSettings settings)
+	{
+		this.settings = settings;
+	}
+
 	public event EventHandler<string>? ErrorOccurred;
 
+	public event EventHandler? UpdateReady;
+
+	public event EventHandler? DownloadFailed;
+
 	/// <summary>
-	/// Checks GitHub for a newer release and returns the version label immediately.
-	/// If an update is found, downloads it in the background so it is ready to apply.
+	/// Returns immediately once a newer release is found and downloads it in the background.
 	/// Returns (null, false) on any failure or when not installed via Velopack.
 	/// </summary>
 	public async Task<(string? VersionText, bool Available)> CheckForUpdatesAsync()
@@ -32,31 +42,43 @@ public sealed class UpdateService: IUpdateService
 #else
 		try
 		{
-			var mgr = new UpdateManager(new GithubSource(GITHUB_URL, null, false));
+			// A fresh check supersedes any earlier failed download attempt.
+			this.downloadTask = null;
+			this.downloadFailed = false;
+
+			AppLog.Info("UpdateService", $"Checking for updates (prereleases={this.settings.UsePrereleases}).");
+
+			var mgr = new UpdateManager(new GithubSource(GITHUB_URL, null, this.settings.UsePrereleases));
 			if(!mgr.IsInstalled)
 			{
+				AppLog.Info("UpdateService", "Not a Velopack install (IsInstalled=false) — skipping update check. This is expected for dev/`dotnet run` builds; only a packed AppImage/Setup self-updates.");
 				return (null, false);
 			}
 
 			var update = await mgr.CheckForUpdatesAsync();
 			if(update == null)
 			{
+				AppLog.Info("UpdateService", "Already up to date — no newer release found on the selected channel.");
 				return (null, false);
 			}
 
-			// Download in the background — caller gets the banner immediately.
-			// Store the task so ApplyAndRestart can await it if the user clicks before download finishes.
+			AppLog.Info("UpdateService", $"Update found: v{update.TargetFullRelease.Version}. Downloading in the background.");
+
+			// Stored so ApplyAndRestartAsync can await it if the user clicks before the download finishes.
 			this.downloadTask = Task.Run(async () =>
 			                            {
 				                            try
 				                            {
 					                            await mgr.DownloadUpdatesAsync(update);
 					                            this.pendingUpdate = update;
+					                            AppLog.Info("UpdateService", $"Update v{update.TargetFullRelease.Version} downloaded — restart required to install.");
+					                            this.UpdateReady?.Invoke(this, EventArgs.Empty);
 				                            }
 				                            catch(Exception ex)
 				                            {
 					                            this.downloadFailed = true;
 					                            this.ReportError("download", ex);
+					                            this.DownloadFailed?.Invoke(this, EventArgs.Empty);
 				                            }
 			                            });
 
@@ -70,11 +92,7 @@ public sealed class UpdateService: IUpdateService
 #endif
 	}
 
-	/// <summary>
-	/// Applies the downloaded update and restarts the application.
-	/// Waits for the background download to complete if it is still in progress.
-	/// No-op if no update is available.
-	/// </summary>
+	/// <summary>Waits for the background download if still in progress; no-op when no update is pending.</summary>
 	public async Task ApplyAndRestartAsync()
 	{
 #if FLATPAK
@@ -97,7 +115,7 @@ public sealed class UpdateService: IUpdateService
 
 		try
 		{
-			var mgr = new UpdateManager(new GithubSource(GITHUB_URL, null, false));
+			var mgr = new UpdateManager(new GithubSource(GITHUB_URL, null, this.settings.UsePrereleases));
 			mgr.ApplyUpdatesAndRestart(this.pendingUpdate);
 		}
 		catch(Exception ex)

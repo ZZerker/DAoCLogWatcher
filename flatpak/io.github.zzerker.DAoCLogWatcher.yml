@@ -13,8 +13,11 @@ finish-args:
   - --socket=wayland
   # GPU ACCELERATION FOR AVALONIA RENDERING
   - --device=dri
-  # READ CHAT.LOG AND EDEN PROFILE FOLDER
+  # READ CHAT.LOG AND EDEN PROFILE FOLDER (ALSO LETS US WRITE THE HOST ~/.config/kwinrulesrc)
   - --filesystem=home
+  # LIVE-RELOAD KWIN AFTER WRITING THE OVERLAY WINDOW RULE (dbus-send ... org.kde.KWin.reconfigure).
+  # WITHOUT THIS THE RULE STILL APPLIES, BUT ONLY ON THE NEXT KWIN RESTART / LOGIN.
+  - --talk-name=org.kde.KWin
 
 modules:
   - name: daoc-log-watcher

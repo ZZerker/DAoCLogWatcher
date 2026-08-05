@@ -1,9 +1,0 @@
-#!/bin/sh
-# AppRun — entry point for the DAoCLogWatcher AppImage.
-#
-# The app is published self-contained, so the .NET runtime is bundled next to
-# the executable in usr/bin and no system-wide .NET install is required.
-HERE="$(dirname "$(readlink -f "$0")")"
-
-# Do NOT unset DISPLAY: Avalonia needs X11/XWayland and crashes without it.
-exec "$HERE/usr/bin/DAoCLogWatcher.UI" "$@"
