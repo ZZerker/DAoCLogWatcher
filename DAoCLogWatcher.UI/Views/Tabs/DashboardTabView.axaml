@@ -682,6 +682,74 @@
                     </StackPanel>
                 </Border>
 
+                <!-- CampaignEvents -->
+                <Border x:Name="WidgetCampaignEvents" Margin="0,0,12,12" Width="420"
+                        Background="{DynamicResource AppCardBackground}"
+                        BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1"
+                        CornerRadius="8" Padding="16">
+                    <StackPanel Spacing="10">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Text="CAMPAIGN EVENTS" FontSize="11" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource AppTextMuted}" />
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                                <TextBlock Text="{Binding CampaignEvents.RotationPhase}"
+                                           Foreground="{DynamicResource AppTextSecondary}" FontSize="11" />
+                                <TextBlock Text="{Binding CampaignEvents.RotationCountdown}"
+                                           Foreground="{DynamicResource AppAccentCyan}" FontSize="11" />
+                            </StackPanel>
+                        </Grid>
+                        <ScrollViewer MaxHeight="200" VerticalScrollBarVisibility="Auto">
+                            <!-- Right margin keeps the "show on map" button clear of the overlay scrollbar. -->
+                            <StackPanel Spacing="6" Margin="0,0,14,0">
+                                <ItemsControl ItemsSource="{Binding CampaignEvents.Missions}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:CampaignMissionItem">
+                                            <Border BorderBrush="{DynamicResource AppRowBorder}"
+                                                    BorderThickness="0,0,0,1" Padding="0,4">
+                                                <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="8">
+                                                    <TextBlock Text="{Binding Name}" FontSize="12"
+                                                               Foreground="{DynamicResource AppTextPrimary}" />
+                                                    <TextBlock Grid.Column="1" Text="{Binding Zone}" FontSize="11"
+                                                               Foreground="{DynamicResource AppTextMuted}" />
+                                                    <TextBlock Grid.Column="2" Text="PENDING" FontSize="10"
+                                                               FontWeight="Bold" VerticalAlignment="Center"
+                                                               IsVisible="{Binding IsPending}"
+                                                               Foreground="{DynamicResource AppWarning}" />
+                                                    <TextBlock Grid.Column="2" Text="{Binding Remaining}" FontSize="11"
+                                                               FontWeight="SemiBold"
+                                                               IsVisible="{Binding !IsPending}"
+                                                               Foreground="{DynamicResource AppEventMission}" />
+                                                    <Button Grid.Column="3" Content="◎" Classes="btn-ghost"
+                                                            Padding="4,0" FontSize="12"
+                                                            ToolTip.Tip="Show on map"
+                                                            Command="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).CampaignEvents.LocateCommand}"
+                                                            CommandParameter="{Binding}" />
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <ItemsControl ItemsSource="{Binding CampaignEvents.Spawns}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:CampaignSpawnItem">
+                                            <Grid ColumnDefinitions="*,Auto">
+                                                <TextBlock Text="{Binding Name}" FontSize="12"
+                                                           Foreground="{DynamicResource AppTextSecondary}" />
+                                                <TextBlock Grid.Column="1"
+                                                           Text="{Binding Count, StringFormat='x{0}'}" FontSize="11"
+                                                           Foreground="{DynamicResource AppEventCampaign}" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </ScrollViewer>
+                        <TextBlock Text="No campaign events" FontSize="12"
+                                   Foreground="{DynamicResource AppTextDim}"
+                                   IsVisible="{Binding !CampaignEvents.HasEvents}" />
+                    </StackPanel>
+                </Border>
+
             </WrapPanel>
 
         </StackPanel>

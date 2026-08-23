@@ -22,5 +22,6 @@ public enum DashboardWidgetId
 	HealLog,
 	CombatLog,
 	Minimap,
-	GlobalActivity
+	GlobalActivity,
+	CampaignEvents
 }

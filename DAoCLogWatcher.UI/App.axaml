@@ -40,6 +40,8 @@
                     <SolidColorBrush x:Key="AppCrit">#FFCC44</SolidColorBrush>
                     <SolidColorBrush x:Key="AppHeat">#FF6644</SolidColorBrush>
                     <SolidColorBrush x:Key="AppMultiKill">#FF6600</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppEventCampaign">#C77DFF</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppEventMission">#22D3EE</SolidColorBrush>
                     <SolidColorBrush x:Key="AppMultiHit">#CC44FF</SolidColorBrush>
                     <SolidColorBrush x:Key="AppDotLabel">#FF9933</SolidColorBrush>
                     <SolidColorBrush x:Key="AppUpdate">#28A745</SolidColorBrush>
@@ -55,6 +57,15 @@
                     <SolidColorBrush x:Key="AppStopBorder">#5A2228</SolidColorBrush>
                     <SolidColorBrush x:Key="AppSplitChevron">#0070BE</SolidColorBrush>
                     <SolidColorBrush x:Key="AppMultiKillHighlightBg">#44FFAA00</SolidColorBrush>
+                    <!-- Realm identity colours, shared with the warmap plot (ZoneMapService.RealmColor). -->
+                    <SolidColorBrush x:Key="AppRealmAlbion">#CC4444</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppRealmMidgard">#4488FF</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppRealmHibernia">#44AA55</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppRealmUnknown">#888888</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppRealmAlbionWash">#66CC4444</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppRealmMidgardWash">#664488FF</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppRealmHiberniaWash">#6644AA55</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppRealmUnknownWash">#44888888</SolidColorBrush>
                     <SolidColorBrush x:Key="AppMultiHitHighlightBg">#44CC44FF</SolidColorBrush>
                     <SolidColorBrush x:Key="AppRealmAlb">#FF5555</SolidColorBrush>
                     <SolidColorBrush x:Key="AppRealmMid">#3FAFFF</SolidColorBrush>
@@ -91,6 +102,8 @@
                     <SolidColorBrush x:Key="AppCrit">#B08800</SolidColorBrush>
                     <SolidColorBrush x:Key="AppHeat">#CC3311</SolidColorBrush>
                     <SolidColorBrush x:Key="AppMultiKill">#CC4400</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppEventCampaign">#7E3FF2</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppEventMission">#0E7490</SolidColorBrush>
                     <SolidColorBrush x:Key="AppMultiHit">#9922CC</SolidColorBrush>
                     <SolidColorBrush x:Key="AppDotLabel">#CC6600</SolidColorBrush>
                     <SolidColorBrush x:Key="AppUpdate">#1A7A30</SolidColorBrush>
@@ -106,6 +119,15 @@
                     <SolidColorBrush x:Key="AppStopBorder">#3A1215</SolidColorBrush>
                     <SolidColorBrush x:Key="AppSplitChevron">#005A9E</SolidColorBrush>
                     <SolidColorBrush x:Key="AppMultiKillHighlightBg">#33FFAA00</SolidColorBrush>
+                    <!-- Realm identity colours, shared with the warmap plot (ZoneMapService.RealmColor). -->
+                    <SolidColorBrush x:Key="AppRealmAlbion">#CC4444</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppRealmMidgard">#4488FF</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppRealmHibernia">#44AA55</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppRealmUnknown">#888888</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppRealmAlbionWash">#66CC4444</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppRealmMidgardWash">#664488FF</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppRealmHiberniaWash">#6644AA55</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppRealmUnknownWash">#44888888</SolidColorBrush>
                     <SolidColorBrush x:Key="AppMultiHitHighlightBg">#33CC44FF</SolidColorBrush>
                     <SolidColorBrush x:Key="AppRealmAlb">#CC2222</SolidColorBrush>
                     <SolidColorBrush x:Key="AppRealmMid">#1F8ACC</SolidColorBrush>
@@ -228,6 +250,27 @@
             <Setter Property="FontWeight" Value="Bold" />
         </Style>
         <Style Selector="Button.btn-toggle.active:pointerover /template/ ContentPresenter">
+            <Setter Property="TextElement.Foreground" Value="{DynamicResource AppAccentCyan}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AppAccentCyan}" />
+        </Style>
+        <Style Selector="ToggleButton.btn-toggle">
+            <Setter Property="Background" Value="{DynamicResource AppCardBackground}" />
+            <Setter Property="Foreground" Value="{DynamicResource AppTextSecondary}" />
+            <Setter Property="Padding" Value="12,5" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="ToggleButton.btn-toggle:pointerover /template/ ContentPresenter">
+            <Setter Property="TextElement.Foreground" Value="{DynamicResource AppTextPrimary}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AppTextMuted}" />
+        </Style>
+        <Style Selector="ToggleButton.btn-toggle:checked /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AppToggleActiveBg}" />
             <Setter Property="TextElement.Foreground" Value="{DynamicResource AppAccentCyan}" />
             <Setter Property="BorderBrush" Value="{DynamicResource AppAccentCyan}" />
         </Style>

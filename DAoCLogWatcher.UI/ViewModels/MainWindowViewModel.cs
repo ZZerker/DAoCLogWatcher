@@ -206,6 +206,8 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 
 	public FrontierMapData FrontierMap { get; private set; } = null!;
 
+	public CampaignEventsViewModel CampaignEvents { get; }
+
 	public IReadOnlyDictionary<string, int> CurrentZoneKills => this.processor.CurrentZoneKills;
 
 	public ZoneActivityViewModel ZoneActivity { get; }
@@ -286,7 +288,8 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 	                           CombatSummary combatSummary,
 	                           IFrontierMapService frontierMapService,
 	                           ISessionHistoryService sessionHistoryService,
-	                           SessionHistoryRecorder sessionHistoryRecorder)
+	                           SessionHistoryRecorder sessionHistoryRecorder,
+	                           WarmapWebSocketService warmapService)
 	{
 		this.watchSession = watchSession;
 		this.notificationService = notificationService;
@@ -335,6 +338,7 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 		this.SessionPicker = new SessionPickerViewModel(() => this.CurrentFilePath ?? this.GetLogPath(), this.OpenRecentSessionCoreAsync, msg => this.WatchError = msg);
 		this.CombatStats = new CombatStatsViewModel(this.combatProcessor, this.CombatSummary);
 		this.FrontierMap = frontierMapService.Load();
+		this.CampaignEvents = new CampaignEventsViewModel(warmapService, this.FrontierMap);
 		this.ZoneActivity = new ZoneActivityViewModel(this.processor, this.settings, this.settingsService, () => this.Summary.SessionStartTime);
 		this.processor.EntryProcessed += this.OnEntryProcessed;
 		this.processor.MultiKillDetected += this.OnMultiKillDetected;
@@ -768,6 +772,7 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 		this.processor.EntryProcessed -= this.OnEntryProcessed;
 		this.processor.MultiKillDetected -= this.OnMultiKillDetected;
 		this.ZoneActivity.Dispose();
+		this.CampaignEvents.Dispose();
 		this.CombatStats.Dispose();
 		this.TimeFilter.FilterChanged -= this.OnTimeFilterChanged;
 		this.watchSession.ErrorOccurred -= this.OnWatchSessionError;

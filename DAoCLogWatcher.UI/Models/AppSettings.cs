@@ -49,4 +49,14 @@ public class AppSettings
 
 	// How often (in minutes) the running app re-checks GitHub for a newer release. A floor is enforced in code.
 	public int UpdateCheckIntervalMinutes { get; set; } = 120;
+
+	public bool WarmapShowHeatmap { get; set; } = true;
+
+	public bool WarmapShowFights { get; set; } = true;
+
+	public bool WarmapShowGroups { get; set; } = true;
+
+	public bool WarmapShowEvents { get; set; } = true;
+
+	public bool WarmapShowRelics { get; set; } = true;
 }

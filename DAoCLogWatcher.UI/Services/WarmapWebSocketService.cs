@@ -14,19 +14,156 @@ public sealed record WarmapKeepState(int Realm, bool InCombat);
 
 public sealed record WarmapActivityEntry(int Zone, int X, int Y, int Size, int Realm);
 
+/// <summary>
+/// One of the six relics, from the <c>relics</c> message. <paramref name="Type"/> is 0 = Strength,
+/// 1 = Power (Eden's <c>t</c>); <paramref name="OriginRealm"/> is the realm it belongs to and
+/// <paramref name="OwnerRealm"/> the realm currently holding it (1 Albion, 2 Midgard, 3 Hibernia).
+/// </summary>
+public sealed record WarmapRelic(int Id, int OriginRealm, int Type, int OwnerRealm);
+
+/// <summary>
+/// A relic pad from the <c>relicpads</c> message: the six home relic keeps (<paramref name="IsHomePad"/>)
+/// plus every regular frontier keep, which can host a captured relic. <paramref name="RelicId"/> is 0
+/// when the pad is empty, and <paramref name="RelicType"/> is -1 then. Coordinates are region-163 game
+/// units, not zone-local.
+/// </summary>
+public sealed record WarmapRelicPad(
+		string Name,
+		int KeepId,
+		int GameX,
+		int GameY,
+		int OwnerRealm,
+		int OriginRealm,
+		int PadType,
+		bool IsHomePad,
+		int RelicId,
+		int RelicType);
+
+/// <summary>
+/// A relic resolved onto the pad it currently sits on — what the map actually draws.
+/// <paramref name="IsAtHome"/> is true only when the relic rests on its own realm's home pad.
+/// </summary>
+public sealed record WarmapRelicPlacement(
+		int RelicId,
+		string DisplayName,
+		int Type,
+		int OriginRealm,
+		int OwnerRealm,
+		string PadName,
+		int PadKeepId,
+		bool IsHomePad,
+		bool IsAtHome,
+		int GameX,
+		int GameY)
+{
+	/// <summary>"Strength" or "Power".</summary>
+	public string TypeName => this.Type == 0?"Strength":"Power";
+}
+
+/// <summary>
+/// A live world event from Eden's campaign system (the <c>events</c> message, which Eden's own
+/// warmap.js has no handler for). <paramref name="Source"/> partitions cleanly: <c>"ws"</c> are
+/// campaign spawns (Behemoth, Scout, SupplyDrop, CampExtinction) which never expire, <c>"gm"</c>
+/// are <c>GeneratedMissionStatic*</c> missions which usually carry a ~21 min deadline.
+/// An event vanishing from the snapshot is its removal — there is no terminal State.
+/// <paramref name="X"/>/<paramref name="Y"/> are zone-local (0-65535), like warmap fights.
+/// </summary>
+public sealed record WarmapEvent(string Id, string Type, string Size, string State, string Source, int Zone, int X, int Y, long EndsAtMs)
+{
+	/// <summary>True for campaign/world spawns; false for generated missions.</summary>
+	public bool IsCampaignSpawn => string.Equals(this.Source, "ws", StringComparison.Ordinal);
+
+	/// <summary>False when the event has no deadline (all "ws" spawns, and some missions).</summary>
+	public bool HasDeadline => this.EndsAtMs > 0;
+
+	/// <summary>Still announced but not yet running — a transient state, typically only one tick.</summary>
+	public bool IsPending => string.Equals(this.State, "pending", StringComparison.OrdinalIgnoreCase);
+
+	/// <summary>Time left, or null when the event has no deadline. Never negative.</summary>
+	public TimeSpan? TimeRemaining
+	{
+		get
+		{
+			if(!this.HasDeadline)
+			{
+				return null;
+			}
+
+			var ms = this.EndsAtMs - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+			return ms <= 0?TimeSpan.Zero:TimeSpan.FromMilliseconds(ms);
+		}
+	}
+
+	/// <summary>"GeneratedMissionStaticTreasureHunt" -> "Treasure Hunt"; "SupplyDrop" -> "Supply Drop".</summary>
+	public string DisplayName => FormatTypeName(this.Type);
+
+	private static string FormatTypeName(string type)
+	{
+		const string missionPrefix = "GeneratedMissionStatic";
+		var name = type.StartsWith(missionPrefix, StringComparison.Ordinal)?type[missionPrefix.Length..]:type;
+
+		var sb = new StringBuilder(name.Length + 4);
+		for(var i = 0; i < name.Length; i++)
+		{
+			if(i > 0&&char.IsUpper(name[i])&&!char.IsUpper(name[i - 1]))
+			{
+				sb.Append(' ');
+			}
+
+			sb.Append(name[i]);
+		}
+
+		return sb.ToString();
+	}
+}
+
+/// <summary>
+/// Campaign rotation phase (the <c>rotation</c> message). <paramref name="Current"/> cycles
+/// 1 -> 2 -> 0 with phases of roughly 18-23 minutes, and it gates which mission types exist:
+/// phase 0 runs PvpTeleporter/Koth/MurderBall, phases 1 and 2 run EspionageStart/Merchant instead.
+/// </summary>
+public sealed record WarmapRotation(int Current, int Of, string Next, long NextAtMs, string NextType)
+{
+	/// <summary>Time until the next phase change, or null once it has passed.</summary>
+	public TimeSpan? TimeToNext
+	{
+		get
+		{
+			if(this.NextAtMs <= 0)
+			{
+				return null;
+			}
+
+			var ms = this.NextAtMs - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+			return ms <= 0?TimeSpan.Zero:TimeSpan.FromMilliseconds(ms);
+		}
+	}
+}
+
 public sealed class WarmapWebSocketService: IDisposable
 {
 	private const string WsUri = "wss://ws.eden-daoc.net:60005";
 	private static readonly TimeSpan PingInterval = TimeSpan.FromSeconds(30);
 	private static readonly TimeSpan PingIdleThreshold = TimeSpan.FromSeconds(25);
 	private static readonly TimeSpan ReconnectDelay = TimeSpan.FromSeconds(5);
-	private const long ActivityExpiryMs = 45 * 1000;
+	// Matches Eden's own warmap client (warmap.js: fight.last + 2 * 60 * 1000), so markers
+	// linger on our minimap exactly as long as they do on eden-daoc.net/warmap.
+	private const long ActivityExpiryMs = 2 * 60 * 1000;
 
 	private readonly Dictionary<int, string> idToName = new();
 	private readonly Dictionary<string, WarmapKeepState> states = new();
 	private readonly Dictionary<string, DateTime> combatStartTimes = new();
 	private readonly Dictionary<string, (WarmapActivityEntry Entry, long LastMs)> fights = new();
 	private readonly Dictionary<string, (WarmapActivityEntry Entry, long LastMs)> groups = new();
+	// Both arrive as full snapshots on connect. Eden has no incremental relic message, so a
+	// relic move is only seen on the next snapshot (i.e. after a reconnect) -- see RelicsUpdated.
+	private Dictionary<int, WarmapRelic> relics = new();
+	private IReadOnlyList<WarmapRelicPad> relicPads = [];
+	// The "events" message is a FULL snapshot every ~10s, so this list is replaced wholesale
+	// rather than merged+expired like fights/groups. An event vanishing from the snapshot IS
+	// its removal — there is no terminal State to wait for (only pending -> active is ever sent).
+	private IReadOnlyList<WarmapEvent> events = [];
+	private WarmapRotation? rotation;
 	private readonly Lock stateLock = new();
 	private CancellationTokenSource? cts;
 	private Timer? expiryTimer;
@@ -34,6 +171,12 @@ public sealed class WarmapWebSocketService: IDisposable
 	public event EventHandler? KeepsUpdated;
 
 	public event EventHandler? FightsUpdated;
+
+	/// <summary>Raised when a new campaign/mission snapshot or rotation phase arrives.</summary>
+	public event EventHandler? EventsUpdated;
+
+	/// <summary>Raised when a relic or relic-pad snapshot arrives.</summary>
+	public event EventHandler? RelicsUpdated;
 
 	public void Start()
 	{
@@ -63,6 +206,109 @@ public sealed class WarmapWebSocketService: IDisposable
 		lock(this.stateLock)
 		{
 			return this.groups.Values.Select(v => v.Entry).ToList();
+		}
+	}
+
+	/// <summary>Currently live campaign spawns and missions. Typically 11-17 entries.</summary>
+	public IReadOnlyList<WarmapEvent> GetEventsSnapshot()
+	{
+		lock(this.stateLock)
+		{
+			return this.events;
+		}
+	}
+
+	/// <summary>The six relics with their current owning realm. Empty before the first snapshot.</summary>
+	public IReadOnlyList<WarmapRelic> GetRelicsSnapshot()
+	{
+		lock(this.stateLock)
+		{
+			return this.relics.Values.ToList();
+		}
+	}
+
+	/// <summary>Every relic pad, home and keep, whether occupied or not.</summary>
+	public IReadOnlyList<WarmapRelicPad> GetRelicPadsSnapshot()
+	{
+		lock(this.stateLock)
+		{
+			return this.relicPads;
+		}
+	}
+
+	/// <summary>
+	/// The relics resolved onto the pads they sit on. A relic being carried by a player sits on no
+	/// pad and is therefore absent from the result.
+	/// </summary>
+	public IReadOnlyList<WarmapRelicPlacement> GetRelicPlacements()
+	{
+		Dictionary<int, WarmapRelic> relicsCopy;
+		IReadOnlyList<WarmapRelicPad> padsCopy;
+
+		lock(this.stateLock)
+		{
+			relicsCopy = new Dictionary<int, WarmapRelic>(this.relics);
+			padsCopy = this.relicPads;
+		}
+
+		var placements = new List<WarmapRelicPlacement>();
+
+		foreach(var pad in padsCopy)
+		{
+			if(pad.RelicId <= 0)
+			{
+				continue;
+			}
+
+			var type = pad.RelicType >= 0?pad.RelicType:pad.PadType;
+			var origin = 0;
+			var owner = pad.OwnerRealm;
+
+			if(relicsCopy.TryGetValue(pad.RelicId, out var relic))
+			{
+				type = relic.Type;
+				origin = relic.OriginRealm;
+				owner = relic.OwnerRealm;
+			}
+
+			var atHome = pad.IsHomePad&&origin != 0&&pad.OriginRealm == origin;
+			placements.Add(new WarmapRelicPlacement(pad.RelicId,
+			                                        RelicName(origin, type),
+			                                        type,
+			                                        origin,
+			                                        owner,
+			                                        pad.Name,
+			                                        pad.KeepId,
+			                                        pad.IsHomePad,
+			                                        atHome,
+			                                        pad.GameX,
+			                                        pad.GameY));
+		}
+
+		return placements;
+	}
+
+	/// <summary>Canonical relic names — the payload carries only realm + type.</summary>
+	private static string RelicName(int originRealm, int type)
+	{
+		return (originRealm, type) switch
+		       {
+				       (1, 0) => "Scabbard of Excalibur",
+				       (1, 1) => "Merlin's Staff",
+				       (2, 0) => "Thor's Hammer",
+				       (2, 1) => "Horn of Valhalla",
+				       (3, 0) => "Lug's Spear of Lightning",
+				       (3, 1) => "Cauldron of Dagda",
+				       _ => type == 0?"Strength Relic":"Power Relic"
+		       };
+	}
+
+	/// <summary>Current campaign rotation phase, or null before the first message arrives.</summary>
+	public WarmapRotation? GetRotation()
+	{
+		lock(this.stateLock)
+		{
+			return this.rotation;
 		}
 	}
 
@@ -159,7 +405,8 @@ public sealed class WarmapWebSocketService: IDisposable
 		}
 	}
 
-	private void ProcessMessage(string json)
+	/// <summary>Internal for tests: feeds one raw server message through the parsers.</summary>
+	internal void ProcessMessage(string json)
 	{
 		JsonDocument doc;
 		try
@@ -187,6 +434,178 @@ public sealed class WarmapWebSocketService: IDisposable
 			{
 				this.ProcessWarmapMessage(warmapEl);
 			}
+
+			if(root.TryGetProperty("relics", out var relicsEl))
+			{
+				this.ProcessRelicsSnapshot(relicsEl);
+				this.RelicsUpdated?.Invoke(this, EventArgs.Empty);
+			}
+
+			if(root.TryGetProperty("relicpads", out var padsEl))
+			{
+				this.ProcessRelicPadsSnapshot(padsEl);
+				this.RelicsUpdated?.Invoke(this, EventArgs.Empty);
+			}
+
+			// Checked independently of the chain above: Eden's server sends these as their own
+			// messages, but tests each key separately in warmap.js rather than as else-if.
+			var eventsChanged = false;
+
+			if(root.TryGetProperty("events", out var eventsEl))
+			{
+				this.ProcessEventsMessage(eventsEl);
+				eventsChanged = true;
+			}
+
+			if(root.TryGetProperty("rotation", out var rotationEl))
+			{
+				this.ProcessRotationMessage(rotationEl);
+				eventsChanged = true;
+			}
+
+			if(eventsChanged)
+			{
+				this.EventsUpdated?.Invoke(this, EventArgs.Empty);
+			}
+		}
+	}
+
+	/// <summary>
+	/// Replaces the whole event list — the payload is a full snapshot, not a delta. Also carries
+	/// <c>df</c>, the realm currently holding Darkness Falls.
+	/// </summary>
+	private void ProcessEventsMessage(JsonElement eventsEl)
+	{
+		var parsed = new List<WarmapEvent>();
+
+		if(eventsEl.TryGetProperty("e", out var listEl)&&listEl.ValueKind == JsonValueKind.Array)
+		{
+			foreach(var item in listEl.EnumerateArray())
+			{
+				var id = item.TryGetProperty("Id", out var idEl)?idEl.GetString():null;
+				var type = item.TryGetProperty("Type", out var typeEl)?typeEl.GetString():null;
+				if(string.IsNullOrEmpty(id)||string.IsNullOrEmpty(type))
+				{
+					continue;
+				}
+
+				var size = item.TryGetProperty("Size", out var sizeEl)?sizeEl.GetString() ?? "":"";
+				var state = item.TryGetProperty("State", out var stateEl)?stateEl.GetString() ?? "":"";
+				var src = item.TryGetProperty("Src", out var srcEl)?srcEl.GetString() ?? "":"";
+				var zone = item.TryGetProperty("Zone", out var zoneEl)&&zoneEl.TryGetInt32(out var z)?z:0;
+				var x = item.TryGetProperty("X", out var xEl)&&xEl.TryGetInt32(out var xv)?xv:0;
+				var y = item.TryGetProperty("Y", out var yEl)&&yEl.TryGetInt32(out var yv)?yv:0;
+				var endsAt = item.TryGetProperty("EndsAt", out var endsEl)&&endsEl.TryGetInt64(out var e)?e:0;
+
+				var parsedEvent = new WarmapEvent(id, type, size, state, src, zone, x, y, endsAt);
+
+				// Announced but not running yet. Dropping it here rather than at each drawing site
+				// keeps every consumer of the snapshot on live events only; it reappears in the next
+				// snapshot (~10s) once the server flips it to active.
+				if(parsedEvent.IsPending)
+				{
+					continue;
+				}
+
+				parsed.Add(parsedEvent);
+			}
+		}
+
+		// The envelope also carries "df" (realm holding Darkness Falls). Eden does not keep it
+		// current, so it is deliberately ignored rather than surfaced as stale data.
+		lock(this.stateLock)
+		{
+			this.events = parsed;
+		}
+	}
+
+	private void ProcessRotationMessage(JsonElement rotationEl)
+	{
+		var cur = rotationEl.TryGetProperty("Cur", out var curEl)&&curEl.TryGetInt32(out var c)?c:0;
+		var of = rotationEl.TryGetProperty("Of", out var ofEl)&&ofEl.TryGetInt32(out var o)?o:0;
+		var next = rotationEl.TryGetProperty("Next", out var nextEl)?nextEl.GetString() ?? "":"";
+		var nextAt = rotationEl.TryGetProperty("NextAt", out var atEl)&&atEl.TryGetInt64(out var at)?at:0;
+		var nextType = rotationEl.TryGetProperty("NextType", out var ntEl)?ntEl.GetString() ?? "":"";
+
+		lock(this.stateLock)
+		{
+			this.rotation = new WarmapRotation(cur, of, next, nextAt, nextType);
+		}
+	}
+
+	/// <summary>
+	/// Full snapshot keyed by relic id: <c>{"1":{"or":1,"t":1,"s":86,"r":2}}</c>. <c>s</c> (the site
+	/// the relic sits on) is deliberately ignored — the pad list carries the same link via its own
+	/// <c>r</c> field along with the coordinates we need, so that is the single source of truth.
+	/// </summary>
+	private void ProcessRelicsSnapshot(JsonElement relicsEl)
+	{
+		if(relicsEl.ValueKind != JsonValueKind.Object)
+		{
+			return;
+		}
+
+		var parsed = new Dictionary<int, WarmapRelic>();
+
+		foreach(var kv in relicsEl.EnumerateObject())
+		{
+			if(!int.TryParse(kv.Name, out var id))
+			{
+				continue;
+			}
+
+			var r = kv.Value;
+			var origin = r.TryGetProperty("or", out var orEl)&&orEl.TryGetInt32(out var o)?o:0;
+			var type = r.TryGetProperty("t", out var tEl)&&tEl.TryGetInt32(out var t)?t:0;
+			var owner = r.TryGetProperty("r", out var rEl)&&rEl.TryGetInt32(out var ow)?ow:origin;
+
+			parsed[id] = new WarmapRelic(id, origin, type, owner);
+		}
+
+		lock(this.stateLock)
+		{
+			this.relics = parsed;
+		}
+	}
+
+	/// <summary>
+	/// Full snapshot array. <c>h</c> marks the six home relic keeps (the walled pad a relic returns
+	/// to when uncontested); every other entry is an ordinary frontier keep that can host a captured
+	/// relic. <c>r</c> is the relic id on the pad, 0 when empty.
+	/// </summary>
+	private void ProcessRelicPadsSnapshot(JsonElement padsEl)
+	{
+		if(padsEl.ValueKind != JsonValueKind.Array)
+		{
+			return;
+		}
+
+		var parsed = new List<WarmapRelicPad>();
+
+		foreach(var item in padsEl.EnumerateArray())
+		{
+			var name = item.TryGetProperty("n", out var nEl)?Normalize(nEl.GetString() ?? ""):"";
+			if(string.IsNullOrEmpty(name))
+			{
+				continue;
+			}
+
+			var x = item.TryGetProperty("x", out var xEl)&&xEl.TryGetInt32(out var xv)?xv:0;
+			var y = item.TryGetProperty("y", out var yEl)&&yEl.TryGetInt32(out var yv)?yv:0;
+			var rlm = item.TryGetProperty("rlm", out var rlmEl)&&rlmEl.TryGetInt32(out var rl)?rl:0;
+			var origin = item.TryGetProperty("o", out var oEl)&&oEl.TryGetInt32(out var o)?o:0;
+			var padType = item.TryGetProperty("pt", out var ptEl)&&ptEl.TryGetInt32(out var pt)?pt:2;
+			var home = item.TryGetProperty("h", out var hEl)&&hEl.TryGetInt32(out var h)&&h != 0;
+			var relicId = item.TryGetProperty("r", out var rEl)&&rEl.TryGetInt32(out var ri)?ri:0;
+			var relicType = item.TryGetProperty("rt", out var rtEl)&&rtEl.TryGetInt32(out var rt)?rt:-1;
+			var keepId = item.TryGetProperty("k", out var kEl)&&kEl.TryGetInt32(out var k)?k:0;
+
+			parsed.Add(new WarmapRelicPad(name, keepId, x, y, rlm, origin, padType, home, relicId, relicType));
+		}
+
+		lock(this.stateLock)
+		{
+			this.relicPads = parsed;
 		}
 	}
 

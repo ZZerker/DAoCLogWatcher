@@ -40,6 +40,15 @@ public class ZoneMapService
 	private readonly SKBitmap?[,] fightBitmaps = new SKBitmap?[4, 4];
 	private readonly SKBitmap?[,] groupBitmaps = new SKBitmap?[4, 4];
 	private List<(string Name, double Px, double Py, bool IsKeep)> burningKeeps = [];
+	private List<(WarmapRelicPlacement Relic, double Px, double Py)> relicHits = [];
+
+	// Mirrors the App.axaml tokens AppEventCampaign / AppEventMission.
+	private static readonly Color EventCampaignColor = Color.FromHex("#C77DFF");
+	private static readonly Color EventMissionColor = Color.FromHex("#22D3EE");
+
+	// The feed sends only the end time, never a start or a total, so the ring is scaled against
+	// the observed standard mission length.
+	private const double NominalMissionSeconds = 21 * 60;
 
 	public sealed record MinimapViewSpec(PixelBounds ZoneBounds, int? ActiveZoneId, double? PlayerPixelX, double? PlayerPixelY, string ZoneName);
 
@@ -79,7 +88,11 @@ public class ZoneMapService
 	                                MinimapViewSpec spec,
 	                                IReadOnlyDictionary<string, WarmapKeepState>? liveKeeps = null,
 	                                IReadOnlyList<WarmapActivityEntry>? fights = null,
-	                                IReadOnlyList<WarmapActivityEntry>? groups = null)
+	                                IReadOnlyList<WarmapActivityEntry>? groups = null,
+	                                IReadOnlyList<WarmapEvent>? events = null,
+	                                bool showEvents = true,
+	                                IReadOnlyList<WarmapRelicPlacement>? relics = null,
+	                                bool showRelics = true)
 	{
 		this.EnsureIconsLoaded();
 		plot.Clear();
@@ -104,6 +117,11 @@ public class ZoneMapService
 
 		this.DrawKeepsAndTowers(plot, map.Keeps, liveKeeps, null, b);
 
+		if(showRelics)
+		{
+			this.DrawRelics(plot, relics, false, b);
+		}
+
 		if(spec.PlayerPixelX.HasValue&&spec.PlayerPixelY.HasValue)
 		{
 			var pm = plot.Add.Marker(spec.PlayerPixelX.Value, -spec.PlayerPixelY.Value, MarkerShape.FilledCircle, 14);
@@ -126,6 +144,11 @@ public class ZoneMapService
 			if(fights != null)
 			{
 				this.DrawActivityMarkers(plot, fights.Where(f => f.Zone == spec.ActiveZoneId.Value).ToList(), true, zoneIdx);
+			}
+
+			if(showEvents&&events != null)
+			{
+				this.DrawEventMarkers(plot, events.Where(e => e.Zone == spec.ActiveZoneId.Value).ToList(), zoneIdx);
 			}
 		}
 	}
@@ -185,7 +208,12 @@ public class ZoneMapService
 	                                IReadOnlyDictionary<string, WarmapKeepState>? liveKeeps = null,
 	                                IReadOnlyList<WarmapActivityEntry>? fights = null,
 	                                IReadOnlyList<WarmapActivityEntry>? groups = null,
-	                                bool showFights = true)
+	                                bool showFights = true,
+	                                IReadOnlyList<WarmapEvent>? events = null,
+	                                bool showEvents = true,
+	                                bool showHeatmap = true,
+	                                IReadOnlyList<WarmapRelicPlacement>? relics = null,
+	                                bool showRelics = true)
 	{
 		this.EnsureIconsLoaded();
 		plot.Clear();
@@ -197,57 +225,60 @@ public class ZoneMapService
 
 		var idx = this.GetOrBuildIndex(map);
 
-		// ── NEW: 2D ScottPlot heatmap overlay ─────────────────────────────────
-		var grid = new double[GRID_H, GRID_W];
-
-		foreach(var kv in zoneCounts)
+		if(showHeatmap)
 		{
-			if(kv.Value == 0)
-			{
-				continue;
-			}
+			// ── NEW: 2D ScottPlot heatmap overlay ─────────────────────────────────
+			var grid = new double[GRID_H, GRID_W];
 
-			if(!idx.TryGetValue(NormalizeName(kv.Key), out var entry))
+			foreach(var kv in zoneCounts)
 			{
-				continue;
-			}
-
-			var px = entry.Kind == LocationKind.Zone?entry.PixelX + entry.Width / 2.0:entry.PixelX;
-			var py = entry.Kind == LocationKind.Zone?entry.PixelY + entry.Height / 2.0:entry.PixelY;
-
-			var sigma = entry.Kind switch
-			{
-					LocationKind.Zone => 6.0,
-					LocationKind.Keep => 4.0,
-					LocationKind.Tower => 2.8,
-					_ => 2.0
-			};
-			ApplyGaussian(grid, px, py, kv.Value, sigma);
-		}
-
-		var hasData = false;
-		var heatData = new double[GRID_H, GRID_W];
-		for(var r = 0; r < GRID_H; r++)
-		{
-			for(var c = 0; c < GRID_W; c++)
-			{
-				if(grid[r, c] > 0)
+				if(kv.Value == 0)
 				{
-					heatData[r, c] = grid[r, c];
-					hasData = true;
+					continue;
 				}
-				else
+
+				if(!idx.TryGetValue(NormalizeName(kv.Key), out var entry))
 				{
-					heatData[r, c] = double.NaN;
+					continue;
+				}
+
+				var px = entry.Kind == LocationKind.Zone?entry.PixelX + entry.Width / 2.0:entry.PixelX;
+				var py = entry.Kind == LocationKind.Zone?entry.PixelY + entry.Height / 2.0:entry.PixelY;
+
+				var sigma = entry.Kind switch
+				{
+						LocationKind.Zone => 6.0,
+						LocationKind.Keep => 4.0,
+						LocationKind.Tower => 2.8,
+						_ => 2.0
+				};
+				ApplyGaussian(grid, px, py, kv.Value, sigma);
+			}
+
+			var hasData = false;
+			var heatData = new double[GRID_H, GRID_W];
+			for(var r = 0; r < GRID_H; r++)
+			{
+				for(var c = 0; c < GRID_W; c++)
+				{
+					if(grid[r, c] > 0)
+					{
+						heatData[r, c] = grid[r, c];
+						hasData = true;
+					}
+					else
+					{
+						heatData[r, c] = double.NaN;
+					}
 				}
 			}
-		}
 
-		if(hasData)
-		{
-			var hm = plot.Add.Heatmap(heatData);
-			hm.Colormap = new AlphaScaledTurbo();
-			hm.Rectangle = new CoordinateRect(0, 1408, -1536, 0);
+			if(hasData)
+			{
+				var hm = plot.Add.Heatmap(heatData);
+				hm.Colormap = new AlphaScaledTurbo();
+				hm.Rectangle = new CoordinateRect(0, 1408, -1536, 0);
+			}
 		}
 
 		// ──────────────────────────────────────────────────────────────────────
@@ -348,6 +379,8 @@ public class ZoneMapService
 		this.DrawKeepsAndTowers(plot, map.Keeps, liveKeeps, newBurningKeeps);
 		this.burningKeeps = newBurningKeeps;
 
+		this.relicHits = showRelics?this.DrawRelics(plot, relics, true, null):[];
+
 		foreach(var k in map.Keeps.Where(k => k.Pixel != null&&k.Type == "dock"))
 		{
 			var m = plot.Add.Marker(k.Pixel!.X, -k.Pixel.Y, MarkerShape.FilledTriangleUp, 8);
@@ -355,48 +388,53 @@ public class ZoneMapService
 		}
 
 		// kill count labels for all active locations (topmost layer)
-		foreach(var kv in zoneCounts)
+		if(showHeatmap)
 		{
-			if(kv.Value == 0)
+			foreach(var kv in zoneCounts)
 			{
-				continue;
-			}
+				if(kv.Value == 0)
+				{
+					continue;
+				}
 
-			if(!idx.TryGetValue(NormalizeName(kv.Key), out var entry))
-			{
-				continue;
-			}
+				if(!idx.TryGetValue(NormalizeName(kv.Key), out var entry))
+				{
+					continue;
+				}
 
-			if(entry.Kind == LocationKind.Zone)
-			{
-				var cx = entry.PixelX + entry.Width / 2.0;
-				var cy = -(entry.PixelY + entry.Height / 2.0);
+				if(entry.Kind == LocationKind.Zone)
+				{
+					var cx = entry.PixelX + entry.Width / 2.0;
+					var cy = -(entry.PixelY + entry.Height / 2.0);
 
-				var countLbl = plot.Add.Text(kv.Value.ToString(), cx, cy);
-				countLbl.LabelFontSize = 30;
-				countLbl.LabelFontColor = Color.FromHex("#FFFFFF");
-				countLbl.LabelBackgroundColor = Color.FromHex("#000000").WithAlpha(0.45);
-				countLbl.LabelAlignment = Alignment.MiddleCenter;
+					var countLbl = plot.Add.Text(kv.Value.ToString(), cx, cy);
+					countLbl.LabelFontSize = 30;
+					countLbl.LabelFontColor = Color.FromHex("#FFFFFF");
+					countLbl.LabelBackgroundColor = Color.FromHex("#000000").WithAlpha(0.45);
+					countLbl.LabelAlignment = Alignment.MiddleCenter;
 
-				var nameLbl = plot.Add.Text(kv.Key, cx, cy - 26);
-				nameLbl.LabelFontSize = 9;
-				nameLbl.LabelFontColor = Color.FromHex("#DDDDDD");
-				nameLbl.LabelBackgroundColor = Color.FromHex("#000000").WithAlpha(0.5);
-				nameLbl.LabelAlignment = Alignment.MiddleCenter;
-			}
-			else
-			{
-				var cx = entry.PixelX;
-				var cy = -entry.PixelY;
-				var countLbl = plot.Add.Text(kv.Value.ToString(), cx, cy);
-				countLbl.LabelFontSize = 14;
-				countLbl.LabelFontColor = Color.FromHex("#FFFFFF");
-				countLbl.LabelBackgroundColor = Color.FromHex("#000000").WithAlpha(0.55);
-				countLbl.LabelAlignment = Alignment.MiddleCenter;
+					var nameLbl = plot.Add.Text(kv.Key, cx, cy - 26);
+					nameLbl.LabelFontSize = 9;
+					nameLbl.LabelFontColor = Color.FromHex("#DDDDDD");
+					nameLbl.LabelBackgroundColor = Color.FromHex("#000000").WithAlpha(0.5);
+					nameLbl.LabelAlignment = Alignment.MiddleCenter;
+				}
+				else
+				{
+					var cx = entry.PixelX;
+					var cy = -entry.PixelY;
+					var countLbl = plot.Add.Text(kv.Value.ToString(), cx, cy);
+					countLbl.LabelFontSize = 14;
+					countLbl.LabelFontColor = Color.FromHex("#FFFFFF");
+					countLbl.LabelBackgroundColor = Color.FromHex("#000000").WithAlpha(0.55);
+					countLbl.LabelAlignment = Alignment.MiddleCenter;
+				}
 			}
 		}
 
-		if(showFights)
+		// Fights and groups gate independently — callers pass null for a hidden layer. Do NOT
+		// re-wrap these in showFights: that made the Groups toggle dead whenever Fights was off.
+		if(showFights&&fights != null||groups != null)
 		{
 			var zoneIdx = this.GetOrBuildZoneIndex(map);
 			if(groups != null)
@@ -404,10 +442,15 @@ public class ZoneMapService
 				this.DrawActivityMarkers(plot, groups, false, zoneIdx);
 			}
 
-			if(fights != null)
+			if(showFights&&fights != null)
 			{
 				this.DrawActivityMarkers(plot, fights, true, zoneIdx);
 			}
+		}
+
+		if(showEvents&&events != null)
+		{
+			this.DrawEventMarkers(plot, events, this.GetOrBuildZoneIndex(map));
 		}
 
 		plot.Axes.SetLimits(-20, 1440, -1580, 20);
@@ -456,6 +499,110 @@ public class ZoneMapService
 		return this.zonePixelIndex;
 	}
 
+	// Relic pads come from Eden in region-163 game units, not zone-local coordinates. See
+	// "coordinateSystem" in Assets/frontier_zones.json: pixel = (game - regionOrigin) / 256.
+	private const int RELIC_ORIGIN_X = 360448;
+	private const int RELIC_ORIGIN_Y = 294912;
+	private const double GAME_UNITS_PER_PIXEL = 256.0;
+
+	private static (double X, double Y) GameToPixel(int gameX, int gameY)
+	{
+		return ((gameX - RELIC_ORIGIN_X) / GAME_UNITS_PER_PIXEL, (gameY - RELIC_ORIGIN_Y) / GAME_UNITS_PER_PIXEL);
+	}
+
+	/// <summary>
+	/// Draws each relic on the pad it currently sits on. The diamond is filled in the realm that
+	/// holds the relic and outlined in its home realm, so a captured relic reads as a mismatch at a
+	/// glance. Returns the hit-test entries for <see cref="GetRelicTooltip"/>.
+	/// </summary>
+	private List<(WarmapRelicPlacement Relic, double Px, double Py)> DrawRelics(Plot plot, IReadOnlyList<WarmapRelicPlacement>? relics, bool withLabels, PixelBounds? clipBounds)
+	{
+		var hits = new List<(WarmapRelicPlacement Relic, double Px, double Py)>();
+
+		if(relics == null)
+		{
+			return hits;
+		}
+
+		foreach(var relic in relics)
+		{
+			var (px, py) = GameToPixel(relic.GameX, relic.GameY);
+
+			if(clipBounds != null&&(px < clipBounds.X||px > clipBounds.X + clipBounds.Width||py < clipBounds.Y||py > clipBounds.Y + clipBounds.Height))
+			{
+				continue;
+			}
+
+			hits.Add((relic, px, py));
+
+			var ownerColor = RealmColor(RealmFromInt(relic.OwnerRealm));
+			var homeColor = RealmColor(RealmFromInt(relic.OriginRealm));
+
+			var halo = plot.Add.Marker(px, -py, MarkerShape.OpenDiamond, 24);
+			halo.Color = homeColor;
+			halo.MarkerLineWidth = 2.5f;
+
+			var body = plot.Add.Marker(px, -py, MarkerShape.FilledDiamond, 15);
+			body.Color = ownerColor;
+
+			// Strength gets a dot in the middle, Power a ring -- readable without a legend and
+			// without relying on colour, which is already carrying realm ownership.
+			var pip = plot.Add.Marker(px, -py, relic.Type == 0?MarkerShape.FilledCircle:MarkerShape.OpenCircle, 6);
+			pip.Color = Color.FromHex("#FFFFFF");
+			pip.MarkerLineWidth = 1.5f;
+
+			if(!withLabels)
+			{
+				continue;
+			}
+
+			var lbl = plot.Add.Text(relic.DisplayName, px, -py - 16);
+			lbl.LabelFontSize = 9;
+			lbl.LabelFontColor = relic.IsAtHome?Color.FromHex("#FFFFFF"):Color.FromHex("#FFCC00");
+			lbl.LabelBackgroundColor = Color.FromHex("#000000").WithAlpha(0.65);
+			lbl.LabelAlignment = Alignment.UpperCenter;
+		}
+
+		return hits;
+	}
+
+	/// <summary>
+	/// Tooltip text for the relic under the given map coordinate, or null. <paramref name="mapY"/>
+	/// is expected already negated by the caller, matching <see cref="GetBurnTooltip"/>.
+	/// </summary>
+	public string? GetRelicTooltip(double mapX, double mapY)
+	{
+		const double HIT_RADIUS = 14.0;
+		(WarmapRelicPlacement Relic, double Px, double Py)? best = null;
+		var bestDistance = double.MaxValue;
+
+		foreach(var entry in this.relicHits)
+		{
+			var dx = mapX - entry.Px;
+			var dy = mapY - entry.Py;
+			var distance = Math.Sqrt(dx * dx + dy * dy);
+
+			if(distance <= HIT_RADIUS&&distance < bestDistance)
+			{
+				bestDistance = distance;
+				best = entry;
+			}
+		}
+
+		if(best == null)
+		{
+			return null;
+		}
+
+		var r = best.Value.Relic;
+		var owner = RealmFromInt(r.OwnerRealm) ?? "Unknown";
+		var home = RealmFromInt(r.OriginRealm) ?? "Unknown";
+		var where = r.IsHomePad?$"{r.PadName} (relic keep)":r.PadName;
+		var status = r.IsAtHome?"At home":$"Captured from {home}";
+
+		return $"{r.DisplayName}\n{r.TypeName} relic · home realm {home}\nNow at: {where}\nHeld by {owner} · {status}";
+	}
+
 	private void DrawKeepsAndTowers(Plot plot, IEnumerable<FrontierKeep> keeps, IReadOnlyDictionary<string, WarmapKeepState>? liveKeeps, List<(string Name, double Px, double Py, bool IsKeep)>? burning, PixelBounds? clipBounds = null)
 	{
 		foreach(var k in keeps.Where(k => k.Pixel != null&&k.Type is "keep" or "tower"))
@@ -495,6 +642,22 @@ public class ZoneMapService
 		}
 	}
 
+	private static bool TryZonePixel(Dictionary<int, PixelBounds> zoneIndex, int zone, int x, int y, out double px, out double py)
+	{
+		if(!zoneIndex.TryGetValue(zone, out var bounds))
+		{
+			px = 0;
+			py = 0;
+			return false;
+		}
+
+		var offsetX = ((x << 13) + 4096) / 256.0;
+		var offsetY = ((y << 13) + 4096) / 256.0;
+		px = bounds.X + offsetX;
+		py = -(bounds.Y + offsetY);
+		return true;
+	}
+
 	private void DrawActivityMarkers(Plot plot, IReadOnlyList<WarmapActivityEntry> entries, bool isFight, Dictionary<int, PixelBounds> zoneIndex)
 	{
 		var bitmaps = isFight?this.fightBitmaps:this.groupBitmaps;
@@ -502,15 +665,10 @@ public class ZoneMapService
 
 		foreach(var entry in entries)
 		{
-			if(!zoneIndex.TryGetValue(entry.Zone, out var bounds))
+			if(!TryZonePixel(zoneIndex, entry.Zone, entry.X, entry.Y, out var px, out var py))
 			{
 				continue;
 			}
-
-			var offsetX = ((entry.X << 13) + 4096) / 256.0;
-			var offsetY = ((entry.Y << 13) + 4096) / 256.0;
-			var px = bounds.X + offsetX;
-			var py = -(bounds.Y + offsetY);
 
 			var s = Math.Clamp(entry.Size, 1, 3);
 			var c = Math.Clamp(entry.Realm, 1, 3);
@@ -525,6 +683,121 @@ public class ZoneMapService
 			{
 				var m = plot.Add.Marker(px, py, MarkerShape.FilledCircle, (float)(half * 2));
 				m.Color = RealmColor(RealmFromInt(c)).WithAlpha(0.8);
+			}
+		}
+	}
+
+	/// <summary>
+	/// Finds the event whose marker is under the given map coordinate, or null. <paramref name="mapY"/>
+	/// is expected already negated by the caller, matching <see cref="GetBurnTooltip"/>.
+	/// </summary>
+	public WarmapEvent? HitTestEvent(double mapX, double mapY, IReadOnlyList<WarmapEvent>? events, FrontierMapData map)
+	{
+		if(events == null||events.Count == 0)
+		{
+			return null;
+		}
+
+		var zoneIndex = this.GetOrBuildZoneIndex(map);
+		const double HIT_RADIUS = 9.0;
+		WarmapEvent? best = null;
+		var bestDistance = double.MaxValue;
+
+		foreach(var ev in events)
+		{
+			if(ev.IsPending)
+			{
+				continue;
+			}
+
+			if(!zoneIndex.TryGetValue(ev.Zone, out var bounds))
+			{
+				continue;
+			}
+
+			var px = bounds.X + ev.X / 256.0;
+			var py = bounds.Y + ev.Y / 256.0;
+			var dx = px - mapX;
+			var dy = py - mapY;
+			var distance = Math.Sqrt(dx * dx + dy * dy);
+
+			if(distance <= HIT_RADIUS&&distance < bestDistance)
+			{
+				bestDistance = distance;
+				best = ev;
+			}
+		}
+
+		return best;
+	}
+
+	private void DrawEventMarkers(Plot plot, IReadOnlyList<WarmapEvent> events, Dictionary<int, PixelBounds> zoneIndex)
+	{
+		// Marker sizes are pixels but ScatterLine takes data coordinates, so the ring radius has to be
+		// converted; the axis span differs by an order of magnitude between the full map and the minimap.
+		var unitsPerPixel = plot.LastRender.UnitsPerPxX > 0?plot.LastRender.UnitsPerPxX:1.0;
+
+		foreach(var ev in events)
+		{
+			if(ev.IsPending)
+			{
+				continue;
+			}
+
+			if(!zoneIndex.TryGetValue(ev.Zone, out var bounds))
+			{
+				continue;
+			}
+
+			// NOT the fights transform. Fight x/y are block indices (0-7, hence "<< 13"), but event
+			// X/Y are zone-local GAME UNITS (0-65535). A zone is 65536 units wide and 256 px, so the
+			// conversion is a plain /256. Using the fight transform puts markers ~1M px off-map.
+			var px = bounds.X + ev.X / 256.0;
+			var py = -(bounds.Y + ev.Y / 256.0);
+
+			var shape = ev.IsCampaignSpawn?MarkerShape.FilledTriangleUp:MarkerShape.FilledCircle;
+			var color = ev.IsCampaignSpawn?EventCampaignColor:EventMissionColor;
+			var size = ev.Size switch
+			           {
+					           "Small" => 10f,
+					           "Exploratory" => 13f,
+					           "Skirmish" => 17f,
+					           "Large" => 22f,
+					           _ => 13f
+			           };
+			var m = plot.Add.Marker(px, py, shape, size);
+			m.Color = color.WithAlpha(0.9);
+
+			// A bare shape does not say WHICH event it is, and 15 markers across 13 zones is sparse
+			// enough to label every one. Hover still gives size/state/countdown.
+			var lbl = plot.Add.Text(ev.DisplayName, px, py - size * 0.55);
+			lbl.LabelFontSize = 8;
+			lbl.LabelFontColor = color.WithAlpha(0.9);
+			lbl.LabelBackgroundColor = Color.FromHex("#000000").WithAlpha(0.55);
+			lbl.LabelAlignment = Alignment.UpperCenter;
+
+			if(ev.TimeRemaining is { } remaining)
+			{
+				var fraction = Math.Clamp(remaining.TotalSeconds / NominalMissionSeconds, 0, 1);
+				if(fraction > 0)
+				{
+					const int segments = 32;
+					var radius = size * 0.75 * unitsPerPixel;
+					var sweep = fraction * 2 * Math.PI;
+					var xs = new double[segments + 1];
+					var ys = new double[segments + 1];
+					for(var i = 0; i <= segments; i++)
+					{
+						var t = sweep * i / segments;
+						xs[i] = px + radius * Math.Sin(t);
+						ys[i] = py + radius * Math.Cos(t);
+					}
+
+					var ring = plot.Add.ScatterLine(xs, ys);
+					ring.LineWidth = 1.5f;
+					ring.Color = color.WithAlpha(0.75);
+					ring.MarkerStyle = MarkerStyle.None;
+				}
 			}
 		}
 	}

@@ -7,7 +7,10 @@ using Avalonia.Animation;
 using Avalonia.Animation.Easings;
 using Avalonia.Controls;
 using Avalonia.Styling;
+using Avalonia.Threading;
+using Avalonia.VisualTree;
 using DAoCLogWatcher.UI.Services;
+using DAoCLogWatcher.UI.Views.Tabs;
 
 namespace DAoCLogWatcher.UI.Views;
 
@@ -28,6 +31,7 @@ public partial class MainWindow: Window
 			                           if(this.vm != null)
 			                           {
 				                           this.vm.SettingsPopup.PropertyChanged -= this.OnViewModelPropertyChanged;
+				                           this.vm.CampaignEvents.LocateRequested -= this.OnLocateRequested;
 				                           this.vm = null;
 			                           }
 
@@ -35,9 +39,38 @@ public partial class MainWindow: Window
 			                           {
 				                           this.vm = newVm;
 				                           newVm.SettingsPopup.PropertyChanged += this.OnViewModelPropertyChanged;
+				                           newVm.CampaignEvents.LocateRequested += this.OnLocateRequested;
 				                           this.ApplyTheme(newVm.SettingsPopup.IsDarkTheme);
 			                           }
 		                           };
+	}
+
+	/// <summary>
+	/// "Show on map" from the Campaign Events widget: the widget is on the Dashboard, so this has to
+	/// select the Map tab and its Heatmap sub-view before the map control can zoom to the zone. The
+	/// focus call is deferred to Background priority so the tab has been realised by the time it runs.
+	/// </summary>
+	private void OnLocateRequested(object? sender, int zoneId)
+	{
+		if(this.vm == null)
+		{
+			return;
+		}
+
+		this.vm.IsMapSubHeatmap = true;
+
+		var mapTab = this.MainTabControl.Items.OfType<TabItem>().FirstOrDefault(t => t.Content is MapTabView);
+		if(mapTab != null)
+		{
+			this.MainTabControl.SelectedItem = mapTab;
+		}
+
+		Dispatcher.UIThread.Post(() =>
+		                         {
+			                         var heatmap = this.MainTabControl.GetVisualDescendants().OfType<KillHeatmapTabView>().FirstOrDefault();
+			                         heatmap?.FocusZone(zoneId);
+		                         },
+		                         DispatcherPriority.Background);
 	}
 
 	[DllImport("dwmapi.dll")]

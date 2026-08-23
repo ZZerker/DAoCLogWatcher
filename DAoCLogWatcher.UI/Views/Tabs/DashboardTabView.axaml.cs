@@ -69,6 +69,7 @@ public partial class DashboardTabView: UserControl
 	private readonly DashboardArrangeBehavior arrange = new();
 	private ZoneMapService? zoneMapService;
 	private WarmapWebSocketService? warmapService;
+	private AppSettings? appSettings;
 	private DispatcherTimer? minimapRenderTimer;
 	private bool minimapDirty;
 	private ZoneMapService.MinimapViewSpec? cachedMinimapSpec;
@@ -102,7 +103,8 @@ public partial class DashboardTabView: UserControl
 				                      [DashboardWidgetId.HealLog] = this.WidgetHealLog,
 				                      [DashboardWidgetId.CombatLog] = this.WidgetCombatLog,
 				                      [DashboardWidgetId.Minimap] = this.WidgetMinimap,
-				                      [DashboardWidgetId.GlobalActivity] = this.WidgetGlobalActivity
+				                      [DashboardWidgetId.GlobalActivity] = this.WidgetGlobalActivity,
+				                      [DashboardWidgetId.CampaignEvents] = this.WidgetCampaignEvents
 		                      };
 
 		this.InitializeGlobalActivityChart();
@@ -147,11 +149,14 @@ public partial class DashboardTabView: UserControl
 
 			                           var app = (App)Application.Current!;
 			                           this.zoneMapService ??= app.Services.GetRequiredService<ZoneMapService>();
+			                           this.appSettings ??= app.Services.GetRequiredService<AppSettings>();
 			                           if(this.warmapService == null)
 			                           {
 				                           this.warmapService = app.Services.GetRequiredService<WarmapWebSocketService>();
 				                           this.warmapService.KeepsUpdated += (_, _) => this.minimapDirty = true;
 				                           this.warmapService.FightsUpdated += (_, _) => this.minimapDirty = true;
+				                           this.warmapService.EventsUpdated += (_, _) => this.minimapDirty = true;
+				                           this.warmapService.RelicsUpdated += (_, _) => this.minimapDirty = true;
 			                           }
 
 			                           this.zoneMapService.InitializeMinimapPlot(this.MinimapZoomPlot.Plot);
@@ -226,13 +231,17 @@ public partial class DashboardTabView: UserControl
 		var liveKeeps = this.warmapService?.GetSnapshot();
 		var fights = this.warmapService?.GetFightsSnapshot();
 		var groups = this.warmapService?.GetGroupsSnapshot();
+		var events = this.warmapService?.GetEventsSnapshot();
+		var showEvents = this.appSettings?.WarmapShowEvents ?? true;
+		var showRelics = this.appSettings?.WarmapShowRelics ?? true;
+		var relics = showRelics?this.warmapService?.GetRelicPlacements():null;
 
 		var b = spec.ZoneBounds;
 		const int MARGIN = 6;
 		this.MinimapZoomPanel.Ratio = (b.Width + 2.0 * MARGIN) / (b.Height + 2.0 * MARGIN);
 		lock(this.MinimapZoomPlot.Plot.Sync)
 		{
-			mapService.ApplyMinimapOverlay(this.MinimapZoomPlot.Plot, viewModel.FrontierMap, spec, liveKeeps, fights, groups);
+			mapService.ApplyMinimapOverlay(this.MinimapZoomPlot.Plot, viewModel.FrontierMap, spec, liveKeeps, fights, groups, events, showEvents, relics, showRelics);
 			this.MinimapZoomPlot.Plot.Axes.SetLimits(b.X - MARGIN, b.X + b.Width + MARGIN, -(b.Y + b.Height + MARGIN), -(b.Y - MARGIN));
 			ChartHelper.HideAxes(this.MinimapZoomPlot.Plot);
 		}

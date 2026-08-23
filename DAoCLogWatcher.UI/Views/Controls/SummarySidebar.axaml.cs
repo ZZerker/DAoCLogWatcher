@@ -3,6 +3,7 @@ using System.ComponentModel;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Threading;
+using DAoCLogWatcher.UI.Models;
 using DAoCLogWatcher.UI.Services;
 using DAoCLogWatcher.UI.ViewModels;
 using DAoCLogWatcher.UI.Views;
@@ -14,6 +15,7 @@ public partial class SummarySidebar: UserControl
 {
 	private MainWindowViewModel? vm;
 	private ZoneMapService? zoneMapService;
+	private AppSettings? appSettings;
 	private WarmapWebSocketService? warmapService;
 	private readonly DispatcherTimer renderTimer;
 	private bool isDirty;
@@ -56,11 +58,14 @@ public partial class SummarySidebar: UserControl
 			                           this.vm = newVm;
 			                           var app = (App)Application.Current!;
 			                           this.zoneMapService ??= app.Services.GetRequiredService<ZoneMapService>();
+			                           this.appSettings ??= app.Services.GetRequiredService<AppSettings>();
 			                           if(this.warmapService == null)
 			                           {
 				                           this.warmapService = app.Services.GetRequiredService<WarmapWebSocketService>();
 				                           this.warmapService.KeepsUpdated += (_, _) => this.isDirty = true;
 				                           this.warmapService.FightsUpdated += (_, _) => this.isDirty = true;
+				                           this.warmapService.EventsUpdated += (_, _) => this.isDirty = true;
+				                           this.warmapService.RelicsUpdated += (_, _) => this.isDirty = true;
 			                           }
 
 			                           this.zoneMapService.InitializeMinimapPlot(this.SidebarMinimap.Plot);
@@ -102,13 +107,17 @@ public partial class SummarySidebar: UserControl
 		var liveKeeps = this.warmapService?.GetSnapshot();
 		var fights = this.warmapService?.GetFightsSnapshot();
 		var groups = this.warmapService?.GetGroupsSnapshot();
+		var showEvents = this.appSettings?.WarmapShowEvents ?? true;
+		var showRelics = this.appSettings?.WarmapShowRelics ?? true;
+		var events = showEvents?this.warmapService?.GetEventsSnapshot():null;
+		var relics = showRelics?this.warmapService?.GetRelicPlacements():null;
 
 		var b = this.cachedMinimapSpec.ZoneBounds;
 		const int MARGIN = 6;
 
 		lock(this.SidebarMinimap.Plot.Sync)
 		{
-			this.zoneMapService.ApplyMinimapOverlay(this.SidebarMinimap.Plot, this.vm.FrontierMap, this.cachedMinimapSpec, liveKeeps, fights, groups);
+			this.zoneMapService.ApplyMinimapOverlay(this.SidebarMinimap.Plot, this.vm.FrontierMap, this.cachedMinimapSpec, liveKeeps, fights, groups, events, showEvents, relics, showRelics);
 			this.SidebarMinimap.Plot.Axes.SetLimits(b.X - MARGIN, b.X + b.Width + MARGIN, -(b.Y + b.Height + MARGIN), -(b.Y - MARGIN));
 			ChartHelper.HideAxes(this.SidebarMinimap.Plot);
 		}

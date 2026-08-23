@@ -8,4 +8,9 @@ public static class DurationFormat
 	{
 		return duration.TotalHours >= 1?$"{(int)duration.TotalHours}h {duration.Minutes}m":$"{(int)duration.TotalMinutes}m";
 	}
+
+	public static string MinutesSeconds(TimeSpan value)
+	{
+		return $"{(int)value.TotalMinutes}:{value.Seconds:D2}";
+	}
 }

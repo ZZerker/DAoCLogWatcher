@@ -53,7 +53,8 @@ public sealed partial class DashboardViewModel: ObservableObject
 			(DashboardWidgetId.HealLog, "Heal Log", DashboardWidgetSize.Medium),
 			(DashboardWidgetId.CombatLog, "Combat Log", DashboardWidgetSize.Medium),
 			(DashboardWidgetId.Minimap, "Zone Minimap", DashboardWidgetSize.Medium),
-			(DashboardWidgetId.GlobalActivity, "Global Activity", DashboardWidgetSize.Large)
+			(DashboardWidgetId.GlobalActivity, "Global Activity", DashboardWidgetSize.Large),
+			(DashboardWidgetId.CampaignEvents, "Campaign Events", DashboardWidgetSize.Medium)
 	];
 
 	public ObservableCollection<string> DashboardProfileNames { get; } = new();
