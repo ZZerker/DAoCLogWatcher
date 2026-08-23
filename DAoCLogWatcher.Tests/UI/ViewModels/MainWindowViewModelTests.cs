@@ -58,7 +58,8 @@ public sealed class MainWindowViewModelTests: IDisposable
 		                               combatSummary,
 		                               this.mockFrontierMapService,
 		                               this.mockSessionHistoryService,
-		                               recorder);
+		                               recorder,
+		                               new WarmapWebSocketService());
 	}
 
 	public void Dispose()
