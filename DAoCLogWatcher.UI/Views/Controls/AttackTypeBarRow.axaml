@@ -5,7 +5,7 @@
              x:DataType="controls:AttackTypeBarRow"
              x:Name="self">
     <StackPanel Spacing="3" Margin="0,0,0,6">
-        <Grid ColumnDefinitions="*,Auto,Auto,Auto">
+        <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto">
             <TextBlock Text="{Binding #self.Label}"
                        Foreground="{DynamicResource AppTextSecondary}"
                        FontSize="13" VerticalAlignment="Center" />
@@ -18,6 +18,9 @@
             <TextBlock Grid.Column="3" Text="{Binding #self.CritCount, StringFormat='crit {0}'}"
                        Foreground="{DynamicResource AppCrit}"
                        FontSize="12" Margin="8,0,0,0" />
+            <TextBlock Grid.Column="4" Text="{Binding #self.CritRate, StringFormat='({0:F0}%)'}"
+                       Foreground="{DynamicResource AppCrit}"
+                       FontSize="12" Margin="4,0,0,0" />
         </Grid>
         <ProgressBar Value="{Binding #self.Percentage}" Minimum="0" Maximum="100"
                      Height="6" CornerRadius="3"

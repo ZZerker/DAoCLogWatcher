@@ -15,6 +15,8 @@ public partial class AttackTypeBarRow: UserControl
 
 	public static readonly StyledProperty<double> PercentageProperty = AvaloniaProperty.Register<AttackTypeBarRow, double>(nameof(Percentage));
 
+	public static readonly StyledProperty<double> CritRateProperty = AvaloniaProperty.Register<AttackTypeBarRow, double>(nameof(CritRate));
+
 	public string Label
 	{
 		get => this.GetValue(LabelProperty);
@@ -43,6 +45,12 @@ public partial class AttackTypeBarRow: UserControl
 	{
 		get => this.GetValue(PercentageProperty);
 		set => this.SetValue(PercentageProperty, value);
+	}
+
+	public double CritRate
+	{
+		get => this.GetValue(CritRateProperty);
+		set => this.SetValue(CritRateProperty, value);
 	}
 
 	public AttackTypeBarRow()

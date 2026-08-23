@@ -107,6 +107,7 @@
                                                                    AvgDamage="{Binding AvgDamage}"
                                                                    HitCount="{Binding HitCount}"
                                                                    CritCount="{Binding CritCount}"
+                                                                   CritRate="{Binding CritRate}"
                                                                    Percentage="{Binding Percentage}" />
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
