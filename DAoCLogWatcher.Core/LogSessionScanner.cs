@@ -18,6 +18,14 @@ public static partial class LogSessionScanner
 
 	private const string DATE_FORMAT = "ddd MMM d HH:mm:ss yyyy";
 
+	private static readonly (string Label, int Months)[] AgeBucketDefs =
+	[
+			("1 month", 1),
+			("3 months", 3),
+			("6 months", 6),
+			("1 year", 12)
+	];
+
 	public static List<LogSession> Scan(string logFilePath)
 	{
 		ArgumentException.ThrowIfNullOrWhiteSpace(logFilePath);
@@ -26,8 +34,47 @@ public static partial class LogSessionScanner
 			return [];
 		}
 
+		return ScanCore(logFilePath).Sessions;
+	}
+
+	/// <summary>Same streaming pass as <see cref="Scan"/>, plus line/byte totals and age-bucket breakdowns for the maintenance UI.</summary>
+	public static LogFileStats Analyze(string logFilePath)
+	{
+		ArgumentException.ThrowIfNullOrWhiteSpace(logFilePath);
+		if(!File.Exists(logFilePath))
+		{
+			return new LogFileStats(logFilePath, 0, 0, 0, null, null, [], []);
+		}
+
+		var result = ScanCore(logFilePath);
+		var sessions = result.Sessions;
+
+		// Newest-first: the oldest session is the last one.
+		var oldestStart = sessions.Count > 0?sessions[^1].StartTime:(DateTime?)null;
+		var newestEnd = sessions.Count > 0?sessions[0].EndTime ?? sessions[0].StartTime:(DateTime?)null;
+
+		var now = DateTime.Now;
+		var buckets = new List<LogAgeBucket>(AgeBucketDefs.Length);
+		foreach(var def in AgeBucketDefs)
+		{
+			var cutoff = now.AddMonths(-def.Months);
+			var older = sessions.Where(s => s.StartTime < cutoff).ToList();
+			var lineSum = older.Sum(s => s.LineCount);
+			var byteSum = older.Sum(s => s.ByteLength);
+			buckets.Add(new LogAgeBucket(def.Label, def.Months, older.Count, lineSum, byteSum));
+		}
+
+		return new LogFileStats(logFilePath, result.FileLength, result.TotalLineCount, sessions.Count, oldestStart, newestEnd, sessions, buckets);
+	}
+
+	private readonly record struct ScanCoreResult(List<LogSession> Sessions, long TotalLineCount, long FileLength);
+
+	private static ScanCoreResult ScanCore(string logFilePath)
+	{
 		var sessions = new List<LogSession>();
 		LogSession? current = null;
+		long sessionLineCount = 0;
+		long totalLineCount = 0;
 
 		// Read in chunks to avoid allocating the entire file on the LOH.
 		// We track byte offsets manually because StreamReader buffers internally
@@ -48,7 +95,8 @@ public static partial class LogSessionScanner
 				{
 					var end = lineLen > 0&&lineBuffer[lineLen - 1] == (byte)'\r'?lineLen - 1:lineLen;
 					var line = Encoding.UTF8.GetString(lineBuffer, 0, end);
-					ProcessScanLine(line, lineStart, sessions, ref current);
+					totalLineCount++;
+					ProcessScanLine(line, lineStart, sessions, ref current, ref sessionLineCount);
 					lineLen = 0;
 					lineStart = position + i + 1;
 				}
@@ -69,7 +117,8 @@ public static partial class LogSessionScanner
 		if(lineLen > 0)
 		{
 			var line = Encoding.UTF8.GetString(lineBuffer, 0, lineLen);
-			ProcessScanLine(line, lineStart, sessions, ref current);
+			totalLineCount++;
+			ProcessScanLine(line, lineStart, sessions, ref current, ref sessionLineCount);
 		}
 
 		for(var i = 0; i < sessions.Count - 1; i++)
@@ -80,13 +129,14 @@ public static partial class LogSessionScanner
 		if(sessions.Count > 0)
 		{
 			sessions[^1].EndFilePosition = fs.Length;
+			sessions[^1].LineCount = sessionLineCount;
 		}
 
 		sessions.Reverse();
-		return sessions;
+		return new ScanCoreResult(sessions, totalLineCount, fs.Length);
 	}
 
-	private static void ProcessScanLine(string line, long lineStart, List<LogSession> sessions, ref LogSession? current)
+	private static void ProcessScanLine(string line, long lineStart, List<LogSession> sessions, ref LogSession? current, ref long sessionLineCount)
 	{
 		var openMatch = OpenRegex.Match(line);
 		if(openMatch.Success)
@@ -94,6 +144,7 @@ public static partial class LogSessionScanner
 			if(!DateTime.TryParseExact(openMatch.Groups["date"].Value, DATE_FORMAT, CultureInfo.InvariantCulture, DateTimeStyles.None, out var openedAt))
 			{
 				Debug.WriteLine($"[SessionScanner] Unrecognized open date: '{openMatch.Groups["date"].Value}'");
+				sessionLineCount++;
 				return;
 			}
 
@@ -102,15 +153,23 @@ public static partial class LogSessionScanner
 				current.EndTime = openedAt;
 			}
 
+			if(current != null)
+			{
+				current.LineCount = sessionLineCount;
+			}
+
 			current = new LogSession
 			          {
 					          StartTime = openedAt,
 					          FilePosition = lineStart
 			          };
 			sessions.Add(current);
+			sessionLineCount = 1;
 
 			return;
 		}
+
+		sessionLineCount++;
 
 		var closeMatch = CloseRegex.Match(line);
 		if(closeMatch.Success&&current != null)

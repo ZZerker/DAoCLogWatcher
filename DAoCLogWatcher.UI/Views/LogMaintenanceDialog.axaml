@@ -1,0 +1,155 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:prim="using:Avalonia.Controls.Primitives"
+        xmlns:controls="using:DAoCLogWatcher.UI.Views.Controls"
+        x:Class="DAoCLogWatcher.UI.Views.LogMaintenanceDialog"
+        x:CompileBindings="False"
+        Title="Log File Maintenance"
+        Width="660" Height="600"
+        WindowStartupLocation="CenterOwner"
+        CanResize="True"
+        Background="{DynamicResource AppWindowBackground}"
+        Opened="OnOpened">
+
+    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto,Auto,Auto" Margin="16">
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Spacing="2" Margin="0,0,0,10">
+            <TextBlock Text="Log File Maintenance"
+                       FontSize="18" FontWeight="SemiBold"
+                       Foreground="{DynamicResource AppTextPrimary}" />
+            <TextBlock Text="{Binding LogFilePath}"
+                       FontSize="10"
+                       Foreground="{DynamicResource AppTextMuted}"
+                       TextTrimming="CharacterEllipsis" />
+        </StackPanel>
+
+        <!-- Stat tiles -->
+        <prim:UniformGrid Grid.Row="1" Columns="4" Margin="0,0,0,12">
+            <controls:StatTile Label="SIZE" Value="{Binding SizeText}"
+                                ValueColor="{DynamicResource AppTextPrimary}" Margin="0,0,6,0" />
+            <controls:StatTile Label="LINES" Value="{Binding LineCountText}"
+                                ValueColor="{DynamicResource AppTextPrimary}" Margin="0,0,6,0" />
+            <controls:StatTile Label="SESSIONS" Value="{Binding SessionCountText}"
+                                ValueColor="{DynamicResource AppTextPrimary}" Margin="0,0,6,0" />
+            <controls:StatTile Label="OLDEST" Value="{Binding AgeText}"
+                                ValueColor="{DynamicResource AppTextPrimary}" Margin="0,0,6,0" />
+        </prim:UniformGrid>
+
+        <!-- Section label -->
+        <TextBlock Grid.Row="2"
+                   Text="TRIM SESSIONS OLDER THAN"
+                   FontSize="10" FontWeight="SemiBold" LetterSpacing="1"
+                   Foreground="{DynamicResource AppTextMuted}"
+                   Margin="0,0,0,6" />
+
+        <!-- Retention list + preview -->
+        <Grid Grid.Row="3" RowDefinitions="Auto,*" IsVisible="{Binding !IsAnalyzing}">
+            <ItemsControl Grid.Row="0" ItemsSource="{Binding RetentionOptions}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <RadioButton GroupName="Retention"
+                                     IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                     Margin="0,2"
+                                     HorizontalContentAlignment="Stretch">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Grid.Column="0" Text="{Binding Label}"
+                                           FontSize="13" Foreground="{DynamicResource AppTextPrimary}" />
+                                <TextBlock Grid.Column="1" Text="{Binding CostText}"
+                                           FontSize="12" Foreground="{DynamicResource AppTextMuted}"
+                                           HorizontalAlignment="Right" />
+                            </Grid>
+                        </RadioButton>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <Border Grid.Row="1"
+                    Background="{DynamicResource AppPanelBackground}"
+                    BorderBrush="{DynamicResource AppBorderBrush}"
+                    BorderThickness="1" CornerRadius="6" Padding="12"
+                    Margin="0,10,0,0"
+                    IsVisible="{Binding HasStats}">
+                <StackPanel Spacing="10">
+                    <StackPanel Spacing="2">
+                        <TextBlock Text="Archive" FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource AppTextMuted}" />
+                        <TextBlock Text="{Binding ArchiveSummary}" FontSize="13"
+                                   Foreground="{DynamicResource AppTextMuted}" />
+                        <TextBlock Text="{Binding ArchiveRangeText}" FontSize="11"
+                                   Foreground="{DynamicResource AppTextMuted}" />
+                        <TextBlock Text="{Binding ArchiveFileText}" FontSize="11"
+                                   Foreground="{DynamicResource AppTextMuted}" />
+                    </StackPanel>
+
+                    <Rectangle Fill="{DynamicResource AppBorderBrush}" Height="1" />
+
+                    <StackPanel Spacing="2">
+                        <TextBlock Text="Keep" FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource AppPositive}" />
+                        <TextBlock Text="{Binding KeepSummary}" FontSize="13"
+                                   Foreground="{DynamicResource AppPositive}" />
+                        <TextBlock Text="{Binding KeepRangeText}" FontSize="11"
+                                   Foreground="{DynamicResource AppPositive}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- Busy -->
+        <StackPanel Grid.Row="3"
+                    IsVisible="{Binding IsAnalyzing}"
+                    VerticalAlignment="Center" HorizontalAlignment="Center"
+                    Spacing="10" Width="260">
+            <TextBlock Text="Reading the log file"
+                       FontSize="13"
+                       Foreground="{DynamicResource AppTextSecondary}"
+                       HorizontalAlignment="Center" />
+            <ProgressBar IsIndeterminate="True" Height="6" />
+            <TextBlock Text="A large chat log can take a few seconds."
+                       FontSize="11"
+                       Foreground="{DynamicResource AppTextMuted}"
+                       HorizontalAlignment="Center" />
+        </StackPanel>
+
+        <!-- Status -->
+        <StackPanel Grid.Row="4" Spacing="6" Margin="0,10,0,0">
+            <TextBlock Text="{Binding BlockerMessage}"
+                       FontSize="12"
+                       Foreground="{DynamicResource AppWarning}"
+                       IsVisible="{Binding BlockerMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+            <TextBlock Text="{Binding ResultMessage}"
+                       FontSize="12"
+                       Foreground="{DynamicResource AppPositive}"
+                       IsVisible="{Binding ResultMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+            <ProgressBar Value="{Binding TrimProgress}"
+                         Maximum="1"
+                         IsVisible="{Binding IsTrimming}"
+                         Height="6" />
+        </StackPanel>
+
+        <!-- Close-the-game hint -->
+        <TextBlock Grid.Row="5"
+                   Text="Close Dark Age of Camelot before trimming. The archive is a zip holding one plain chat log, so any zip tool opens it. Each trim rewrites it, so a large archive takes longer."
+                   FontSize="11"
+                   Foreground="{DynamicResource AppTextMuted}"
+                   TextWrapping="Wrap"
+                   Margin="0,10,0,0" />
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="6"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Spacing="10"
+                    Margin="0,12,0,0">
+            <Button Content="Trim and archive"
+                    Classes="btn-primary"
+                    Command="{Binding TrimCommand}"
+                    IsEnabled="{Binding CanTrim}" />
+            <Button Content="Close"
+                    Name="CloseButton"
+                    Classes="btn-secondary"
+                    Click="OnCloseClick" />
+        </StackPanel>
+    </Grid>
+</Window>

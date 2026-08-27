@@ -7,6 +7,9 @@ public sealed class LogSession
 
 	public DateTime? EndTime { get; set; }
 
+	/// <summary>Number of lines this session spans.</summary>
+	public long LineCount { get; set; }
+
 	public string? CharacterName { get; set; }
 
 	/// <summary>Byte offset of the "Chat Log Opened" line in the file.</summary>
@@ -14,6 +17,9 @@ public sealed class LogSession
 
 	/// <summary>Byte offset of the end of this session (start of next session, or end of file). -1 = no limit.</summary>
 	public long EndFilePosition { get; set; } = -1;
+
+	/// <summary>Bytes this session occupies, or 0 while its end is still unknown.</summary>
+	public long ByteLength => this.EndFilePosition < 0?0:this.EndFilePosition - this.FilePosition;
 
 	public TimeSpan Duration => this.EndTime.HasValue?this.EndTime.Value - this.StartTime:DateTime.Now - this.StartTime;
 

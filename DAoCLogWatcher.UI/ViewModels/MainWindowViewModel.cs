@@ -518,6 +518,26 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 	}
 
 	[RelayCommand]
+	private async Task OpenLogMaintenance(Window? ownerWindow)
+	{
+		if(ownerWindow == null)
+		{
+			return;
+		}
+
+		var path = this.CurrentFilePath ?? this.GetLogPath();
+		if(path == null||!File.Exists(path))
+		{
+			return;
+		}
+
+		var vm = new LogMaintenanceViewModel(path, this.IsWatching);
+		await new LogMaintenanceDialog(vm).ShowDialog(ownerWindow);
+
+		this.SessionPicker.RescanAfterWatchStopped();
+	}
+
+	[RelayCommand]
 	private async Task OpenSessionPicker(Window? ownerWindow)
 	{
 		if(ownerWindow == null)
