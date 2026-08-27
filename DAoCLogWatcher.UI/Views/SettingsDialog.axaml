@@ -1,0 +1,253 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:DAoCLogWatcher.UI.Views.Controls"
+        x:Class="DAoCLogWatcher.UI.Views.SettingsDialog"
+        x:CompileBindings="False"
+        Title="Settings"
+        Width="720" Height="580"
+        WindowStartupLocation="CenterOwner"
+        CanResize="True"
+        Background="{DynamicResource AppWindowBackground}">
+
+    <Grid RowDefinitions="*,Auto" Margin="16">
+
+        <TabControl Grid.Row="0" TabStripPlacement="Left">
+            <TabControl.Styles>
+                <Style Selector="TabItem">
+                    <Setter Property="FontSize" Value="13" />
+                    <Setter Property="Padding" Value="14,9" />
+                    <Setter Property="MinHeight" Value="0" />
+                    <Setter Property="Foreground" Value="{DynamicResource AppTextSecondary}" />
+                </Style>
+                <Style Selector="TabItem:selected">
+                    <Setter Property="Foreground" Value="{DynamicResource AppTextPrimary}" />
+                    <Setter Property="Background" Value="{DynamicResource AppCardBackground}" />
+                </Style>
+            </TabControl.Styles>
+
+            <TabItem Header="General">
+                <ScrollViewer Padding="16,0,6,0" VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <controls:SettingsSection Header="Appearance">
+                            <controls:SettingsSection.SectionContent>
+                                <StackPanel>
+                                    <controls:SettingsRow Label="Theme" Description="Dark or light colour scheme">
+                                        <controls:SettingsRow.Action>
+                                            <ToggleSwitch IsChecked="{Binding SettingsPopup.IsDarkTheme}" OffContent="" OnContent="" />
+                                        </controls:SettingsRow.Action>
+                                    </controls:SettingsRow>
+                                    <controls:SettingsRow Label="Sidebar" Description="Show the summary sidebar">
+                                        <controls:SettingsRow.Action>
+                                            <ToggleSwitch IsChecked="{Binding SettingsPopup.IsSidebarVisible}" OffContent="" OnContent="" />
+                                        </controls:SettingsRow.Action>
+                                    </controls:SettingsRow>
+                                </StackPanel>
+                            </controls:SettingsSection.SectionContent>
+                        </controls:SettingsSection>
+
+                        <controls:SettingsSection Header="Highlighting">
+                            <controls:SettingsSection.SectionContent>
+                                <StackPanel>
+                                    <controls:SettingsRow Label="Multi-kills" Description="Amber border on multi-kill RP entries">
+                                        <controls:SettingsRow.Action>
+                                            <ToggleSwitch IsChecked="{Binding HighlightMultiKills}" OffContent="" OnContent="" />
+                                        </controls:SettingsRow.Action>
+                                    </controls:SettingsRow>
+                                    <controls:SettingsRow Label="AoE multi-hits" Description="Purple border on AoE aggregate combat log entries">
+                                        <controls:SettingsRow.Action>
+                                            <ToggleSwitch IsChecked="{Binding HighlightMultiHits}" OffContent="" OnContent="" />
+                                        </controls:SettingsRow.Action>
+                                    </controls:SettingsRow>
+                                </StackPanel>
+                            </controls:SettingsSection.SectionContent>
+                        </controls:SettingsSection>
+
+                        <controls:SettingsSection Header="Notifications">
+                            <controls:SettingsSection.SectionContent>
+                                <controls:SettingsRow Label="Player messages" Description="Show toast when a player sends a message">
+                                    <controls:SettingsRow.Action>
+                                        <ToggleSwitch IsChecked="{Binding ShowSendNotifications}" OffContent="" OnContent="" />
+                                    </controls:SettingsRow.Action>
+                                </controls:SettingsRow>
+                            </controls:SettingsSection.SectionContent>
+                        </controls:SettingsSection>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="Tabs">
+                <ScrollViewer Padding="16,0,6,0" VerticalScrollBarVisibility="Auto">
+                    <controls:SettingsSection Header="Visible tabs">
+                        <controls:SettingsSection.SectionContent>
+                            <StackPanel>
+                                <controls:SettingsRow Label="Dashboard">
+                                    <controls:SettingsRow.Action>
+                                        <ToggleSwitch IsChecked="{Binding DashboardTab.Value}" OffContent="" OnContent="" />
+                                    </controls:SettingsRow.Action>
+                                </controls:SettingsRow>
+                                <controls:SettingsRow Label="Realm Points">
+                                    <controls:SettingsRow.Action>
+                                        <ToggleSwitch IsChecked="{Binding RealmPointsTab.Value}" OffContent="" OnContent="" />
+                                    </controls:SettingsRow.Action>
+                                </controls:SettingsRow>
+                                <controls:SettingsRow Label="Combat">
+                                    <controls:SettingsRow.Action>
+                                        <ToggleSwitch IsChecked="{Binding CombatTab.Value}" OffContent="" OnContent="" />
+                                    </controls:SettingsRow.Action>
+                                </controls:SettingsRow>
+                                <controls:SettingsRow Label="Heals">
+                                    <controls:SettingsRow.Action>
+                                        <ToggleSwitch IsChecked="{Binding HealLogTab.Value}" OffContent="" OnContent="" />
+                                    </controls:SettingsRow.Action>
+                                </controls:SettingsRow>
+                            </StackPanel>
+                        </controls:SettingsSection.SectionContent>
+                    </controls:SettingsSection>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="Log File">
+                <ScrollViewer Padding="16,0,6,0" VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <controls:SettingsSection Header="Chat log">
+                            <controls:SettingsSection.SectionContent>
+                                <StackPanel>
+                                    <controls:SettingsRow Label="Chat log path" Description="Leave empty to auto-detect">
+                                        <controls:SettingsRow.Action>
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <Button Content="Browse"
+                                                        Classes="btn-secondary"
+                                                        Command="{Binding SettingsPopup.BrowseChatLogPathCommand}"
+                                                        CommandParameter="{Binding $parent[Window].StorageProvider}"
+                                                        Padding="10,5" FontSize="11" />
+                                                <Button Content="✕"
+                                                        Classes="btn-ghost"
+                                                        Command="{Binding SettingsPopup.ClearChatLogPathCommand}"
+                                                        IsVisible="{Binding SettingsPopup.CustomChatLogPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                                        FontSize="11" />
+                                            </StackPanel>
+                                        </controls:SettingsRow.Action>
+                                    </controls:SettingsRow>
+                                    <TextBox Text="{Binding SettingsPopup.CustomChatLogPath, Mode=OneWay}"
+                                             PlaceholderText="Auto-detected"
+                                             IsReadOnly="True"
+                                             FontSize="10"
+                                             Padding="6,4" Margin="0,0,0,8" />
+                                    <controls:SettingsRow Label="Maintenance" Description="Trim old sessions into a compressed archive">
+                                        <controls:SettingsRow.Action>
+                                            <Button Content="Log file maintenance"
+                                                    Classes="btn-secondary"
+                                                    Command="{Binding OpenLogMaintenanceCommand}"
+                                                    CommandParameter="{Binding $parent[Window]}"
+                                                    Padding="10,5" FontSize="11" />
+                                        </controls:SettingsRow.Action>
+                                    </controls:SettingsRow>
+                                </StackPanel>
+                            </controls:SettingsSection.SectionContent>
+                        </controls:SettingsSection>
+
+                        <controls:SettingsSection Header="Diagnostics">
+                            <controls:SettingsSection.SectionContent>
+                                <controls:SettingsRow Label="Error log" Description="Errors are written to a daily log file (kept 7 days)">
+                                    <controls:SettingsRow.Action>
+                                        <Button Content="Open log folder"
+                                                Classes="btn-secondary"
+                                                Command="{Binding SettingsPopup.OpenLogFolderCommand}"
+                                                Padding="10,5" FontSize="11" />
+                                    </controls:SettingsRow.Action>
+                                </controls:SettingsRow>
+                            </controls:SettingsSection.SectionContent>
+                        </controls:SettingsSection>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="Overlay">
+                <ScrollViewer Padding="16,0,6,0" VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <controls:SettingsSection Header="In-game overlay" IsVisible="{Binding IsOverlaySupported}">
+                            <controls:SettingsSection.SectionContent>
+                                <controls:SettingsRow Label="Overlay window"
+                                                       Description="Opacity and contents are set on the overlay itself: unlock it from the toolbar first.">
+                                    <controls:SettingsRow.Action>
+                                        <Button Content="Toggle overlay"
+                                                Classes="btn-secondary"
+                                                Command="{Binding ToggleOverlayCommand}"
+                                                Padding="10,5" FontSize="11" />
+                                    </controls:SettingsRow.Action>
+                                </controls:SettingsRow>
+                            </controls:SettingsSection.SectionContent>
+                        </controls:SettingsSection>
+
+                        <controls:SettingsSection Header="KDE Wayland" IsVisible="{Binding SettingsPopup.IsKdeWaylandSession}">
+                            <controls:SettingsSection.SectionContent>
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="{Binding SettingsPopup.KWinRuleStatusText}"
+                                               FontSize="10" Foreground="{DynamicResource AppTextMuted}"
+                                               TextWrapping="Wrap" />
+                                    <Button Content="Apply KWin overlay rule"
+                                            Classes="btn-secondary"
+                                            Command="{Binding SettingsPopup.ApplyKWinRuleCommand}"
+                                            IsVisible="{Binding !SettingsPopup.IsKWinRuleInstalled}"
+                                            Padding="10,5" FontSize="11"
+                                            HorizontalAlignment="Left" />
+                                    <Button Content="Reset choice"
+                                            Classes="btn-secondary"
+                                            Command="{Binding SettingsPopup.ResetKWinRuleChoiceCommand}"
+                                            IsVisible="{Binding SettingsPopup.IsKWinRuleInstalled}"
+                                            Padding="10,5" FontSize="11"
+                                            HorizontalAlignment="Left" />
+                                </StackPanel>
+                            </controls:SettingsSection.SectionContent>
+                        </controls:SettingsSection>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="Updates" IsVisible="{Binding SettingsPopup.IsUpdaterAvailable}">
+                <ScrollViewer Padding="16,0,6,0" VerticalScrollBarVisibility="Auto">
+                    <controls:SettingsSection Header="Updates">
+                        <controls:SettingsSection.SectionContent>
+                            <StackPanel>
+                                <controls:SettingsRow Label="Pre-releases" Description="Also offer beta / rc builds (otherwise stable releases only)">
+                                    <controls:SettingsRow.Action>
+                                        <ToggleSwitch IsChecked="{Binding SettingsPopup.UsePrereleases}" OffContent="" OnContent="" />
+                                    </controls:SettingsRow.Action>
+                                </controls:SettingsRow>
+                                <controls:SettingsRow Label="Check interval" Description="How often the running app looks for a new release (minutes)">
+                                    <controls:SettingsRow.Action>
+                                        <NumericUpDown Value="{Binding SettingsPopup.UpdateCheckIntervalMinutes}"
+                                                       Minimum="15" Maximum="1440"
+                                                       Increment="15" FormatString="0"
+                                                       ClipValueToMinMax="True"
+                                                       Width="120" />
+                                    </controls:SettingsRow.Action>
+                                </controls:SettingsRow>
+                            </StackPanel>
+                        </controls:SettingsSection.SectionContent>
+                    </controls:SettingsSection>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="About">
+                <ScrollViewer Padding="16,0,6,0" VerticalScrollBarVisibility="Auto">
+                    <controls:SettingsSection Header="About">
+                        <controls:SettingsSection.SectionContent>
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="{Binding SettingsPopup.AppVersion, StringFormat='DAoC Log Watcher {0}'}"
+                                           FontSize="12" Foreground="{DynamicResource AppTextPrimary}" />
+                                <TextBlock Text="Realm point and combat tracking for Dark Age of Camelot."
+                                           FontSize="10" Foreground="{DynamicResource AppTextMuted}" />
+                            </StackPanel>
+                        </controls:SettingsSection.SectionContent>
+                    </controls:SettingsSection>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal"
+                    HorizontalAlignment="Right" Spacing="10" Margin="0,12,0,0">
+            <Button Content="Close" Classes="btn-secondary" Click="OnCloseClick" />
+        </StackPanel>
+    </Grid>
+</Window>

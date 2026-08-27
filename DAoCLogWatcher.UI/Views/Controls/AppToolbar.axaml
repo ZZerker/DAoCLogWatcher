@@ -294,7 +294,8 @@
                         </Canvas>
                     </Viewbox>
                 </Button>
-                <Button Command="{Binding SettingsPopup.ToggleSettingsPopupCommand}"
+                <Button Command="{Binding OpenSettingsCommand}"
+                        CommandParameter="{Binding $parent[Window]}"
                         ToolTip.Tip="Settings"
                         Classes="btn-icon">
                     <Viewbox Width="16" Height="16">

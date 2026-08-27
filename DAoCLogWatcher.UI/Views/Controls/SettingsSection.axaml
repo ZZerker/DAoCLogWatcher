@@ -1,0 +1,16 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="using:DAoCLogWatcher.UI.Views.Controls"
+             x:Class="DAoCLogWatcher.UI.Views.Controls.SettingsSection"
+             x:DataType="controls:SettingsSection"
+             x:Name="self">
+    <StackPanel Spacing="6" Margin="0,0,0,14">
+        <TextBlock Text="{Binding #self.Header}" FontSize="10" FontWeight="SemiBold"
+                   LetterSpacing="1" Foreground="{DynamicResource AppTextMuted}" />
+        <Border Background="{DynamicResource AppCardBackground}"
+                BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1"
+                CornerRadius="6" Padding="12,4">
+            <ContentPresenter Content="{Binding #self.SectionContent}" />
+        </Border>
+    </StackPanel>
+</UserControl>

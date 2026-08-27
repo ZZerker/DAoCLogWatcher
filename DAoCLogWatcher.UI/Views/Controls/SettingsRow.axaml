@@ -1,0 +1,19 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="using:DAoCLogWatcher.UI.Views.Controls"
+             x:Class="DAoCLogWatcher.UI.Views.Controls.SettingsRow"
+             x:DataType="controls:SettingsRow"
+             x:Name="self">
+    <Grid ColumnDefinitions="*,Auto" Margin="0,7">
+        <StackPanel Spacing="2">
+            <TextBlock Text="{Binding #self.Label}" FontSize="12"
+                       Foreground="{DynamicResource AppTextPrimary}" />
+            <TextBlock Text="{Binding #self.Description}" FontSize="10"
+                       Foreground="{DynamicResource AppTextMuted}"
+                       TextWrapping="Wrap"
+                       IsVisible="{Binding #self.Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+        </StackPanel>
+        <ContentPresenter Grid.Column="1" Content="{Binding #self.Action}"
+                           VerticalAlignment="Center" Margin="12,0,0,0" />
+    </Grid>
+</UserControl>

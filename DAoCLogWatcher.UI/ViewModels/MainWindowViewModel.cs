@@ -379,6 +379,7 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 	private async Task RestartAsync()
 	{
 		await this.watchSession.StopAndWaitAsync();
+
 		if(string.IsNullOrWhiteSpace(this.CurrentFilePath))
 		{
 			return;
@@ -503,6 +504,17 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 		{
 			this.ShowOverlay();
 		}
+	}
+
+	[RelayCommand]
+	private async Task OpenSettings(Window? ownerWindow)
+	{
+		if(ownerWindow == null)
+		{
+			return;
+		}
+
+		await new SettingsDialog(this).ShowDialog(ownerWindow);
 	}
 
 	[RelayCommand]

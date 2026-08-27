@@ -43,20 +43,6 @@ public sealed partial class SettingsPopupViewModel: ObservableObject
 		return version != null?$"v{version.ToString(3)}":"unknown";
 	}
 
-	[ObservableProperty] private bool isSettingsPopupVisible;
-
-	[RelayCommand]
-	private void ToggleSettingsPopup()
-	{
-		this.IsSettingsPopupVisible = !this.IsSettingsPopupVisible;
-	}
-
-	[RelayCommand]
-	private void CloseSettingsPopup()
-	{
-		this.IsSettingsPopupVisible = false;
-	}
-
 	[ObservableProperty] private string? customChatLogPath;
 
 	partial void OnCustomChatLogPathChanged(string? value)
@@ -130,7 +116,17 @@ public sealed partial class SettingsPopupViewModel: ObservableObject
 
 	partial void OnUpdateCheckIntervalMinutesChanged(decimal? value)
 	{
-		var minutes = (int)(value ?? this.settings.UpdateCheckIntervalMinutes);
+		if(value is null)
+		{
+			return;
+		}
+
+		var minutes = (int)value;
+		if(minutes == this.settings.UpdateCheckIntervalMinutes)
+		{
+			return;
+		}
+
 		this.settings.UpdateCheckIntervalMinutes = minutes;
 		this.settingsService.Save(this.settings);
 		this.UpdateCheckIntervalChanged?.Invoke(this, minutes);
