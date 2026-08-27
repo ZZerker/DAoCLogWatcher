@@ -363,12 +363,11 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 		task.ContinueWith(t => Dispatcher.UIThread.InvokeAsync(() => this.WatchError = t.Exception!.Flatten().InnerExceptions[0].Message), CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default);
 	}
 
+	// Picking a timespan is a request to see that timespan, so it starts a watch even when none is
+	// running: otherwise the selection silently does nothing until the user also presses a start button.
 	private void OnTimeFilterChanged(object? sender, EventArgs e)
 	{
-		if(this.IsWatching)
-		{
-			this.FireAndForget(this.RestartAsync());
-		}
+		this.FireAndForget(this.RestartAsync());
 	}
 
 	private void OnWatchSessionError(object? sender, string message)
@@ -380,9 +379,17 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 	{
 		await this.watchSession.StopAndWaitAsync();
 
+		// Nothing has been opened yet: fall back to the configured or auto-detected log so a timespan
+		// pick works as the first action after launch, the same path OpenDaocLog takes.
 		if(string.IsNullOrWhiteSpace(this.CurrentFilePath))
 		{
-			return;
+			var detected = this.GetLogPath();
+			if(string.IsNullOrWhiteSpace(detected)||!File.Exists(detected))
+			{
+				return;
+			}
+
+			this.CurrentFilePath = detected;
 		}
 
 		if(await this.TryStartCurrentSessionAsync())
