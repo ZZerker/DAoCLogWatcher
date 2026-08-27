@@ -3,7 +3,7 @@
   "sources": [
     {
       "name": "dol-zones-xml",
-      "url": "D:/PrivatProjects/DOLSharp/GameServerScripts/dbupdater/insert/Zones.xml",
+      "url": "DOLSharp/GameServerScripts/dbupdater/insert/Zones.xml",
       "fetchedAt": "2026-04-19T17:04:14.177Z"
     },
     {

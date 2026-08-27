@@ -526,6 +526,13 @@ public class ZoneMapService
 
 		foreach(var relic in relics)
 		{
+			// A relic in transit has no pad, so it has no coordinates either: drawing it would put a
+			// marker on the map origin.
+			if(relic.IsMoving)
+			{
+				continue;
+			}
+
 			var (px, py) = GameToPixel(relic.GameX, relic.GameY);
 
 			if(clipBounds != null&&(px < clipBounds.X||px > clipBounds.X + clipBounds.Width||py < clipBounds.Y||py > clipBounds.Y + clipBounds.Height))
@@ -596,11 +603,9 @@ public class ZoneMapService
 
 		var r = best.Value.Relic;
 		var owner = RealmFromInt(r.OwnerRealm) ?? "Unknown";
-		var home = RealmFromInt(r.OriginRealm) ?? "Unknown";
 		var where = r.IsHomePad?$"{r.PadName} (relic keep)":r.PadName;
-		var status = r.IsAtHome?"At home":$"Captured from {home}";
 
-		return $"{r.DisplayName}\n{r.TypeName} relic · home realm {home}\nNow at: {where}\nHeld by {owner} · {status}";
+		return $"{r.DisplayName}\n{r.TypeName} relic\nNow at: {where}\nHeld by {owner}";
 	}
 
 	private void DrawKeepsAndTowers(Plot plot, IEnumerable<FrontierKeep> keeps, IReadOnlyDictionary<string, WarmapKeepState>? liveKeeps, List<(string Name, double Px, double Py, bool IsKeep)>? burning, PixelBounds? clipBounds = null)

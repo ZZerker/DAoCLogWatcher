@@ -19,7 +19,17 @@ public sealed record WarmapActivityEntry(int Zone, int X, int Y, int Size, int R
 /// 1 = Power (Eden's <c>t</c>); <paramref name="OriginRealm"/> is the realm it belongs to and
 /// <paramref name="OwnerRealm"/> the realm currently holding it (1 Albion, 2 Midgard, 3 Hibernia).
 /// </summary>
-public sealed record WarmapRelic(int Id, int OriginRealm, int Type, int OwnerRealm);
+public sealed record WarmapRelic(int Id, int OriginRealm, int Type, int OwnerRealm, int Site)
+{
+	/// <summary>Being carried by a player right now: Eden reports site 0 while a relic is in transit.</summary>
+	public bool IsMoving => this.Site == 0;
+
+	/// <summary>Sitting on its own realm's relic keep pad. Eden encodes those three pads as sites 1, 2 and 3.</summary>
+	public bool IsAtHomeSite => this.Site >= 1&&this.Site <= 3;
+
+	/// <summary>The keep the relic sits in, or 0 when it is moving or at home.</summary>
+	public int KeepId => this.IsMoving||this.IsAtHomeSite?0:this.Site;
+}
 
 /// <summary>
 /// A relic pad from the <c>relicpads</c> message: the six home relic keeps (<paramref name="IsHomePad"/>)
@@ -54,7 +64,8 @@ public sealed record WarmapRelicPlacement(
 		bool IsHomePad,
 		bool IsAtHome,
 		int GameX,
-		int GameY)
+		int GameY,
+		bool IsMoving)
 {
 	/// <summary>"Strength" or "Power".</summary>
 	public string TypeName => this.Type == 0?"Strength":"Power";
@@ -253,39 +264,48 @@ public sealed class WarmapWebSocketService: IDisposable
 
 		var placements = new List<WarmapRelicPlacement>();
 
-		foreach(var pad in padsCopy)
+		// Driven by the relic records, not by the pad list: only the relics are kept current by the
+		// incremental "relic" message, so a pad's own RelicId goes stale as soon as one is captured.
+		// The pads are used purely for names and coordinates, which never change.
+		foreach(var relic in relicsCopy.Values)
 		{
-			if(pad.RelicId <= 0)
-			{
-				continue;
-			}
+			var pad = FindPad(padsCopy, relic);
+			var atHome = relic.IsAtHomeSite&&relic.Site == relic.OriginRealm;
 
-			var type = pad.RelicType >= 0?pad.RelicType:pad.PadType;
-			var origin = 0;
-			var owner = pad.OwnerRealm;
-
-			if(relicsCopy.TryGetValue(pad.RelicId, out var relic))
-			{
-				type = relic.Type;
-				origin = relic.OriginRealm;
-				owner = relic.OwnerRealm;
-			}
-
-			var atHome = pad.IsHomePad&&origin != 0&&pad.OriginRealm == origin;
-			placements.Add(new WarmapRelicPlacement(pad.RelicId,
-			                                        RelicName(origin, type),
-			                                        type,
-			                                        origin,
-			                                        owner,
-			                                        pad.Name,
-			                                        pad.KeepId,
-			                                        pad.IsHomePad,
+			placements.Add(new WarmapRelicPlacement(relic.Id,
+			                                        RelicName(relic.OriginRealm, relic.Type),
+			                                        relic.Type,
+			                                        relic.OriginRealm,
+			                                        relic.OwnerRealm,
+			                                        pad?.Name ?? (relic.IsMoving?"In transit":"Unknown"),
+			                                        pad?.KeepId ?? 0,
+			                                        pad?.IsHomePad ?? false,
 			                                        atHome,
-			                                        pad.GameX,
-			                                        pad.GameY));
+			                                        pad?.GameX ?? 0,
+			                                        pad?.GameY ?? 0,
+			                                        relic.IsMoving));
 		}
 
 		return placements;
+	}
+
+	/// <summary>
+	/// Resolves a relic's site to the pad it sits on. Eden encodes the site as 0 for a relic being
+	/// carried, 1 to 3 for the home relic keep of that realm, and otherwise the id of the keep holding it.
+	/// </summary>
+	private static WarmapRelicPad? FindPad(IReadOnlyList<WarmapRelicPad> pads, WarmapRelic relic)
+	{
+		if(relic.IsMoving)
+		{
+			return null;
+		}
+
+		if(relic.IsAtHomeSite)
+		{
+			return pads.FirstOrDefault(p => p.IsHomePad&&p.OriginRealm == relic.Site&&p.PadType == relic.Type);
+		}
+
+		return pads.FirstOrDefault(p => p.KeepId == relic.KeepId);
 	}
 
 	/// <summary>Canonical relic names — the payload carries only realm + type.</summary>
@@ -441,6 +461,12 @@ public sealed class WarmapWebSocketService: IDisposable
 				this.RelicsUpdated?.Invoke(this, EventArgs.Empty);
 			}
 
+			if(root.TryGetProperty("relic", out var relicEl))
+			{
+				this.ProcessRelicUpdate(relicEl);
+				this.RelicsUpdated?.Invoke(this, EventArgs.Empty);
+			}
+
 			if(root.TryGetProperty("relicpads", out var padsEl))
 			{
 				this.ProcessRelicPadsSnapshot(padsEl);
@@ -558,14 +584,57 @@ public sealed class WarmapWebSocketService: IDisposable
 			var origin = r.TryGetProperty("or", out var orEl)&&orEl.TryGetInt32(out var o)?o:0;
 			var type = r.TryGetProperty("t", out var tEl)&&tEl.TryGetInt32(out var t)?t:0;
 			var owner = r.TryGetProperty("r", out var rEl)&&rEl.TryGetInt32(out var ow)?ow:origin;
+			var site = ReadSite(r);
 
-			parsed[id] = new WarmapRelic(id, origin, type, owner);
+			parsed[id] = new WarmapRelic(id, origin, type, owner, site);
 		}
 
 		lock(this.stateLock)
 		{
 			this.relics = parsed;
 		}
+	}
+
+	/// <summary>
+	/// A single relic moved or changed hands: <c>{"relic":{"id":2,"s":82,"r":2}}</c>. Eden's own client
+	/// treats this as the authoritative update and only ever seeds from the snapshot, so without it
+	/// ownership and location freeze at whatever was true when the socket connected.
+	/// </summary>
+	private void ProcessRelicUpdate(JsonElement relicEl)
+	{
+		if(!relicEl.TryGetProperty("id", out var idEl)||!idEl.TryGetInt32(out var id))
+		{
+			return;
+		}
+
+		lock(this.stateLock)
+		{
+			if(!this.relics.TryGetValue(id, out var existing))
+			{
+				return;
+			}
+
+			var owner = relicEl.TryGetProperty("r", out var rEl)&&rEl.TryGetInt32(out var ow)?ow:existing.OwnerRealm;
+			var site = relicEl.TryGetProperty("s", out _)?ReadSite(relicEl):existing.Site;
+
+			this.relics[id] = existing with { OwnerRealm = owner, Site = site };
+		}
+	}
+
+	/// <summary>Eden sends the site as a number in the snapshot but quotes it in some updates, so both are accepted.</summary>
+	private static int ReadSite(JsonElement element)
+	{
+		if(!element.TryGetProperty("s", out var sEl))
+		{
+			return 0;
+		}
+
+		if(sEl.ValueKind == JsonValueKind.Number&&sEl.TryGetInt32(out var number))
+		{
+			return number;
+		}
+
+		return sEl.ValueKind == JsonValueKind.String&&int.TryParse(sEl.GetString(), out var parsed)?parsed:0;
 	}
 
 	/// <summary>

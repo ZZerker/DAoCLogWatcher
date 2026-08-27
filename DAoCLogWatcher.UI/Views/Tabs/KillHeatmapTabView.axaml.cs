@@ -279,18 +279,20 @@ public partial class KillHeatmapTabView: UserControl
 
 	private static string BuildRelicTileTooltip(WarmapRelicPlacement? placement, int relicId)
 	{
+		if(placement is { IsMoving: true })
+		{
+			return $"{placement.DisplayName}\n{placement.TypeName} relic\nBeing carried right now";
+		}
+
 		if(placement == null)
 		{
 			// No pad holds it: either a player is carrying it right now, or no snapshot has arrived yet.
-			return $"Relic {relicId}\nNot on a pad — carried or not yet reported";
+			return $"Relic {relicId}\nNot reported yet";
 		}
 
-		var owner = RealmName(placement.OwnerRealm);
-		var home = RealmName(placement.OriginRealm);
 		var where = placement.IsHomePad?$"{placement.PadName} (relic keep)":placement.PadName;
-		var status = placement.IsAtHome?"At home":$"Captured from {home}";
 
-		return $"{placement.DisplayName}\n{placement.TypeName} relic · home realm {home}\nNow at: {where}\nHeld by {owner} · {status}";
+		return $"{placement.DisplayName}\n{placement.TypeName} relic\nNow at: {where}\nHeld by {RealmName(placement.OwnerRealm)}";
 	}
 
 	private static string RealmName(int realm)
