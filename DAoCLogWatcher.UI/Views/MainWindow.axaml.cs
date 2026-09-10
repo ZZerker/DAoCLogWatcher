@@ -111,6 +111,32 @@ public partial class MainWindow: Window
 		}
 	}
 
+	protected override void OnClosing(WindowClosingEventArgs e)
+	{
+		base.OnClosing(e);
+
+		this.SaveWindowBounds();
+	}
+
+	private void SaveWindowBounds()
+	{
+		if(this.DataContext is not ViewModels.MainWindowViewModel mainVm||this.WindowState == WindowState.Minimized)
+		{
+			return;
+		}
+
+		if(this.WindowState == WindowState.Maximized)
+		{
+			// Keep whatever normal-state bounds are already saved; only the maximized flag changes.
+			var saved = mainVm.GetSavedWindowBounds();
+			mainVm.SaveWindowBounds(saved.X??this.Position.X, saved.Y??this.Position.Y, saved.Width??this.Width, saved.Height??this.Height, true);
+		}
+		else
+		{
+			mainVm.SaveWindowBounds(this.Position.X, this.Position.Y, this.Width, this.Height, false);
+		}
+	}
+
 	protected override void OnOpened(EventArgs e)
 	{
 		base.OnOpened(e);
@@ -121,6 +147,11 @@ public partial class MainWindow: Window
 		if(this.DataContext is ViewModels.MainWindowViewModel overlayVm)
 		{
 			overlayVm.AutoOpenOverlayIfEnabled();
+		}
+
+		if(this.DataContext is ViewModels.MainWindowViewModel mainVm&&this.TryRestoreWindowBounds(mainVm))
+		{
+			return;
 		}
 
 		// Move to a secondary screen if one is available — DAoC typically runs full-screen
@@ -147,6 +178,37 @@ public partial class MainWindow: Window
 				newVm.RpSourceBreakdown.Value = false;
 			}
 		}
+	}
+
+	// Only restores when a prior session saved bounds that still fit on a currently-connected screen —
+	// otherwise falls through to the default secondary-screen placement below.
+	private bool TryRestoreWindowBounds(ViewModels.MainWindowViewModel mainVm)
+	{
+		var(x, y, width, height, maximized) = mainVm.GetSavedWindowBounds();
+		if(x == null||y == null||width == null||height == null)
+		{
+			return false;
+		}
+
+		var position = new PixelPoint((int)x.Value, (int)y.Value);
+		var size = PixelSize.FromSize(new Size(width.Value, height.Value), this.RenderScaling);
+		var rect = new PixelRect(position, size);
+
+		if(!this.Screens.All.Any(s => s.Bounds.Intersects(rect)))
+		{
+			return false;
+		}
+
+		this.Width = width.Value;
+		this.Height = height.Value;
+		this.Position = position;
+
+		if(maximized)
+		{
+			this.WindowState = WindowState.Maximized;
+		}
+
+		return true;
 	}
 
 	private void SelectFirstVisibleTab()

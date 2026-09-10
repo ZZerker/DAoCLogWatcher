@@ -85,6 +85,8 @@ public partial class OverlayWindow: Window
 
 	private void OnHeaderPointerReleased(object? sender, PointerReleasedEventArgs e)
 	{
+		// A fresh drag supersedes a Reset, so the new spot should persist like normal.
+		this.viewModel.ResetPositionRequested = false;
 		this.SavePosition();
 	}
 
@@ -158,8 +160,12 @@ public partial class OverlayWindow: Window
 
 	private void SavePosition()
 	{
-		this.settings.OverlayX = this.Position.X;
-		this.settings.OverlayY = this.Position.Y;
+		// A Reset cleared the saved position; don't let a subsequent close drag it back.
+		if(!this.viewModel.ResetPositionRequested)
+		{
+			this.settings.OverlayX = this.Position.X;
+			this.settings.OverlayY = this.Position.Y;
+		}
 		this.settings.OverlayOpacity = this.viewModel.BackgroundOpacity;
 		this.settingsService.Save(this.settings);
 	}

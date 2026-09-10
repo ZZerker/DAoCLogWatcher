@@ -20,7 +20,7 @@
                 <Grid ColumnDefinitions="*,Auto">
                     <TextBox Grid.Column="0"
                              Text="{Binding RpLog.FilterText}"
-                             Watermark="Filter by player or source…"
+                             PlaceholderText="Filter by player or source…"
                              FontSize="13" />
                     <Button Grid.Column="1"
                             Content="✕"

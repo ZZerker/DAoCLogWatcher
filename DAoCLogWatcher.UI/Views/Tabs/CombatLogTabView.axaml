@@ -51,7 +51,7 @@
                 <Grid ColumnDefinitions="*,Auto">
                     <TextBox Grid.Column="0"
                              Text="{Binding CombatStats.CombatLog.FilterText}"
-                             Watermark="Filter by target or source…"
+                             PlaceholderText="Filter by target or source…"
                              FontSize="13" />
                     <Button Grid.Column="1"
                             Content="✕"

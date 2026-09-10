@@ -86,12 +86,20 @@
                         <TextBlock Text="{Binding Summary.TotalRealmPoints}" FontSize="32"
                                    FontWeight="Bold" Foreground="{DynamicResource AppAccentCyan}" />
                     </StackPanel>
-                    <StackPanel Spacing="5">
-                        <TextBlock Text="RPs PER HOUR" FontWeight="SemiBold" FontSize="10"
-                                   Foreground="{DynamicResource AppTextDim}" />
-                        <TextBlock Text="{Binding Summary.RpsPerHour, StringFormat='{}{0:F0} RP/h'}"
-                                   FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource AppAccentPurple}" />
-                    </StackPanel>
+                    <Grid ColumnDefinitions="*,*">
+                        <StackPanel Grid.Column="0" Spacing="5">
+                            <TextBlock Text="RP/h · LAST 1H" FontWeight="SemiBold" FontSize="10"
+                                       Foreground="{DynamicResource AppTextDim}" />
+                            <TextBlock Text="{Binding Summary.RpsPerHour, StringFormat='{}{0:F0}'}"
+                                       FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource AppAccentPurple}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Spacing="5">
+                            <TextBlock Text="RP/h · SESSION" FontWeight="SemiBold" FontSize="10"
+                                       Foreground="{DynamicResource AppTextDim}" />
+                            <TextBlock Text="{Binding Summary.SessionRpsPerHour, StringFormat='{}{0:F0}'}"
+                                       FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource AppAccentPurple}" />
+                        </StackPanel>
+                    </Grid>
                 </StackPanel>
             </Border>
 

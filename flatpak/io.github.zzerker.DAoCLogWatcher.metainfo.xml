@@ -5,7 +5,7 @@
     <name>DAoC Log Watcher</name>
     <summary>Dark Age of Camelot realm points and kill tracker</summary>
     <metadata_license>CC0-1.0</metadata_license>
-    <project_license>GPL-3.0-only</project_license>
+    <project_license>MIT</project_license>
 
     <developer id="io.github.zzerker">
         <name>Zerker</name>
@@ -22,15 +22,26 @@
         </p>
         <ul>
             <li>Realm point breakdown by source: Player Kills, Campaign Quests, Battle Ticks, Siege, Assault Orders, Support Activity, Relic Captures, and Timed Missions</li>
-            <li>Rolling RP/h meter updated every 5 seconds</li>
-            <li>Character detection via the /stats command — automatically identifies your active character and tracks kills, deaths, and K/D ratio</li>
-            <li>Cumulative RP and rolling RP/h charts</li>
-            <li>Configurable time filters: All time, preset windows from 1 hour to 1 week, or a custom duration in hours and minutes</li>
-            <li>Screenshot to clipboard with one click</li>
-            <li>Dark and light theme</li>
-            <li>Auto-update on startup</li>
+            <li>Rolling RP/h meter updated every 5 seconds, plus cumulative RP and RP/h charts</li>
+            <li>Character detection via the /stats command, tracking kills, deaths and K/D ratio automatically</li>
+            <li>Combat statistics: damage and healing by target, spell and attack type, with crit rates and multi-hit detection</li>
+            <li>Live warmap: keep ownership, sieges, fights and group activity, campaign events and relic ownership, all streamed from the Eden server</li>
+            <li>Kill heatmap showing where the fighting is happening across the frontier</li>
+            <li>Customizable dashboard with drag-to-arrange widgets and saved layout profiles</li>
+            <li>In-game overlay with realm points, damage, healing and a kill feed</li>
+            <li>Session browser and session history to review earlier play sessions</li>
+            <li>Log file maintenance: trim old sessions out of a large chat log into a compressed archive</li>
+            <li>Configurable time filters: current session, preset windows from 1 hour to 1 week, or a custom duration</li>
+            <li>Screenshot to clipboard with one click, and a dark and light theme</li>
         </ul>
     </description>
+
+    <screenshots>
+        <screenshot type="default">
+            <caption>Live realm point and kill statistics dashboard</caption>
+            <image>https://raw.githubusercontent.com/ZZerker/DAoCLogWatcher/main/DAoCLogWatcher.Core/TestFiles/DAoC_Log_Watcher.png</image>
+        </screenshot>
+    </screenshots>
 
     <content_rating type="oars-1.1" />
 

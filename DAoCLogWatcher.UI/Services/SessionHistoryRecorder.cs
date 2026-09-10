@@ -31,7 +31,7 @@ public sealed class SessionHistoryRecorder
 				       DurationSeconds = this.summary.SessionDuration.TotalSeconds,
 				       CharacterName = characterName,
 				       RealmPoints = this.summary.TotalRealmPoints,
-				       RpPerHour = this.summary.RpsPerHour,
+				       RpPerHour = this.summary.SessionRpsPerHour,
 				       Kills = this.processor.Kills,
 				       Deaths = this.processor.Deaths,
 				       BestMultiKill = bestMultiKill,

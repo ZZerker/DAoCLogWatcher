@@ -12,6 +12,8 @@ public class AppSettings
 
 	public bool ShowSendNotifications { get; set; } = true;
 
+	public int SendNotificationSeconds { get; set; } = 60;
+
 	public bool ShowDashboardTab { get; set; } = true;
 
 	public bool ShowRealmPointsTab { get; set; } = true;
@@ -59,4 +61,14 @@ public class AppSettings
 	public bool WarmapShowEvents { get; set; } = true;
 
 	public bool WarmapShowRelics { get; set; } = true;
+
+	public double? WindowX { get; set; }
+
+	public double? WindowY { get; set; }
+
+	public double? WindowWidth { get; set; }
+
+	public double? WindowHeight { get; set; }
+
+	public bool WindowMaximized { get; set; }
 }

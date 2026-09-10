@@ -282,7 +282,7 @@ public sealed partial class CombatParser
 
 	private bool TryMatchAnyDealtHit(string line, out PendingDamage pending)
 	{
-		return this.TryMatchWeaponAttack(line, out pending)||this.TryMatchDealtSpellHit(line, out pending)||this.TryMatchDealtDotHit(line, out pending);
+		return this.TryMatchWeaponAttack(line, out pending)||this.TryMatchDealtSpellHit(line, out pending)||this.TryMatchDealtRedirectedHit(line, out pending)||this.TryMatchDealtDotHit(line, out pending);
 	}
 
 	private string? ResolveStyleName(TimeOnly hitTimestamp)
@@ -403,6 +403,23 @@ public sealed partial class CombatParser
 		var isWeaponAttack = spellName == null;
 		var styleName = isWeaponAttack?this.ResolveStyleName(ts):null;
 		pending = new PendingDamage(ts, match.Groups["target"].Value, int.Parse(match.Groups["dmg"].Value, CultureInfo.InvariantCulture), ParseAbsorbed(match), true, spellName, isWeaponAttack, styleName);
+		return true;
+	}
+
+	/// <summary>
+	/// Pet/summon swing redirected onto a third party by guard or intercept. Only the pet name is the
+	/// damage source; the intended target is dropped since the hit never landed on them.
+	/// </summary>
+	private bool TryMatchDealtRedirectedHit(string line, out PendingDamage pending)
+	{
+		pending = default;
+		var match = DealtRedirectedHitRegex().Match(line);
+		if(!match.Success||!ExtractTimestamp(match, out var ts))
+		{
+			return false;
+		}
+
+		pending = new PendingDamage(ts, match.Groups["target"].Value, int.Parse(match.Groups["dmg"].Value, CultureInfo.InvariantCulture), ParseAbsorbed(match), true, match.Groups["spell"].Value, false, IsDotTick: true);
 		return true;
 	}
 
@@ -647,6 +664,12 @@ public sealed partial class CombatParser
 	// [HH:mm:ss] Your {spell} hits {target} for {N} damage!  — DoT/named-spell tick
 	[GeneratedRegex(@"^\[(?<ts>\d{2}:\d{2}:\d{2})\] Your (?<spell>.+?) hits (?<target>.+?) for (?<dmg>\d+)(?: \(-(?<abs>\d+)\))? damage!$", RegexOptions.Compiled|RegexOptions.CultureInvariant)]
 	private static partial Regex DealtDotHitRegex();
+
+	// [HH:mm:ss] Your {pet} attacks {intended} but hits {actual} for {N} damage!  — guard/intercept redirect.
+	// Must be tried before DealtDotHitRegex, whose lazy spell group would otherwise bind at the first
+	// " hits " and swallow the whole "attacks {intended} but" clause into the spell name (BUG-006).
+	[GeneratedRegex(@"^\[(?<ts>\d{2}:\d{2}:\d{2})\] Your (?<spell>.+?) attacks .+? but hits (?<target>.+?) for (?<dmg>\d+)(?: \(-(?<abs>\d+)\))? damage!$", RegexOptions.Compiled|RegexOptions.CultureInvariant)]
+	private static partial Regex DealtRedirectedHitRegex();
 
 	// [HH:mm:ss] Your {spell} critically hits {target} for an additional {N} damage!  — DoT/named-spell crit (no Crit Chance suffix)
 	[GeneratedRegex(@"^\[(?<ts>\d{2}:\d{2}:\d{2})\] Your (?<spell>.+?) critically hits (?<target>.+?) for an additional (?<crit>\d+) damage!$", RegexOptions.Compiled|RegexOptions.CultureInvariant)]

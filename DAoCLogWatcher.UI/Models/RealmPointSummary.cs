@@ -1,10 +1,19 @@
 using System;
+using System.Collections.Generic;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace DAoCLogWatcher.UI.Models;
 
 public partial class RealmPointSummary: ObservableObject
 {
+	private static readonly TimeSpan RollingWindow = TimeSpan.FromHours(1);
+
+	// Dampens the early spike while the session is still shorter than the window
+	private const double MIN_WINDOW_HOURS = 10.0 / 60.0;
+
+	private readonly Queue<(DateTime Time, int Points)> rollingEntries = new();
+	private int rollingWindowPoints;
+
 	[ObservableProperty] private int totalRealmPoints;
 
 	[ObservableProperty] private DateTime? firstEntryTime;
@@ -111,7 +120,34 @@ public partial class RealmPointSummary: ObservableObject
 		}
 	}
 
+	/// <summary>RP per hour over the trailing hour, not the session average.</summary>
 	public double RpsPerHour
+	{
+		get
+		{
+			var end = this.RollingWindowEnd;
+			this.TrimRollingWindow(end);
+
+			if(this.rollingWindowPoints == 0)
+			{
+				return 0;
+			}
+
+			var windowStart = end - RollingWindow;
+			var sessionStart = this.SessionStartTime ?? this.FirstEntryTime;
+			if(sessionStart.HasValue&&sessionStart.Value > windowStart)
+			{
+				windowStart = sessionStart.Value;
+			}
+
+			var windowHours = Math.Max((end - windowStart).TotalHours, MIN_WINDOW_HOURS);
+
+			return this.rollingWindowPoints / windowHours;
+		}
+	}
+
+	/// <summary>Session average, for the history record.</summary>
+	public double SessionRpsPerHour
 	{
 		get
 		{
@@ -131,11 +167,50 @@ public partial class RealmPointSummary: ObservableObject
 		}
 	}
 
+	/// <summary>Feeds one RP entry into the rolling window behind <see cref="RpsPerHour" />.</summary>
+	public void AddEntry(DateTime entryTime, int points)
+	{
+		this.rollingEntries.Enqueue((entryTime, points));
+		this.rollingWindowPoints += points;
+		this.TrimRollingWindow(entryTime);
+
+		this.OnPropertyChanged(nameof(this.RpsPerHour));
+		this.OnPropertyChanged(nameof(this.SessionRpsPerHour));
+	}
+
+	/// <summary>Wall clock while watching, last entry otherwise.</summary>
+	private DateTime RollingWindowEnd
+	{
+		get
+		{
+			if(!this.IsLive)
+			{
+				return this.LastEntryTime ?? DateTime.Now;
+			}
+
+			var now = DateTime.Now;
+
+			return this.LastEntryTime > now?this.LastEntryTime.Value:now;
+		}
+	}
+
+	private void TrimRollingWindow(DateTime end)
+	{
+		var windowStart = end - RollingWindow;
+		while(this.rollingEntries.TryPeek(out var oldest)&&oldest.Time < windowStart)
+		{
+			this.rollingEntries.Dequeue();
+			this.rollingWindowPoints -= oldest.Points;
+		}
+	}
+
 	public void Reset()
 	{
 		this.IsLive = false;
 		this.SessionStartTime = null;
 		this.TotalRealmPoints = 0;
+		this.rollingEntries.Clear();
+		this.rollingWindowPoints = 0;
 		this.FirstEntryTime = null;
 		this.LastEntryTime = null;
 		this.PlayerKills = 0;
@@ -158,6 +233,7 @@ public partial class RealmPointSummary: ObservableObject
 		this.MiscRP = 0;
 
 		this.OnPropertyChanged(nameof(this.RpsPerHour));
+		this.OnPropertyChanged(nameof(this.SessionRpsPerHour));
 		this.OnPropertyChanged(nameof(this.SessionStartText));
 		this.OnPropertyChanged(nameof(this.SessionDurationText));
 	}
@@ -165,6 +241,7 @@ public partial class RealmPointSummary: ObservableObject
 	public void RefreshRpsPerHour()
 	{
 		this.OnPropertyChanged(nameof(this.RpsPerHour));
+		this.OnPropertyChanged(nameof(this.SessionRpsPerHour));
 		this.OnPropertyChanged(nameof(this.SessionStartText));
 		this.OnPropertyChanged(nameof(this.SessionDurationText));
 	}

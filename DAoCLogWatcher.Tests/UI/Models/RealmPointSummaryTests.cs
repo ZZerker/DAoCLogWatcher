@@ -162,7 +162,7 @@ public sealed class RealmPointSummaryTests
 	}
 
 	[Fact]
-	public void RpsPerHour_WithOneHourSession_CalculatesCorrectly()
+	public void SessionRpsPerHour_WithOneHourSession_CalculatesCorrectly()
 	{
 		// Arrange
 		var now = DateTime.Now;
@@ -175,13 +175,13 @@ public sealed class RealmPointSummaryTests
 		              };
 
 		// Act
-		var rpsPerHour = summary.RpsPerHour;
+		var rpsPerHour = summary.SessionRpsPerHour;
 
 		rpsPerHour.Should().BeApproximately(5000.0, 10.0);
 	}
 
 	[Fact]
-	public void RpsPerHour_WithOldSession_UsesLastEntryTime()
+	public void SessionRpsPerHour_WithOldSession_UsesLastEntryTime()
 	{
 		// Arrange
 		var summary = new RealmPointSummary
@@ -192,13 +192,13 @@ public sealed class RealmPointSummaryTests
 		              };
 
 		// Act
-		var rpsPerHour = summary.RpsPerHour;
+		var rpsPerHour = summary.SessionRpsPerHour;
 
 		rpsPerHour.Should().BeApproximately(10000.0, 1.0);
 	}
 
 	[Fact]
-	public void RpsPerHour_WithIdenticalTimestamps_Recent_UsesNowAsEnd()
+	public void SessionRpsPerHour_WithIdenticalTimestamps_Recent_UsesNowAsEnd()
 	{
 		// Arrange
 		var now = DateTime.Now;
@@ -211,13 +211,13 @@ public sealed class RealmPointSummaryTests
 		              };
 
 		// Act
-		var rpsPerHour = summary.RpsPerHour;
+		var rpsPerHour = summary.SessionRpsPerHour;
 
 		rpsPerHour.Should().BeGreaterThan(0.0);
 	}
 
 	[Fact]
-	public void RpsPerHour_WithIdenticalTimestamps_Old_UsesLastAsEnd()
+	public void SessionRpsPerHour_WithIdenticalTimestamps_Old_UsesLastAsEnd()
 	{
 		// Arrange
 		var timestamp = DateTime.Now.AddHours(-5);
@@ -229,9 +229,85 @@ public sealed class RealmPointSummaryTests
 		              };
 
 		// Act
-		var rpsPerHour = summary.RpsPerHour;
+		var rpsPerHour = summary.SessionRpsPerHour;
 
 		rpsPerHour.Should().Be(0.0);
+	}
+
+	[Fact]
+	public void RpsPerHour_IgnoresEntriesOlderThanOneHour()
+	{
+		// Arrange
+		var now = DateTime.Now;
+		var summary = new RealmPointSummary
+		              {
+				              SessionStartTime = now.AddHours(-3),
+				              IsLive = true
+		              };
+		summary.AddEntry(now.AddHours(-2), 50000);
+		summary.AddEntry(now.AddMinutes(-30), 2000);
+		summary.LastEntryTime = now.AddMinutes(-30);
+
+		// Act
+		var rpsPerHour = summary.RpsPerHour;
+
+		// Assert - only the entry inside the window counts, over a full-hour window
+		rpsPerHour.Should().BeApproximately(2000.0, 10.0);
+	}
+
+	[Fact]
+	public void RpsPerHour_SessionShorterThanWindow_MeasuresFromSessionStart()
+	{
+		// Arrange
+		var now = DateTime.Now;
+		var summary = new RealmPointSummary
+		              {
+				              SessionStartTime = now.AddMinutes(-15),
+				              IsLive = true
+		              };
+		summary.AddEntry(now.AddMinutes(-5), 1000);
+		summary.LastEntryTime = now.AddMinutes(-5);
+
+		// Act
+		var rpsPerHour = summary.RpsPerHour;
+
+		// Assert - 1000 RP over the 15 minutes the session has existed
+		rpsPerHour.Should().BeApproximately(4000.0, 50.0);
+	}
+
+	[Fact]
+	public void RpsPerHour_NoEntriesInWindow_ReturnsZero()
+	{
+		// Arrange
+		var now = DateTime.Now;
+		var summary = new RealmPointSummary
+		              {
+				              SessionStartTime = now.AddHours(-4),
+				              IsLive = true
+		              };
+		summary.AddEntry(now.AddHours(-3), 10000);
+		summary.LastEntryTime = now.AddHours(-3);
+
+		// Act
+		var rpsPerHour = summary.RpsPerHour;
+
+		// Assert
+		rpsPerHour.Should().Be(0.0);
+	}
+
+	[Fact]
+	public void RpsPerHour_AfterReset_ReturnsZero()
+	{
+		// Arrange
+		var now = DateTime.Now;
+		var summary = new RealmPointSummary { IsLive = true };
+		summary.AddEntry(now.AddMinutes(-1), 5000);
+
+		// Act
+		summary.Reset();
+
+		// Assert
+		summary.RpsPerHour.Should().Be(0.0);
 	}
 
 	[Fact]

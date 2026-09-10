@@ -31,7 +31,7 @@
                 <Grid ColumnDefinitions="*,Auto">
                     <TextBox Grid.Column="0"
                              Text="{Binding CombatStats.HealLog.FilterText}"
-                             Watermark="Filter by healer or direction…"
+                             PlaceholderText="Filter by healer or direction…"
                              FontSize="13" />
                     <Button Grid.Column="1"
                             Content="✕"

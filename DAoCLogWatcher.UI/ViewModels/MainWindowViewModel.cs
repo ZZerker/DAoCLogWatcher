@@ -220,6 +220,21 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 		this.settingsService.Save(this.settings);
 	}
 
+	[ObservableProperty] private int sendNotificationSeconds;
+
+	partial void OnSendNotificationSecondsChanged(int value)
+	{
+		this.SendNotification.DurationSeconds = value;
+		if(this.SendNotification.DurationSeconds != value)
+		{
+			this.SendNotificationSeconds = this.SendNotification.DurationSeconds;
+			return;
+		}
+
+		this.settings.SendNotificationSeconds = value;
+		this.settingsService.Save(this.settings);
+	}
+
 	public SendNotificationController SendNotification { get; } = new();
 
 	[ObservableProperty] private bool isParsing;
@@ -305,10 +320,12 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 		this.Summary = summary;
 		this.ChartData = chartData;
 		this.CombatSummary = combatSummary;
-		this.overlay = new OverlayViewModel(summary, settings);
+		this.overlay = new OverlayViewModel(summary, settings, this.SendNotification, this.settingsService);
 		this.highlightMultiKills = this.settings.HighlightMultiKills;
 		this.highlightMultiHits = this.settings.HighlightMultiHits;
 		this.showSendNotifications = this.settings.ShowSendNotifications;
+		this.SendNotification.DurationSeconds = this.settings.SendNotificationSeconds;
+		this.sendNotificationSeconds = this.SendNotification.DurationSeconds;
 		this.DashboardTab = new ToggleState(this.settings.ShowDashboardTab,
 		                                    v =>
 		                                    {
@@ -511,6 +528,21 @@ public partial class MainWindowViewModel: ViewModelBase, IDisposable
 		{
 			this.ShowOverlay();
 		}
+	}
+
+	public (double? X, double? Y, double? Width, double? Height, bool Maximized) GetSavedWindowBounds()
+	{
+		return (this.settings.WindowX, this.settings.WindowY, this.settings.WindowWidth, this.settings.WindowHeight, this.settings.WindowMaximized);
+	}
+
+	public void SaveWindowBounds(double x, double y, double width, double height, bool maximized)
+	{
+		this.settings.WindowX = x;
+		this.settings.WindowY = y;
+		this.settings.WindowWidth = width;
+		this.settings.WindowHeight = height;
+		this.settings.WindowMaximized = maximized;
+		this.settingsService.Save(this.settings);
 	}
 
 	[RelayCommand]

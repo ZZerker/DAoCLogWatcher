@@ -72,7 +72,7 @@
                     <StackPanel Orientation="Horizontal" Spacing="6"
                                 IsVisible="{Binding Dashboard.IsAddingDashboardProfile}">
                         <TextBox Text="{Binding Dashboard.NewDashboardProfileName}"
-                                 Watermark="Profile name"
+                                 PlaceholderText="Profile name"
                                  MinWidth="180" />
                         <Button Content="Save"
                                 Command="{Binding Dashboard.ConfirmSaveAsDashboardProfileCommand}"
@@ -139,7 +139,7 @@
                         <TextBlock Text="{Binding Summary.RpsPerHour, StringFormat='{}{0:F0}'}"
                                    FontSize="36" FontWeight="Bold"
                                    Foreground="{DynamicResource AppAccentPurple}" />
-                        <TextBlock Text="RP/h rate" FontSize="11"
+                        <TextBlock Text="RP/h, last 1h" FontSize="11"
                                    Foreground="{DynamicResource AppTextDim}" />
                     </StackPanel>
                 </Border>

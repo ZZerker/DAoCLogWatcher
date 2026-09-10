@@ -1,4 +1,5 @@
 using DAoCLogWatcher.UI.Models;
+using DAoCLogWatcher.UI.Services;
 using DAoCLogWatcher.UI.ViewModels;
 using FluentAssertions;
 
@@ -8,7 +9,16 @@ public sealed class OverlayViewModelTests
 {
 	private static OverlayViewModel Create()
 	{
-		return new OverlayViewModel(new RealmPointSummary(), new AppSettings());
+		return new OverlayViewModel(new RealmPointSummary(), new AppSettings(), new SendNotificationController(), new RecordingSettingsService());
+	}
+
+	private sealed class RecordingSettingsService: ISettingsService
+	{
+		public AppSettings? LastSaved { get; private set; }
+
+		public AppSettings Load() => new();
+
+		public void Save(AppSettings settings) => this.LastSaved = settings;
 	}
 
 	[Fact]
@@ -43,7 +53,7 @@ public sealed class OverlayViewModelTests
 				               OverlayShowKillFeed = true
 		               };
 
-		var vm = new OverlayViewModel(new RealmPointSummary(), settings);
+		var vm = new OverlayViewModel(new RealmPointSummary(), settings, new SendNotificationController(), new RecordingSettingsService());
 
 		vm.ShowRp.Should().BeTrue();
 		vm.ShowKillFeed.Should().BeTrue();

@@ -299,6 +299,21 @@ public sealed class CombatParserTests
 	}
 
 	[Fact]
+	public void TryParse_PetAttackRedirectedByIntercept_AttributesPetNameOnly()
+	{
+		// BUG-006: guard/intercept redirects the pet's swing onto a third party. The lazy spell
+		// group used to bind at the first " hits ", swallowing the whole "attacks X but" clause
+		// and producing an attack-type key of "priest of Arawn attacks Opasletztenummer but".
+		this.parser.TryParse("[21:24:38] Your priest of Arawn attacks Opasletztenummer but hits the spirit champion for 130 (-14) damage!", out _, out _, out _);
+
+		var ev = this.parser.FlushPending();
+		ev!.SpellName.Should().Be("priest of Arawn", "only the pet name is the damage source");
+		ev.Opponent.Should().Be("the spirit champion", "the intercepting target is who actually took the hit");
+		ev.TotalDamage.Should().Be(130);
+		ev.Absorbed.Should().Be(14);
+	}
+
+	[Fact]
 	public void TryParse_DirectNukeLandingOutsideWindow_IsNotTaggedAsDotTick()
 	{
 		// Regression: a single-target nuke (e.g. Frigid Torment) confirmed by an in-window hit,

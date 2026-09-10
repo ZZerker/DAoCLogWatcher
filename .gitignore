@@ -49,3 +49,7 @@ DAoCLogWatcher.Tests/DAoCLogWatcher.Tests.csproj
 # Local design system references (source of truth lives in Figma)
 /DAoCLogWatcher.Core/TestFiles/DesignSystem/
 /DAoCLogWatcher.Core/TestFiles/*.zip
+
+# Warmap events recorder output (observe-warmap-events.py)
+warmap-events.jsonl
+warmap-events-log.txt

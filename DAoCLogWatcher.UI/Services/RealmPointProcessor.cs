@@ -82,6 +82,7 @@ public sealed class RealmPointProcessor: IRealmPointProcessor
 
 		this.summary.FirstEntryTime ??= entryDateTime;
 		this.summary.LastEntryTime = entryDateTime;
+		this.summary.AddEntry(entryDateTime, entry.Points);
 
 		var (sourceLabel, accumulate) = GetSourceMeta(entry.Source);
 		accumulate(this.summary, entry.Points);

@@ -6,10 +6,12 @@ $charplanPath = Join-Path $PSScriptRoot "data\eden\charplan.json"
 $outputPath   = Join-Path $PSScriptRoot "DAoCLogWatcher.Core\Resources\spells.json"
 
 function ConvertTo-Seconds([string]$value) {
-    if (-not $value -or $value -eq "Unlimited") { return -1 }
-    if ($value -match "^(\d+)s$")              { return [int]$Matches[1] }
-    if ($value -match "^(\d+):(\d+) min$")     { return [int]$Matches[1] * 60 + [int]$Matches[2] }
-    if ($value -match "^(\d+):(\d+) h$")       { return [int]$Matches[1] * 3600 + [int]$Matches[2] * 60 }
+    $inv = [System.Globalization.CultureInfo]::InvariantCulture
+    if (-not $value -or $value -eq "Unlimited")  { return -1 }
+    # Seconds, integer or decimal ("2s", "2.50s"). Parse invariant — the source uses '.' decimals.
+    if ($value -match "^(\d+(?:\.\d+)?)s$")       { return [int][math]::Ceiling([double]::Parse($Matches[1], $inv)) }
+    if ($value -match "^(\d+):(\d+) min$")        { return [int]$Matches[1] * 60 + [int]$Matches[2] }
+    if ($value -match "^(\d+):(\d+) h$")          { return [int]$Matches[1] * 3600 + [int]$Matches[2] * 60 }
     return -1
 }
 
@@ -42,7 +44,7 @@ foreach ($class in $data) {
 
                     if ($attrs["Type"] -eq "Damage Over Time") {
                         [void]$seen.Add($skill.name)
-                        $dotList.Add(@{
+                        $dotList.Add([ordered]@{
                             name             = $skill.name
                             durationSeconds  = ConvertTo-Seconds $attrs["Duration"]
                             frequencySeconds = ConvertTo-Seconds ($attrs["Frequency"])
@@ -56,7 +58,7 @@ foreach ($class in $data) {
                     # and turret PBAoE spells (Turret PBAoE type, different log format).
                     elseif (($attrs["Type"] -eq "Direct Damage" -or $attrs["Type"] -eq "Bolt") -and $attrs.ContainsKey("Radius") -and -not $attrs.ContainsKey("Frequency")) {
                         [void]$seen.Add($skill.name)
-                        $aoenukeList.Add(@{
+                        $aoenukeList.Add([ordered]@{
                             name             = $skill.name
                             durationSeconds  = 0
                             frequencySeconds = 0

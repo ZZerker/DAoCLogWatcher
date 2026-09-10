@@ -82,6 +82,7 @@
                     <SolidColorBrush x:Key="AppOverlayAccentPurple">#AA88FF</SolidColorBrush>
                     <SolidColorBrush x:Key="AppOverlayDamage">#FF6644</SolidColorBrush>
                     <SolidColorBrush x:Key="AppOverlayHeal">#00D968</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppOverlayMessageBg">#33000000</SolidColorBrush>
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Light">
                     <SolidColorBrush x:Key="AppWindowBackground">#F0F0F0</SolidColorBrush>
@@ -144,6 +145,7 @@
                     <SolidColorBrush x:Key="AppOverlayAccentPurple">#AA88FF</SolidColorBrush>
                     <SolidColorBrush x:Key="AppOverlayDamage">#FF6644</SolidColorBrush>
                     <SolidColorBrush x:Key="AppOverlayHeal">#00D968</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppOverlayMessageBg">#33000000</SolidColorBrush>
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
         </ResourceDictionary>

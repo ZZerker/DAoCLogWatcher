@@ -6,6 +6,7 @@ using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DAoCLogWatcher.UI.Models;
+using DAoCLogWatcher.UI.Services;
 
 namespace DAoCLogWatcher.UI.ViewModels;
 
@@ -31,9 +32,18 @@ public sealed partial class OverlayViewModel: ViewModelBase
 	private bool lastPrimaryVisible;
 	private bool lastSecondaryVisible;
 
-	public OverlayViewModel(RealmPointSummary summary, AppSettings settings)
+	// Default overlay opacity; the Reset button restores this value.
+	public const double DefaultOpacity = 0.6;
+
+	private readonly AppSettings settings;
+	private readonly ISettingsService settingsService;
+
+	public OverlayViewModel(RealmPointSummary summary, AppSettings settings, SendNotificationController sendNotification, ISettingsService settingsService)
 	{
 		this.Summary = summary;
+		this.SendNotification = sendNotification;
+		this.settings = settings;
+		this.settingsService = settingsService;
 		this.showRp = settings.OverlayShowRp;
 		this.showKillFeed = settings.OverlayShowKillFeed;
 		this.backgroundOpacity = Math.Clamp(settings.OverlayOpacity, 0.2, 1.0);
@@ -41,9 +51,14 @@ public sealed partial class OverlayViewModel: ViewModelBase
 
 	public RealmPointSummary Summary { get; }
 
+	public SendNotificationController SendNotification { get; }
+
 	public ObservableCollection<string> KillFeed { get; } = [];
 
 	[ObservableProperty] private bool isLocked = true;
+
+	// Set by Reset so the window keeps the cleared position instead of re-saving it on close; the window clears it on the next drag.
+	[ObservableProperty] private bool resetPositionRequested;
 
 	[ObservableProperty] private long damageTotal;
 
@@ -160,6 +175,19 @@ public sealed partial class OverlayViewModel: ViewModelBase
 	private void ToggleLock()
 	{
 		this.IsLocked = !this.IsLocked;
+	}
+
+	// Restores the overlay defaults: opacity back to 0.6 and the saved window position cleared so the next open
+	// falls back to the default placement. The reset is persisted through AppSettings.
+	[RelayCommand]
+	public void Reset()
+	{
+		this.ResetPositionRequested = true;
+		this.BackgroundOpacity = DefaultOpacity;
+		this.settings.OverlayOpacity = DefaultOpacity;
+		this.settings.OverlayX = null;
+		this.settings.OverlayY = null;
+		this.settingsService.Save(this.settings);
 	}
 
 	public void AddKillFeedEntry(string entry)

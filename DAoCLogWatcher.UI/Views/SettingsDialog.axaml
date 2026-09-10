@@ -64,11 +64,22 @@
 
                         <controls:SettingsSection Header="Notifications">
                             <controls:SettingsSection.SectionContent>
-                                <controls:SettingsRow Label="Player messages" Description="Show toast when a player sends a message">
-                                    <controls:SettingsRow.Action>
-                                        <ToggleSwitch IsChecked="{Binding ShowSendNotifications}" OffContent="" OnContent="" />
-                                    </controls:SettingsRow.Action>
-                                </controls:SettingsRow>
+                                <StackPanel>
+                                    <controls:SettingsRow Label="Player messages" Description="Show toast when a player sends a message">
+                                        <controls:SettingsRow.Action>
+                                            <ToggleSwitch IsChecked="{Binding ShowSendNotifications}" OffContent="" OnContent="" />
+                                        </controls:SettingsRow.Action>
+                                    </controls:SettingsRow>
+                                    <controls:SettingsRow Label="Message duration" Description="Seconds a player message toast stays on screen">
+                                        <controls:SettingsRow.Action>
+                                            <NumericUpDown Value="{Binding SendNotificationSeconds}"
+                                                           Minimum="5" Maximum="300" Increment="5"
+                                                           FormatString="0"
+                                                           ClipValueToMinMax="True"
+                                                           Width="110" />
+                                        </controls:SettingsRow.Action>
+                                    </controls:SettingsRow>
+                                </StackPanel>
                             </controls:SettingsSection.SectionContent>
                         </controls:SettingsSection>
                     </StackPanel>
