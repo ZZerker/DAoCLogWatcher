@@ -3,8 +3,6 @@
 		<TargetFrameworks>net10.0;net10.0-windows10.0.17763</TargetFrameworks>
 		<Nullable>enable</Nullable>
 		<AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
-		<!-- Default version for local/dev builds. CI overrides this with -p:Version=<git tag> at release time. -->
-		<Version>0.5.1</Version>
 	</PropertyGroup>
 
 	<!-- Flatpak/Flathub builds update through the store, so the in-app Velopack updater is compiled out. Set via -p:Flatpak=true. -->
@@ -30,26 +28,26 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Avalonia" Version="12.1.0" />
-		<PackageReference Include="Avalonia.Controls.DataGrid" Version="12.1.0" />
-		<PackageReference Include="Avalonia.Desktop" Version="12.1.0" />
-		<PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.0" />
-		<PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.0" />
+		<PackageReference Include="Avalonia" Version="12.1.2" />
+		<PackageReference Include="Avalonia.Controls.DataGrid" Version="12.1.2" />
+		<PackageReference Include="Avalonia.Desktop" Version="12.1.2" />
+		<PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.2" />
+		<PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.2" />
 		<!--Condition below is needed to remove the diagnostics package from build output in Release configuration.-->
 		<PackageReference Include="AvaloniaUI.DiagnosticsSupport" Version="2.2.3">
 			<IncludeAssets Condition="'$(Configuration)' != 'Debug'">None</IncludeAssets>
 			<PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
 		</PackageReference>
 		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.10" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.12" />
 		<!-- Avalonia 12.1's FreeDesktop pulls Tmds.DBus.Protocol >= 0.94.1 transitively. Pin 0.94.2
 		     (min patched for CVE-2026-39959) so the CVE fix is enforced above Avalonia's 0.94.1 floor. -->
-		<PackageReference Include="Tmds.DBus.Protocol" Version="0.94.2" />
+		<PackageReference Include="Tmds.DBus.Protocol" Version="0.95.1" />
 		<PackageReference Include="Velopack" Version="1.2.0" />
 		<PackageReference Include="ScottPlot.Avalonia" Version="5.1.59" />
 		<!-- Override ScottPlot's outdated Linux native SkiaSharp assets to match the managed SkiaSharp 3.119.4 used by Avalonia 12.1/ScottPlot 5.1.59 -->
-		<PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="3.119.4" />
-		<PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="3.119.4" />
+		<PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="4.152.0" />
+		<PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.152.0" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -60,6 +58,6 @@
 
 	<ItemGroup Condition="$(TargetFramework.Contains('windows'))">
 		<PackageReference Include="Microsoft.Toolkit.Uwp.Notifications" Version="7.1.3" />
-		<PackageReference Include="System.Drawing.Common" Version="10.0.10" />
+		<PackageReference Include="System.Drawing.Common" Version="10.0.12" />
 	</ItemGroup>
 </Project>

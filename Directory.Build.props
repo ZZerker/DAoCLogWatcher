@@ -1,11 +1,20 @@
 <Project>
   <PropertyGroup>
-    <Version>0.1.0</Version>
-    <!-- AssemblyVersion and FileVersion require numeric-only format; strip any pre-release suffix (e.g. -beta, -rc1) -->
-    <_VersionNumeric>$(Version.Split('-')[0])</_VersionNumeric>
-    <AssemblyVersion>$(_VersionNumeric)</AssemblyVersion>
-    <FileVersion>$(_VersionNumeric)</FileVersion>
     <!-- Required to restore/build net10.0-windows TFMs on Linux (CI) -->
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <!-- Evaluated before the SDK defaults Version, so this is only true when no -p:Version was passed (CI passes the git tag). -->
+    <VersionFromGit Condition="'$(Version)' == ''">true</VersionFromGit>
   </PropertyGroup>
+
+  <!-- Local builds take the newest git tag so the version never drifts from the last release. -->
+  <Target Name="SetVersionFromGit" BeforeTargets="GetAssemblyVersion" Condition="'$(VersionFromGit)' == 'true'">
+    <Exec Command="git describe --tags --abbrev=0" ConsoleToMSBuild="true" IgnoreExitCode="true" StandardOutputImportance="low" StandardErrorImportance="low" ContinueOnError="true">
+      <Output TaskParameter="ConsoleOutput" PropertyName="GitTag" />
+      <Output TaskParameter="ExitCode" PropertyName="GitDescribeExitCode" />
+    </Exec>
+    <PropertyGroup>
+      <Version Condition="'$(GitDescribeExitCode)' == '0' And '$(GitTag)' != ''">$(GitTag.TrimStart('v'))</Version>
+      <Version Condition="'$(GitDescribeExitCode)' != '0' Or '$(GitTag)' == ''">0.0.0-dev</Version>
+    </PropertyGroup>
+  </Target>
 </Project>
