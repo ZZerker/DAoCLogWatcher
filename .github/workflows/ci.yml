@@ -37,7 +37,7 @@ jobs:
         run: sudo apt-get update -y && sudo apt-get install -y xvfb
 
       - name: Test
-        run: xvfb-run dotnet test DAoCLogWatcher.Tests/DAoCLogWatcher.Tests.csproj --no-build -c Release --logger "trx;LogFileName=results.trx"
+        run: xvfb-run dotnet test --project DAoCLogWatcher.Tests/DAoCLogWatcher.Tests.csproj --no-build -c Release -- --report-xunit-trx
 
       - name: Upload test results
         if: always()

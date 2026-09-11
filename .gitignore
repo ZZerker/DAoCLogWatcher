@@ -53,3 +53,6 @@ DAoCLogWatcher.Tests/DAoCLogWatcher.Tests.csproj
 # Warmap events recorder output (observe-warmap-events.py)
 warmap-events.jsonl
 warmap-events-log.txt
+
+# MTP test reports
+TestResults/
