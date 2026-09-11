@@ -145,13 +145,14 @@
         <!-- Sidebar reopen strip (visible only when sidebar is collapsed) -->
         <Button IsVisible="{Binding !SettingsPopup.IsSidebarVisible}"
                 Command="{Binding SettingsPopup.ToggleSidebarCommand}"
-                Content="▶"
                 HorizontalAlignment="Left" VerticalAlignment="Center"
                 Margin="0"
                 Background="#FF336655" Foreground="White"
                 Padding="4,20" BorderThickness="0"
                 CornerRadius="0,6,6,0"
-                ToolTip.Tip="Show Summary" />
+                ToolTip.Tip="Show Summary">
+            <PathIcon Data="{StaticResource IconPlay}" Width="10" Height="10" Foreground="White" />
+        </Button>
 
         <!-- Update available popup -->
         <Border IsVisible="{Binding Update.IsUpdateAvailable}"
@@ -169,10 +170,12 @@
                         <TextBlock Text="{Binding Update.UpdateVersionText}" FontSize="12"
                                    Foreground="{DynamicResource AppUpdate}" />
                     </StackPanel>
-                    <Button Grid.Column="1" Content="✕"
+                    <Button Grid.Column="1"
                             Classes="btn-ghost"
                             Command="{Binding Update.DismissUpdateCommand}"
-                            VerticalAlignment="Top" />
+                            VerticalAlignment="Top">
+                        <PathIcon Data="{StaticResource IconX}" Width="10" Height="10" />
+                    </Button>
                 </Grid>
                 <TextBlock Text="Downloading the new version…" FontSize="11" TextWrapping="Wrap"
                            Foreground="{DynamicResource AppTextMuted}"
@@ -250,10 +253,12 @@
                                Foreground="{DynamicResource AppTextPrimary}" FontSize="12"
                                TextWrapping="Wrap" MaxWidth="300" />
                 </StackPanel>
-                <Button Grid.Column="1" Content="✕"
+                <Button Grid.Column="1"
                         Classes="btn-ghost"
                         Command="{Binding SendNotification.DismissCommand}"
-                        VerticalAlignment="Top" Margin="8,0,0,0" />
+                        VerticalAlignment="Top" Margin="8,0,0,0">
+                    <PathIcon Data="{StaticResource IconX}" Width="10" Height="10" />
+                </Button>
             </Grid>
         </Border>
 
@@ -273,12 +278,12 @@
                            TextWrapping="Wrap"
                            VerticalAlignment="Center" />
                 <Button Grid.Column="1"
-                        Content="✕"
                         Classes="btn-ghost"
                         Command="{Binding DismissWatchErrorCommand}"
                         Foreground="White"
-                        Margin="8,0,0,0"
-                        FontSize="13" />
+                        Margin="8,0,0,0">
+                    <PathIcon Data="{StaticResource IconX}" Width="10" Height="10" />
+                </Button>
             </Grid>
         </Border>
 

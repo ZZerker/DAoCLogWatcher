@@ -21,10 +21,14 @@
             <Grid>
                 <TextBlock Text="Dashboard" FontSize="22" FontWeight="Bold"
                            Foreground="{DynamicResource AppTextPrimary}" VerticalAlignment="Center" />
-                <Button Content="⚙ Customize"
-                        Command="{Binding Dashboard.ToggleDashboardCustomizeCommand}"
+                <Button Command="{Binding Dashboard.ToggleDashboardCustomizeCommand}"
                         Classes="btn-secondary"
-                        HorizontalAlignment="Right" />
+                        HorizontalAlignment="Right">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <Path Data="{StaticResource IconLayoutDashboard}" Stroke="{Binding $parent[Button].Foreground}" StrokeThickness="2" StrokeLineCap="Round" StrokeJoin="Round" Stretch="Uniform" Width="14" Height="14" />
+                        <TextBlock Text="Customize" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
             </Grid>
 
             <!-- Customize panel -->
@@ -90,12 +94,16 @@
                                 <Border BorderBrush="{DynamicResource AppRowBorder}" BorderThickness="0,0,0,1"
                                         Padding="0,4">
                                     <Grid ColumnDefinitions="26,26,*,Auto" ColumnSpacing="4">
-                                        <Button Grid.Column="0" Content="↑" Command="{Binding MoveUpCommand}"
+                                        <Button Grid.Column="0" Command="{Binding MoveUpCommand}"
                                                 Classes="btn-ghost"
-                                                Width="22" Height="22" Padding="0" FontSize="11" />
-                                        <Button Grid.Column="1" Content="↓" Command="{Binding MoveDownCommand}"
+                                                Width="22" Height="22" Padding="0">
+                                            <PathIcon Data="{StaticResource IconArrowUp}" Width="10" Height="10" />
+                                        </Button>
+                                        <Button Grid.Column="1" Command="{Binding MoveDownCommand}"
                                                 Classes="btn-ghost"
-                                                Width="22" Height="22" Padding="0" FontSize="11" />
+                                                Width="22" Height="22" Padding="0">
+                                            <PathIcon Data="{StaticResource IconArrowUp}" Width="10" Height="10" RenderTransform="scaleY(-1)" />
+                                        </Button>
                                         <TextBlock Grid.Column="2" Text="{Binding Label}" FontSize="12"
                                                    Foreground="{DynamicResource AppTextPrimary}"
                                                    VerticalAlignment="Center" Margin="4,0" />
@@ -719,11 +727,13 @@
                                                                FontWeight="SemiBold"
                                                                IsVisible="{Binding !IsPending}"
                                                                Foreground="{DynamicResource AppEventMission}" />
-                                                    <Button Grid.Column="3" Content="◎" Classes="btn-ghost"
-                                                            Padding="4,0" FontSize="12"
+                                                    <Button Grid.Column="3" Classes="btn-ghost"
+                                                            Padding="4,0"
                                                             ToolTip.Tip="Show on map"
                                                             Command="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).CampaignEvents.LocateCommand}"
-                                                            CommandParameter="{Binding}" />
+                                                            CommandParameter="{Binding}">
+                                                        <PathIcon Data="{StaticResource IconCrosshair}" Width="12" Height="12" />
+                                                    </Button>
                                                 </Grid>
                                             </Border>
                                         </DataTemplate>

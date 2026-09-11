@@ -23,11 +23,12 @@
                              PlaceholderText="Filter by player or source…"
                              FontSize="13" />
                     <Button Grid.Column="1"
-                            Content="✕"
                             Classes="btn-ghost"
                             Command="{Binding RpLog.ClearFilterCommand}"
                             IsVisible="{Binding RpLog.FilterText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                            Margin="6,0,0,0" />
+                            Margin="6,0,0,0">
+                        <PathIcon Data="{StaticResource IconX}" Width="10" Height="10" />
+                    </Button>
                 </Grid>
             </StackPanel>
 

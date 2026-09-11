@@ -131,11 +131,12 @@
                                                         Command="{Binding SettingsPopup.BrowseChatLogPathCommand}"
                                                         CommandParameter="{Binding $parent[Window].StorageProvider}"
                                                         Padding="10,5" FontSize="11" />
-                                                <Button Content="✕"
-                                                        Classes="btn-ghost"
+                                                <Button Classes="btn-ghost"
                                                         Command="{Binding SettingsPopup.ClearChatLogPathCommand}"
                                                         IsVisible="{Binding SettingsPopup.CustomChatLogPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                                                        FontSize="11" />
+                                                        FontSize="11">
+                                                    <PathIcon Data="{StaticResource IconX}" Width="10" Height="10" />
+                                                </Button>
                                             </StackPanel>
                                         </controls:SettingsRow.Action>
                                     </controls:SettingsRow>
