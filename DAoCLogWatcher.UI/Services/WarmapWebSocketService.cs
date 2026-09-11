@@ -523,17 +523,8 @@ public sealed class WarmapWebSocketService: IDisposable
 				var y = item.TryGetProperty("Y", out var yEl)&&yEl.TryGetInt32(out var yv)?yv:0;
 				var endsAt = item.TryGetProperty("EndsAt", out var endsEl)&&endsEl.TryGetInt64(out var e)?e:0;
 
-				var parsedEvent = new WarmapEvent(id, type, size, state, src, zone, x, y, endsAt);
-
-				// Announced but not running yet. Dropping it here rather than at each drawing site
-				// keeps every consumer of the snapshot on live events only; it reappears in the next
-				// snapshot (~10s) once the server flips it to active.
-				if(parsedEvent.IsPending)
-				{
-					continue;
-				}
-
-				parsed.Add(parsedEvent);
+				// Pending events are kept: consumers surface State themselves (badge, tooltip).
+				parsed.Add(new WarmapEvent(id, type, size, state, src, zone, x, y, endsAt));
 			}
 		}
 

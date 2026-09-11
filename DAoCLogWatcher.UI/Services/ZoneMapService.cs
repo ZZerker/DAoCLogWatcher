@@ -710,11 +710,6 @@ public class ZoneMapService
 
 		foreach(var ev in events)
 		{
-			if(ev.IsPending)
-			{
-				continue;
-			}
-
 			if(!zoneIndex.TryGetValue(ev.Zone, out var bounds))
 			{
 				continue;
@@ -744,11 +739,6 @@ public class ZoneMapService
 
 		foreach(var ev in events)
 		{
-			if(ev.IsPending)
-			{
-				continue;
-			}
-
 			if(!zoneIndex.TryGetValue(ev.Zone, out var bounds))
 			{
 				continue;
