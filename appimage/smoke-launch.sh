@@ -28,7 +28,32 @@ fail() {
 	echo "--- diagnostics: HOME=$HOME XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-} TMPDIR=${TMPDIR:-}"
 	ps -eo pid,etimes,rss,comm,args 2>/dev/null | head -40 || true
 	du -sh /tmp/appimage_extracted_* /tmp/.mount_* 2>/dev/null || true
-	find / -xdev -name 'app-*.log' -newer "$BIN" 2>/dev/null || true
+	ls -la "$HOME" "$HOME/.config" 2>/dev/null || true
+	# No -xdev: $HOME is a bind mount in container jobs, so it would be skipped.
+	find / -path /proc -prune -o -name 'app-*.log' -print 2>/dev/null || true
+	local pid
+	for pid in $(pgrep '^DAoCLogWatcher' 2>/dev/null || true); do
+		echo "--- /proc/$pid ($(cat "/proc/$pid/comm" 2>/dev/null)) wchan=$(cat "/proc/$pid/wchan" 2>/dev/null)"
+		tr '\0' '\n' < "/proc/$pid/environ" 2>/dev/null | grep -E '^(HOME|XDG_CONFIG_HOME|DISPLAY|APPIMAGE|APPDIR|TMPDIR|DOTNET_[A-Z_]*)=' || true
+		cat "/proc/$pid/stack" 2>/dev/null || true
+		local task
+		for task in /proc/"$pid"/task/*; do
+			echo "  tid $(basename "$task") $(cat "$task/comm" 2>/dev/null) $(cat "$task/wchan" 2>/dev/null)"
+		done | head -40
+	done
+	# Control experiment: run the extracted main executable directly, bypassing the AppImage
+	# runtime and AppRun, to tell a runtime/env problem apart from a container problem.
+	local direct
+	direct=$(ls -d /tmp/appimage_extracted_*/usr/bin/DAoCLogWatcher.UI 2>/dev/null | head -1 || true)
+	if [ -n "$direct" ]; then
+		echo "--- control: launching $direct directly for 20 s"
+		rm -rf "$LOG_DIR"
+		timeout 20 xvfb-run --auto-servernum "$direct" > "$OUT.direct" 2>&1 < /dev/null || true
+		echo "direct exit=$?"
+		cat "$OUT.direct" 2>/dev/null || true
+		ls -la "$LOG_DIR" 2>/dev/null || true
+		cat "$LOG_DIR"/app-*.log 2>/dev/null || true
+	fi
 	exit 1
 }
 
