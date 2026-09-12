@@ -7,7 +7,7 @@ namespace DAoCLogWatcher.UI.Services;
 
 public sealed class SettingsService: ISettingsService
 {
-	private static readonly string FilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DAoCLogWatcher", "settings.json");
+	private static readonly string FilePath = Path.Combine(AppPaths.DataDirectory, "settings.json");
 
 	public AppSettings Load()
 	{

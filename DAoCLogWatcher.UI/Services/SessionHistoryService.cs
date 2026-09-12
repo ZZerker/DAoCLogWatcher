@@ -13,7 +13,7 @@ public sealed class SessionHistoryService: ISessionHistoryService
 	private List<SessionRecord>? cache;
 
 	public SessionHistoryService()
-			: this(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DAoCLogWatcher", "sessions.json"))
+			: this(Path.Combine(AppPaths.DataDirectory, "sessions.json"))
 	{
 	}
 

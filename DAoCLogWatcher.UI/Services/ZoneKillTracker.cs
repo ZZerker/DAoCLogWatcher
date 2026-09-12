@@ -31,7 +31,7 @@ public sealed class ZoneKillTracker
 	private TimeSpan activeWindow = DefaultWindow;
 
 	public ZoneKillTracker()
-			: this(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DAoCLogWatcher", ZONE_EXPORT_FILE_NAME))
+			: this(Path.Combine(AppPaths.DataDirectory, ZONE_EXPORT_FILE_NAME))
 	{
 	}
 

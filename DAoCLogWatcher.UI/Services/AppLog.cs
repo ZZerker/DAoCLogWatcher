@@ -25,7 +25,7 @@ public static class AppLog
 	private static readonly Lock WriteLock = new();
 
 	/// <summary>Sits beside settings.json and sessions.json so "zip this folder" collects everything.</summary>
-	public static string LogDirectory { get; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DAoCLogWatcher", "logs");
+	public static string LogDirectory { get; } = Path.Combine(AppPaths.DataDirectory, "logs");
 
 	public static string CurrentLogFile => Path.Combine(LogDirectory, $"app-{DateTime.Now:yyyy-MM-dd}.log");
 

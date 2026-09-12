@@ -41,19 +41,6 @@ fail() {
 			echo "  tid $(basename "$task") $(cat "$task/comm" 2>/dev/null) $(cat "$task/wchan" 2>/dev/null)"
 		done | head -40
 	done
-	# Control experiment: run the extracted main executable directly, bypassing the AppImage
-	# runtime and AppRun, to tell a runtime/env problem apart from a container problem.
-	local direct
-	direct=$(ls -d /tmp/appimage_extracted_*/usr/bin/DAoCLogWatcher.UI 2>/dev/null | head -1 || true)
-	if [ -n "$direct" ]; then
-		echo "--- control: launching $direct directly for 20 s"
-		rm -rf "$LOG_DIR"
-		timeout 20 xvfb-run --auto-servernum "$direct" > "$OUT.direct" 2>&1 < /dev/null || true
-		echo "direct exit=$?"
-		cat "$OUT.direct" 2>/dev/null || true
-		ls -la "$LOG_DIR" 2>/dev/null || true
-		cat "$LOG_DIR"/app-*.log 2>/dev/null || true
-	fi
 	exit 1
 }
 
