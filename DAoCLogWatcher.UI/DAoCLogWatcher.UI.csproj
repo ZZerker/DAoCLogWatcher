@@ -45,9 +45,8 @@
 		<PackageReference Include="Tmds.DBus.Protocol" Version="0.95.1" />
 		<PackageReference Include="Velopack" Version="1.2.0" />
 		<PackageReference Include="ScottPlot.Avalonia" Version="5.1.59" />
-		<!-- Override ScottPlot's outdated Linux native SkiaSharp assets to match the managed SkiaSharp 3.119.4 used by Avalonia 12.1/ScottPlot 5.1.59 -->
-		<PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="4.152.0" />
-		<PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.152.0" />
+		<!-- Two transitive packages supply the Linux libSkiaSharp.so at the managed SkiaSharp version: Avalonia.Skia via SkiaSharp.NativeAssets.Linux, and ScottPlot via SkiaSharp.NativeAssets.Linux.NoDependencies. MSBuild conflict resolution picks the fontconfig-linked one, so libfontconfig1 is a runtime requirement.
+		     Never pin SkiaSharp.NativeAssets.Linux* here: a mismatched pin crashed v0.6.0 at startup on Linux (BUG-007). SkiaSharpNativeTests guards this. -->
 	</ItemGroup>
 
 	<ItemGroup>

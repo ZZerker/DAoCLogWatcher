@@ -76,7 +76,7 @@ jobs:
 
       - name: Generate icon2.ico
         run: |
-          sudo apt-get install -y librsvg2-bin imagemagick
+          sudo apt-get install -y librsvg2-bin imagemagick xvfb
           rsvg-convert -w 256 -h 256 -o /tmp/icon2.png DAoCLogWatcher.UI/Assets/icon2.svg
           convert /tmp/icon2.png -define icon:auto-resize="256,128,64,48,32,16" DAoCLogWatcher.UI/Assets/icon2.ico
 
@@ -92,6 +92,11 @@ jobs:
             -p:IncludeNativeLibrariesForSelfExtract=true \
             -p:Version="$VERSION" \
             -o publish/${{ matrix.rid }}
+
+      # Guards against a native/managed SkiaSharp mismatch, which crashed v0.6.0 on Linux before the first window.
+      - name: Smoke-launch linux-x64 build
+        if: matrix.rid == 'linux-x64'
+        run: bash ./appimage/smoke-launch.sh publish/linux-x64/DAoCLogWatcher.UI
 
       - name: Package
         run: cd publish/${{ matrix.rid }} && ${{ matrix.package_cmd }}
@@ -190,11 +195,13 @@ jobs:
     steps:
       # curl/ca-certificates: tool/runtime downloads; librsvg2-bin: icon rasterizing;
       # libicu70: .NET runtime; file/desktop-file-utils/squashfs-tools/zsync: used by the
-      # appimagetool that Velopack (vpk) invokes to assemble the AppImage.
+      # appimagetool that Velopack (vpk) invokes to assemble the AppImage; xvfb plus the
+      # libx11/libxext/libxi/libxcursor/libxrandr/libxfixes/libsm/libice/libfontconfig/libgl
+      # set: the X11 and GL runtime floor the smoke launch needs to bring up an Avalonia window.
       - name: Install build prerequisites
         run: |
           apt-get update -y
-          apt-get install -y curl ca-certificates git librsvg2-bin libicu70 file desktop-file-utils squashfs-tools zsync
+          apt-get install -y curl ca-certificates git librsvg2-bin libicu70 file desktop-file-utils squashfs-tools zsync xvfb xauth libx11-6 libxext6 libxi6 libxcursor1 libxrandr2 libxfixes3 libsm6 libice6 libfontconfig1 libgl1
 
       - uses: actions/checkout@v4
 
@@ -212,6 +219,12 @@ jobs:
           # Strip the leading "v" from the tag (v0.5.0 -> 0.5.0).
           export VERSION="${VERSION#v}"
           ./appimage/build-appimage.sh
+
+      # Guards against a native/managed SkiaSharp mismatch, which crashed v0.6.0 on Linux before the first window.
+      - name: Smoke-launch AppImage
+        env:
+          APPIMAGE_EXTRACT_AND_RUN: '1'
+        run: bash ./appimage/smoke-launch.sh "$(ls releases/linux/*.AppImage | head -1)"
 
       # The whole release folder: DAoCLogWatcher.AppImage plus the Velopack update metadata
       # (releases.linux.json, *-linux-full.nupkg, RELEASES-linux) the in-app updater reads.
