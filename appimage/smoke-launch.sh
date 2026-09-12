@@ -23,6 +23,12 @@ fail() {
 	if [ -n "$log" ]; then
 		cat "$log"
 	fi
+	# Diagnostics: tells a slow AppImage extraction apart from an app that started but logged
+	# somewhere unexpected.
+	echo "--- diagnostics: HOME=$HOME XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-} TMPDIR=${TMPDIR:-}"
+	ps -eo pid,etimes,rss,comm,args 2>/dev/null | head -40 || true
+	du -sh /tmp/appimage_extracted_* /tmp/.mount_* 2>/dev/null || true
+	find / -xdev -name 'app-*.log' -newer "$BIN" 2>/dev/null || true
 	exit 1
 }
 

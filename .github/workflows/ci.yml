@@ -201,7 +201,7 @@ jobs:
       - name: Install build prerequisites
         run: |
           apt-get update -y
-          apt-get install -y curl ca-certificates git librsvg2-bin libicu70 file desktop-file-utils squashfs-tools zsync xvfb xauth libx11-6 libxext6 libxi6 libxcursor1 libxrandr2 libxfixes3 libsm6 libice6 libfontconfig1 libgl1
+          apt-get install -y curl ca-certificates git librsvg2-bin libicu70 file desktop-file-utils squashfs-tools zsync procps xvfb xauth libx11-6 libxext6 libxi6 libxcursor1 libxrandr2 libxfixes3 libsm6 libice6 libfontconfig1 libgl1
 
       - uses: actions/checkout@v4
 
