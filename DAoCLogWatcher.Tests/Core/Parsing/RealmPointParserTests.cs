@@ -525,4 +525,131 @@ public sealed class RealmPointParserTests
 		buffered.Source.Should().Be(RealmPointSource.TimedMission);
 		buffered.SubSource.Should().Be("Mission Complete");
 	}
+
+	[Theory]
+	[InlineData("[21:40:37] Patrol Hunt completed. Earned 175 RP and 20 Buff XP.", 175, "Patrol Hunt")]
+	[InlineData("[08:44:48] Patrol Hunt completed. Earned 175 RP, 17 BP and 20 Buff XP.", 175, "Patrol Hunt")]
+	[InlineData("[08:47:43] Treasure Hunt completed. Earned 500 RP, 50 BP and 20 Buff XP.", 500, "Treasure Hunt")]
+	[InlineData("[09:06:00] Collection completed. Earned 210 RP, 17 BP and 20 Buff XP.", 210, "Collection")]
+	[InlineData("[08:51:35] Capture the Flag won. Earned 385 RP, 35 BP and 40 Buff XP.", 385, "Capture the Flag")]
+	[InlineData("[09:04:22] Vendetta won. Earned 385 RP, 35 BP and 40 Buff XP.", 385, "Vendetta")]
+	[InlineData("[21:30:45] Vendetta lost. Participation reward: 175 RP and 40 Buff XP.", 175, "Vendetta")]
+	public void TryParse_MissionPayoutLines_ClassifiedAsTimedMissionWithMode(string line, int expectedPoints, string expectedMode)
+	{
+		// Arrange
+		var parser = new RealmPointParser();
+
+		// Act
+		var result = parser.TryParse(line, out var entry);
+
+		// Assert
+		result.Should().BeTrue();
+		entry.Should().NotBeNull();
+		entry!.Points.Should().Be(expectedPoints);
+		entry.Source.Should().Be(RealmPointSource.TimedMission);
+		entry.SubSource.Should().Be(expectedMode);
+		entry.RawLine.Should().Be(line);
+	}
+
+	[Fact]
+	public void TryParse_MissionPayoutLine_NotMatchedInsidePlayerChat()
+	{
+		// Arrange
+		var parser = new RealmPointParser();
+
+		// Act
+		var result = parser.TryParse("[10:00:00] @@[Advice] Bob: Patrol Hunt completed. Earned 175 RP and 20 Buff XP.", out var entry);
+
+		// Assert
+		result.Should().BeFalse();
+		entry.Should().BeNull();
+	}
+
+	[Fact]
+	public void TryParse_MissionPayoutAfterPendingRp_BothCounted()
+	{
+		// A kill's RP line goes pending; the payout arrives before any confirmation.
+		// The pending entry flushes as Misc and the payout must not be dropped.
+		var parser = new RealmPointParser();
+
+		parser.TryParse("[10:00:00] You get 500 realm points!", out var first);
+		first.Should().BeNull();
+
+		parser.TryParse("[10:00:01] Vendetta won. Earned 385 RP, 35 BP and 40 Buff XP.", out var flushed);
+		flushed.Should().NotBeNull();
+		flushed!.Points.Should().Be(500);
+		flushed.Source.Should().Be(RealmPointSource.Misc);
+
+		parser.TryParse("[10:00:02] Some unrelated line", out var payout);
+		payout.Should().NotBeNull();
+		payout!.Points.Should().Be(385);
+		payout.Source.Should().Be(RealmPointSource.TimedMission);
+		payout.SubSource.Should().Be("Vendetta");
+	}
+
+	[Fact]
+	public void TryParse_VendettaLossSequence_FairFightAndParticipationRewardCountedOnce()
+	{
+		// Real sequence from chat.log (21:30:45): the fair-fight RP, then the mission participation reward.
+		var parser = new RealmPointParser();
+
+		parser.TryParse("[21:30:45] You recently lost a fair fight, 1v1", out var none).Should().BeFalse();
+		none.Should().BeNull();
+
+		parser.TryParse("[21:30:45] You get 100 realm points!", out var fairFight).Should().BeTrue();
+		fairFight!.Points.Should().Be(100);
+		fairFight.Source.Should().Be(RealmPointSource.CampaignQuest);
+		fairFight.SubSource.Should().Be("Fair Fight");
+
+		parser.TryParse("[21:30:45] Vendetta lost. Participation reward: 175 RP and 40 Buff XP.", out var reward).Should().BeTrue();
+		reward!.Points.Should().Be(175);
+		reward.Source.Should().Be(RealmPointSource.TimedMission);
+		reward.SubSource.Should().Be("Vendetta");
+
+		parser.TryParse("[21:30:46] Riantan was just killed by Loemiiee in Ellan Vannin.", out var extra).Should().BeFalse();
+		extra.Should().BeNull();
+	}
+
+	[Theory]
+	[InlineData("[12:33:18] You get an additional 15 realm points due to your winning streak!", 15, "Winning Streak")]
+	[InlineData("[12:33:18] You get an additional 18 realm points due to your GroupFinder bonus!", 18, "GroupFinder Bonus")]
+	public void TryParse_KillBonusLines_EmitDirectlyAsMiscWithSubSource(string line, int expectedPoints, string expectedSubSource)
+	{
+		// Arrange
+		var parser = new RealmPointParser();
+
+		// Act
+		var result = parser.TryParse(line, out var entry);
+
+		// Assert
+		result.Should().BeTrue();
+		entry.Should().NotBeNull();
+		entry!.Points.Should().Be(expectedPoints);
+		entry.Source.Should().Be(RealmPointSource.Misc);
+		entry.SubSource.Should().Be(expectedSubSource);
+	}
+
+	[Fact]
+	public void TryParse_KillWithBonusLines_BonusesDoNotDisturbKillClassification()
+	{
+		// Real sequence from chat.log (12:33:18): guild buff is folded into the kill, the other bonuses are separate entries.
+		var parser = new RealmPointParser();
+
+		parser.TryParse("[12:33:18] Sekk was just killed by Adusta in Hadrian's Wall.", out _);
+		parser.TryParse("[12:33:18] You get an additional 3 realm points due to your guild's buff!", out var guild).Should().BeFalse();
+		guild.Should().BeNull();
+
+		parser.TryParse("[12:33:18] You get an additional 15 realm points due to your winning streak!", out var streak).Should().BeTrue();
+		streak!.SubSource.Should().Be("Winning Streak");
+
+		parser.TryParse("[12:33:18] You get an additional 18 realm points due to your GroupFinder bonus!", out var groupFinder).Should().BeTrue();
+		groupFinder!.SubSource.Should().Be("GroupFinder Bonus");
+
+		parser.TryParse("[12:33:18] You get 110 realm points!", out var kill).Should().BeFalse();
+		kill.Should().BeNull();
+
+		parser.TryParse("[12:33:18] You gain a total of 12,345 experience points.", out var confirmed).Should().BeTrue();
+		confirmed!.Points.Should().Be(110);
+		confirmed.Source.Should().Be(RealmPointSource.PlayerKill);
+	}
 }

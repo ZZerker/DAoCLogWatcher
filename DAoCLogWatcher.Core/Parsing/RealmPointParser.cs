@@ -8,6 +8,7 @@ namespace DAoCLogWatcher.Core.Parsing;
 public sealed partial class RealmPointParser
 {
 	private static readonly Regex RealmPointRegex = GenerateRealmPointRegex();
+	private static readonly Regex MissionPayoutRegex = GenerateMissionPayoutRegex();
 
 	private enum ParserState
 	{
@@ -98,7 +99,7 @@ public sealed partial class RealmPointParser
 			// (e.g. a spell-cast notice between the RP gain and the keep-capture
 			// broadcast). Skip a bounded number of such lines before giving up — but
 			// never skip another RP line, which must be parsed in its own right.
-			if(pendingSource == null&&!RealmPointRegex.IsMatch(line)&&this.participationSkips < MAX_PARTICIPATION_SKIPS)
+			if(pendingSource == null&&!IsRealmPointLine(line)&&this.participationSkips < MAX_PARTICIPATION_SKIPS)
 			{
 				this.participationSkips++;
 				return false;
@@ -119,7 +120,7 @@ public sealed partial class RealmPointParser
 
 			// If the confirmation line is itself an RP line, re-parse it so its RP
 			// are not silently consumed. The result is buffered for the next TryParse call.
-			if(RealmPointRegex.IsMatch(line))
+			if(IsRealmPointLine(line))
 			{
 				if(this.TryParseInternal(line, out var additional))
 				{
@@ -127,6 +128,26 @@ public sealed partial class RealmPointParser
 				}
 			}
 
+			return true;
+		}
+
+		var payout = MissionPayoutRegex.Match(line);
+		if(payout.Success)
+		{
+			// Mission rewards arrive as their own system line, with no "You get N realm points" companion.
+			if(!TimeOnly.TryParseExact(payout.Groups["timestamp"].Value, "HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out var payoutTime)||!int.TryParse(payout.Groups["points"].Value, out var payoutPoints))
+			{
+				return false;
+			}
+
+			entry = new RealmPointEntry
+			        {
+					        Timestamp = payoutTime,
+					        Points = payoutPoints,
+					        Source = RealmPointSource.TimedMission,
+					        SubSource = payout.Groups["mode"].Value,
+					        RawLine = line
+			        };
 			return true;
 		}
 
@@ -220,6 +241,11 @@ public sealed partial class RealmPointParser
 		        };
 
 		return true;
+	}
+
+	private static bool IsRealmPointLine(string line)
+	{
+		return RealmPointRegex.IsMatch(line)||MissionPayoutRegex.IsMatch(line);
 	}
 
 	private static RealmPointSource DetermineSourceFromReason(string reason)
@@ -316,6 +342,17 @@ public sealed partial class RealmPointParser
 			return "Support Activity";
 		}
 
+		// Lowercase "winning streak" is the kill bonus; the capitalised "Win Streak" above is the Arena mission bonus.
+		if(reason.Contains("winning streak"))
+		{
+			return "Winning Streak";
+		}
+
+		if(reason.Contains("GroupFinder bonus"))
+		{
+			return "GroupFinder Bonus";
+		}
+
 		if(reason.Contains("repair"))
 		{
 			return "Repair";
@@ -329,4 +366,7 @@ public sealed partial class RealmPointParser
 
 	[GeneratedRegex(@"^\[(?<timestamp>\d{2}:\d{2}:\d{2})\] You get (?:an additional )?(?<points>\d+) realm points?(?<reason>.*)!$", RegexOptions.Compiled|RegexOptions.CultureInvariant)]
 	private static partial Regex GenerateRealmPointRegex();
+
+	[GeneratedRegex(@"^\[(?<timestamp>\d{2}:\d{2}:\d{2})\] (?<mode>[A-Za-z][A-Za-z' ]*?) (?:(?:completed|won)\. Earned|lost\. Participation reward:) (?<points>\d+) RP(?:, \d+ BP)? and \d+ Buff XP\.$", RegexOptions.Compiled|RegexOptions.CultureInvariant)]
+	private static partial Regex GenerateMissionPayoutRegex();
 }
