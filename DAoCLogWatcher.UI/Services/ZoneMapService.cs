@@ -25,6 +25,9 @@ public class ZoneMapService
 	private const double CELL_W = 1408.0 / GRID_W;
 	private const double CELL_H = 1536.0 / GRID_H;
 
+	/// <summary>Terrain oversampling: 2 makes each 256x256 zone slot hold its full 512x512 tile.</summary>
+	private const int TERRAIN_SCALE = 2;
+
 	private SKBitmap? terrain;
 #pragma warning disable CS0169
 	private SKBitmap? legendBitmap; // used in commented-out legacy rendering block
@@ -995,7 +998,10 @@ public class ZoneMapService
 
 	private static SKBitmap BuildTerrainBitmap(FrontierMapData map)
 	{
-		var bitmap = new SKBitmap(1408, 1536, SKColorType.Rgb888x, SKAlphaType.Opaque);
+		// A zone occupies a 256x256 slot in map coordinates while its tile is 512x512, so the terrain
+		// is rasterized at TERRAIN_SCALE and the plot stretches it back over the same CoordinateRect.
+		// Every other coordinate (keeps, markers, the heatmap) stays in the unscaled 1408x1536 space.
+		var bitmap = new SKBitmap(1408 * TERRAIN_SCALE, 1536 * TERRAIN_SCALE, SKColorType.Rgb888x, SKAlphaType.Opaque);
 		using var canvas = new SKCanvas(bitmap);
 		canvas.Clear(new SKColor(30, 30, 30));
 
@@ -1006,7 +1012,8 @@ public class ZoneMapService
 			{
 				using var stream = AssetLoader.Open(uri);
 				using var zoneImg = SKBitmap.Decode(stream);
-				var dst = new SKRect(zone.PixelBounds!.X, zone.PixelBounds.Y, zone.PixelBounds.X + zone.PixelBounds.Width, zone.PixelBounds.Y + zone.PixelBounds.Height);
+				var bounds = zone.PixelBounds!;
+				var dst = new SKRect(bounds.X * TERRAIN_SCALE, bounds.Y * TERRAIN_SCALE, (bounds.X + bounds.Width) * TERRAIN_SCALE, (bounds.Y + bounds.Height) * TERRAIN_SCALE);
 				canvas.DrawBitmap(zoneImg, dst);
 			}
 			catch
